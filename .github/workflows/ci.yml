@@ -81,6 +81,14 @@ jobs:
         run: rustup target add aarch64-apple-darwin
       - name: Install formatter and linter components
         run: rustup component add rustfmt clippy
+      - name: Save the Rust toolchain
+        if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && steps.rust-toolchain-cache.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/mlx-c-rust-cache
+        with:
+          operation: save
+          owner: rust-toolchain
+          path: ~/.rustup/toolchains
+          key: mlx-c-rust-v1-rust-toolchain-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
       # The sccache directory is pinned explicitly, under the same
       # ~/.cache/mlx-c-rust prefix the native pair uses, so the cache
       # restore and save steps below point at exactly what the server
@@ -157,14 +165,6 @@ jobs:
       - name: Print compiler cache statistics
         if: ${{ !cancelled() }}
         run: sccache --show-stats
-      - name: Save the Rust toolchain
-        if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && steps.rust-toolchain-cache.outputs.cache-hit != 'true' }}
-        uses: ./.github/actions/mlx-c-rust-cache
-        with:
-          operation: save
-          owner: rust-toolchain
-          path: ~/.rustup/toolchains
-          key: mlx-c-rust-v1-rust-toolchain-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
       - name: Save cargo downloads
         if: ${{ !cancelled() && steps.cargo-downloads-cache.outputs.cache-hit != 'true' }}
         uses: ./.github/actions/mlx-c-rust-cache
@@ -190,8 +190,8 @@ jobs:
   native:
     name: Adopt, build, and test — the one macOS journey
     runs-on: macos-latest
-    # A warm run takes about two minutes and a full compile of the pinned pair
-    # about eight, the cold-native gate included, so ten is a real ceiling.
+    # The hard limit: a warm run takes about two minutes, and a full compile of
+    # the pinned pair, as in the cold-native gate, must also fit.
     timeout-minutes: 10
     # Pruning surplus caches needs actions:write; everything else this job
     # touches stays read-only.
@@ -218,6 +218,14 @@ jobs:
           key: mlx-c-rust-v1-rust-toolchain-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
       - name: Activate the pinned toolchain
         run: rustup show
+      - name: Save the Rust toolchain
+        if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && steps.rust-toolchain-cache.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/mlx-c-rust-cache
+        with:
+          operation: save
+          owner: rust-toolchain
+          path: ~/.rustup/toolchains
+          key: mlx-c-rust-v1-rust-toolchain-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
       - name: Pin the sccache directory
         run: printf 'SCCACHE_DIR=%s\n' "$HOME/.cache/mlx-c-rust/sccache" >> "$GITHUB_ENV"
       - name: Install sccache
@@ -263,6 +271,17 @@ jobs:
             mlx-c-rust-v1-sccache-${{ runner.os }}-${{ runner.arch }}-
       - name: Build the pinned pair (typed, live progress)
         run: cargo xtask build-native
+      # Saved here, not at the end of the job: if anything later hits the job's
+      # time limit, losing this compile would make the next run compile again
+      # and hit the same limit.
+      - name: Save the compiled pinned pair
+        if: ${{ !cancelled() && steps.native-pair-cache.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/mlx-c-rust-cache
+        with:
+          operation: save
+          owner: native-pair
+          key: native-pair-${{ hashFiles('native_build.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**') }}
+          path: ~/.cache/mlx-c-rust/native
       # install-action verifies the release's SHA-256 from inside the pinned
       # action commit; fallback: none forbids a silent source build if the
       # pinned release is absent.
@@ -290,14 +309,6 @@ jobs:
       - name: Print compiler cache statistics
         if: ${{ !cancelled() }}
         run: sccache --show-stats
-      - name: Save the Rust toolchain
-        if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && steps.rust-toolchain-cache.outputs.cache-hit != 'true' }}
-        uses: ./.github/actions/mlx-c-rust-cache
-        with:
-          operation: save
-          owner: rust-toolchain
-          path: ~/.rustup/toolchains
-          key: mlx-c-rust-v1-rust-toolchain-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
       - name: Save cargo downloads
         if: ${{ !cancelled() && steps.cargo-downloads-cache.outputs.cache-hit != 'true' }}
         uses: ./.github/actions/mlx-c-rust-cache
@@ -308,14 +319,6 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
           key: mlx-c-rust-v1-cargo-downloads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
-      - name: Save the compiled pinned pair
-        if: ${{ !cancelled() && steps.native-pair-cache.outputs.cache-hit != 'true' }}
-        uses: ./.github/actions/mlx-c-rust-cache
-        with:
-          operation: save
-          owner: native-pair
-          key: native-pair-${{ hashFiles('native_build.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**') }}
-          path: ~/.cache/mlx-c-rust/native
       - name: Save sccache
         if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && steps.sccache-cache.outputs.cache-hit != 'true' }}
         uses: ./.github/actions/mlx-c-rust-cache
