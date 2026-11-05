@@ -8,7 +8,6 @@
 
 #include "mlxrs/gap_shim.h"
 
-#include <optional>
 #include <utility>
 #include <vector>
 
@@ -30,25 +29,6 @@ inline void shim_array_set(mlx_array& destination, mlx::core::array&& value) {
     *static_cast<mlx::core::array*>(destination.ctx) = std::move(value);
   } else {
     destination.ctx = new mlx::core::array(std::move(value));
-  }
-}
-
-inline std::vector<mlx::core::array>& shim_vector_array_get(
-    const mlx_vector_array handle) {
-  if (!handle.ctx) {
-    throw std::runtime_error("expected a non-empty mlx_vector_array");
-  }
-  return *static_cast<std::vector<mlx::core::array>*>(handle.ctx);
-}
-
-inline void shim_vector_array_set(
-    mlx_vector_array& destination,
-    std::vector<mlx::core::array>&& value) {
-  if (destination.ctx) {
-    *static_cast<std::vector<mlx::core::array>*>(destination.ctx) =
-        std::move(value);
-  } else {
-    destination.ctx = new std::vector<mlx::core::array>(std::move(value));
   }
 }
 
@@ -96,52 +76,6 @@ extern "C" int mlxrs_minmax_axis(
         mlx::core::minmax(shim_array_get(a), axis, keepdims, shim_stream_get(s));
     shim_array_set(*res_0, std::move(minima));
     shim_array_set(*res_1, std::move(maxima));
-  } catch (std::exception& error) {
-    mlx_error("%s", error.what());
-    return 1;
-  }
-  return 0;
-}
-
-extern "C" int mlxrs_matrix_transpose(
-    mlx_array* res,
-    const mlx_array a,
-    const mlx_stream s) {
-  try {
-    shim_array_set(
-        *res,
-        mlx::core::matrix_transpose(shim_array_get(a), shim_stream_get(s)));
-  } catch (std::exception& error) {
-    mlx_error("%s", error.what());
-    return 1;
-  }
-  return 0;
-}
-
-extern "C" int mlxrs_unique(
-    mlx_vector_array* res,
-    const mlx_array a,
-    int size,
-    bool return_index,
-    bool return_inverse,
-    bool return_counts,
-    const mlx_array fill_value,
-    const mlx_stream s) {
-  try {
-    std::optional<mlx::core::array> fill;
-    if (fill_value.ctx) {
-      fill = shim_array_get(fill_value);
-    }
-    shim_vector_array_set(
-        *res,
-        mlx::core::unique(
-            shim_array_get(a),
-            size,
-            return_index,
-            return_inverse,
-            return_counts,
-            fill,
-            shim_stream_get(s)));
   } catch (std::exception& error) {
     mlx_error("%s", error.what());
     return 1;

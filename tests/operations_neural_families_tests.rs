@@ -6,9 +6,9 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{
-    FLOAT_TOLERANCE, assert_floats_close, float_array, floats_of, gpu_context, int_array,
+    FLOAT_TOLERANCE, array_at, assert_floats_close, float_array, floats_of, gpu_context, int_array,
 };
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxDtype};
+use mlx_c_rust::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxDtype};
 
 fn ramp_weights(context: &MlxBindingsContext) -> MlxArray {
     let ramp = context.arange_f32(0.0, 256.0, 1.0).unwrap();
@@ -185,4 +185,118 @@ fn should_forward_the_group_size_and_bit_width_to_quantization() {
     assert_eq!(four_bit_weights.shape(), vec![4, 8]);
     assert_eq!(eight_bit_scales.shape(), vec![4, 2]);
     assert_eq!(wider_group_scales.shape(), vec![4, 1]);
+}
+
+/// The argument shapes all differ, so a swapped parameter fails to build.
+struct GatedDeltaFixture {
+    queries: MlxArray,
+    keys: MlxArray,
+    values: MlxArray,
+    gates: MlxArray,
+    beta: MlxArray,
+}
+
+impl GatedDeltaFixture {
+    fn with_distinct_shapes(context: &MlxBindingsContext) -> Self {
+        Self {
+            queries: context.full(&[1, 3, 1, 4], 0.5, MlxDtype::Float32).unwrap(),
+            keys: context.full(&[1, 3, 1, 4], 0.5, MlxDtype::Float32).unwrap(),
+            values: context.full(&[1, 3, 2, 5], 1.0, MlxDtype::Float32).unwrap(),
+            gates: context.full(&[1, 3, 2], 0.5, MlxDtype::Float32).unwrap(),
+            beta: context.full(&[1, 3, 2], 0.5, MlxDtype::Float32).unwrap(),
+        }
+    }
+
+    fn update(
+        &self,
+        context: &MlxBindingsContext,
+        initial_state: Option<&MlxArray>,
+        mask: Option<&MlxArray>,
+    ) -> MlxArrayVector {
+        context
+            .gated_delta_update(
+                &self.queries,
+                &self.keys,
+                &self.values,
+                &self.gates,
+                &self.beta,
+                initial_state,
+                mask,
+            )
+            .expect("the gated-delta graph should build")
+    }
+}
+
+#[test]
+fn should_return_gated_delta_outputs_before_the_recurrent_state() {
+    let context = gpu_context();
+    let fixture = GatedDeltaFixture::with_distinct_shapes(&context);
+
+    let outputs = fixture.update(&context, None, None);
+
+    assert_eq!(outputs.len(), 2);
+    assert_eq!(array_at(&outputs, 0).shape(), vec![1, 3, 2, 5]);
+    assert_eq!(array_at(&outputs, 1).shape(), vec![1, 2, 5, 4]);
+}
+
+#[test]
+fn should_forward_the_initial_state_to_the_gated_delta_update() {
+    let context = gpu_context();
+    let fixture = GatedDeltaFixture::with_distinct_shapes(&context);
+    let zero_state = context.zeros(&[1, 2, 5, 4], MlxDtype::Float32).unwrap();
+    let nonzero_state = context.full(&[1, 2, 5, 4], 1.0, MlxDtype::Float32).unwrap();
+
+    let without_state = fixture.update(&context, None, None);
+    let from_zero = fixture.update(&context, Some(&zero_state), None);
+    let from_nonzero = fixture.update(&context, Some(&nonzero_state), None);
+
+    let without_state_outputs = floats_of(&array_at(&without_state, 0));
+    assert_floats_close(
+        &without_state_outputs,
+        &floats_of(&array_at(&from_zero, 0)),
+        FLOAT_TOLERANCE,
+    );
+    assert_ne!(
+        without_state_outputs,
+        floats_of(&array_at(&from_nonzero, 0))
+    );
+}
+
+#[test]
+fn should_forward_the_mask_to_the_gated_delta_update() {
+    let context = gpu_context();
+    let fixture = GatedDeltaFixture::with_distinct_shapes(&context);
+    let nothing_selected = context
+        .greater(
+            &context.zeros(&[1, 3], MlxDtype::Float32).unwrap(),
+            &MlxArray::from_scalar_f32(0.5),
+        )
+        .unwrap();
+
+    let masked = fixture.update(&context, None, Some(&nothing_selected));
+
+    // With no step selected the state never leaves its zero start.
+    for state_value in floats_of(&array_at(&masked, 1)) {
+        assert_eq!(state_value, 0.0);
+    }
+}
+
+#[test]
+fn should_translate_swapped_gated_delta_arguments_into_an_error() {
+    let context = gpu_context();
+    let fixture = GatedDeltaFixture::with_distinct_shapes(&context);
+
+    let failure = context
+        .gated_delta_update(
+            &fixture.values,
+            &fixture.keys,
+            &fixture.queries,
+            &fixture.gates,
+            &fixture.beta,
+            None,
+            None,
+        )
+        .expect_err("the shapes only line up in the documented order");
+
+    assert_eq!(failure.operation, "apply the MLX gated-delta update");
 }

@@ -8,7 +8,8 @@ mod bridge_fixtures;
 
 use bridge_fixtures::{float_array, floats_of, gpu_context};
 use mlx_c_rust::{
-    cuda_is_available, distributed_is_available, metal_is_available, set_wired_limit,
+    clear_distributed_backends, cuda_is_available, distributed_is_available,
+    initialize_distributed, metal_is_available, set_wired_limit,
 };
 
 #[test]
@@ -46,4 +47,38 @@ fn should_return_the_previous_wired_limit_when_it_changes() {
     let previous_limit = set_wired_limit(original_limit).unwrap();
 
     assert_eq!(previous_limit, FIRST_WIRED_LIMIT_BYTES);
+}
+
+#[test]
+fn should_report_this_process_as_the_only_member_of_a_singleton_group() {
+    gpu_context();
+
+    let group = initialize_distributed(false, "any").unwrap();
+
+    assert_eq!(group.rank().unwrap(), 0);
+    assert_eq!(group.size().unwrap(), 1);
+}
+
+#[test]
+fn should_reinitialize_after_clearing_the_distributed_backends() {
+    gpu_context();
+    drop(initialize_distributed(false, "any").unwrap());
+
+    clear_distributed_backends().unwrap();
+
+    assert_eq!(
+        initialize_distributed(false, "any")
+            .unwrap()
+            .size()
+            .unwrap(),
+        1
+    );
+}
+
+#[test]
+fn should_refuse_an_unknown_or_malformed_backend_name() {
+    gpu_context();
+
+    assert!(initialize_distributed(false, "not-a-backend").is_err());
+    assert!(initialize_distributed(false, "a\0b").is_err());
 }

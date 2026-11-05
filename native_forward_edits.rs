@@ -6,9 +6,9 @@
 //! dependencies along.
 
 /// One reviewed forward adaptation of the pinned MLX-C sources to the
-/// pinned MLX, carried until an MLX-C release pairs with that MLX (see
-/// `drop_with`). C++-side only: the C surface this crate binds is
-/// untouched, and COVERAGE_INVENTORY.md's pairing note mirrors this set.
+/// pinned MLX, carried until an upstream release makes it unnecessary (see
+/// `drop_with`). The C surface this crate binds is never touched, and
+/// COVERAGE_INVENTORY.md's pairing note mirrors this set.
 /// Changing an entry's find or replacement requires bumping
 /// PINNED_PAIR_BUILD_RECIPE in the engine: extracted trees already carrying
 /// the old form must orphan through a new identity rather than wedge on
@@ -32,61 +32,20 @@ pub struct ForwardSourceEdit {
     pub drop_with: &'static str,
 }
 
-pub const MLX_C_FORWARD_SOURCE_EDITS: &[ForwardSourceEdit] = &[
-    ForwardSourceEdit {
-        path: "mlx/c/ops.cpp",
-        find: r#"        mlx::core::gather_qmm(
-            mlx_array_get_(x),
-            mlx_array_get_(w),
-            mlx_array_get_(scales),
-            (biases.ctx ? std::make_optional(mlx_array_get_(biases))
-                        : std::nullopt),
-            (lhs_indices.ctx ? std::make_optional(mlx_array_get_(lhs_indices))
-                             : std::nullopt),
-            (rhs_indices.ctx ? std::make_optional(mlx_array_get_(rhs_indices))
-                             : std::nullopt),
-            transpose,
-            (group_size.has_value ? std::make_optional<int>(group_size.value)
-                                  : std::nullopt),
-            (bits.has_value ? std::make_optional<int>(bits.value)
-                            : std::nullopt),
-            std::string(mode),"#,
-        replacement: r#"        mlx::core::gather_qmm(
-            mlx_array_get_(x),
-            mlx_array_get_(w),
-            mlx_array_get_(scales),
-            (biases.ctx ? std::make_optional(mlx_array_get_(biases))
-                        : std::nullopt),
-            (lhs_indices.ctx ? std::make_optional(mlx_array_get_(lhs_indices))
-                             : std::nullopt),
-            (rhs_indices.ctx ? std::make_optional(mlx_array_get_(rhs_indices))
-                             : std::nullopt),
-            transpose,
-            (group_size.has_value ? std::make_optional<int>(group_size.value)
-                                  : std::nullopt),
-            (bits.has_value ? std::make_optional<int>(bits.value)
-                            : std::nullopt),
-            std::string(mode),
-            std::nullopt,"#,
-        drop_with: "the MLX-C release pairing with MLX v0.32.4, whose \
-                    gather_qmm call gains the global_scale parameter this \
-                    edit bridges over",
-    },
-    ForwardSourceEdit {
-        path: "CMakeLists.txt",
-        find: r#"if(MLX_C_USE_SYSTEM_MLX)
+pub const MLX_C_FORWARD_SOURCE_EDITS: &[ForwardSourceEdit] = &[ForwardSourceEdit {
+    path: "CMakeLists.txt",
+    find: r#"if(MLX_C_USE_SYSTEM_MLX)
   find_package(MLX REQUIRED)"#,
-        replacement: r#"if(MLX_C_USE_SYSTEM_MLX)
+    replacement: r#"if(MLX_C_USE_SYSTEM_MLX)
   # The installed static MLX package's targets reference jaccl::jaccl in
   # their link interface without loading the jaccl package themselves, so
   # the consumer must resolve it first or find_package(MLX) dies at
   # set_target_properties on a missing target.
   find_package(jaccl REQUIRED)
   find_package(MLX REQUIRED)"#,
-        drop_with: "an MLX or MLX-C release whose system-MLX packaging \
+    drop_with: "an MLX or MLX-C release whose system-MLX packaging \
                     resolves jaccl's imported target itself",
-    },
-];
+}];
 
 /// Applies the forward edit set to the extracted MLX-C tree. Idempotent: a
 /// retry over sources edited by a previous attempt recognizes the

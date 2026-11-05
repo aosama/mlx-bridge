@@ -4,7 +4,7 @@
 //! makes the calls safe and typed. Every function here mirrors exactly one
 //! official MLX-C control.
 
-use crate::{MlxCError, MlxStream, error::check_status, raw};
+use crate::{MlxArrayVector, MlxCError, MlxStream, error::check_status, raw};
 
 /// Applies the graph-evaluation active-memory guidance and returns the
 /// previous limit in bytes.
@@ -64,6 +64,17 @@ pub fn clear_allocator_cache() -> Result<(), MlxCError> {
     // initialization and `mlx_clear_cache` has no pointer arguments.
     let status = unsafe { raw::mlx_clear_cache() };
     check_status(status, "clear the MLX allocator cache")
+}
+
+/// The bytes the arrays' underlying buffers occupy, through MLX-C
+/// `mlx_get_array_buffer_size`.
+pub fn array_buffer_size_bytes(arrays: &MlxArrayVector) -> Result<usize, MlxCError> {
+    let mut buffer_size_bytes = 0_usize;
+    // SAFETY: The output pointer is valid writable storage and the vector
+    // handle is live.
+    let status = unsafe { raw::mlx_get_array_buffer_size(&mut buffer_size_bytes, arrays.raw()) };
+    check_status(status, "read the MLX array buffer size")?;
+    Ok(buffer_size_bytes)
 }
 
 /// Waits for submitted work on the given stream to complete.

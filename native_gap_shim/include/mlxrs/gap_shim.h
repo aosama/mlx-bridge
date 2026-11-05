@@ -52,25 +52,6 @@ int mlxrs_minmax_axis(
     bool keepdims,
     const mlx_stream s);
 
-/* Transposes the last two dimensions of `a` (MLX core matrix_transpose). */
-int mlxrs_matrix_transpose(mlx_array* res, const mlx_array a, const mlx_stream s);
-
-/* The unique elements of `a` (MLX core unique). `size` is the exact
- * unique count the result carries: when the array holds fewer uniques
- * the result is padded (with `fill_value` when supplied).
- * `return_index`, `return_inverse`, and `return_counts` append their
- * arrays to the returned vector, exactly as the C++ function appends
- * them. */
-int mlxrs_unique(
-    mlx_vector_array* res,
-    const mlx_array a,
-    int size,
-    bool return_index,
-    bool return_inverse,
-    bool return_counts,
-    const mlx_array fill_value /* may be null */,
-    const mlx_stream s);
-
 #ifdef __cplusplus
 }
 #endif
