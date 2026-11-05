@@ -9,6 +9,7 @@
 //! caller's status translation so nothing unwinds across the C ABI.
 
 use std::cell::RefCell;
+use std::mem::ManuallyDrop;
 use std::os::raw::c_void;
 
 use crate::error::check_status;
@@ -305,7 +306,11 @@ where
         "apply a Rust kwargs closure",
         |callback| {
             owned_input_arrays(input).and_then(|inputs| {
-                let borrowed_keywords = MlxMapStringToArray::from_borrowed_raw(keyword_arguments);
+                // MLX-C frees this map handle after the trampoline returns, so
+                // the Rust wrapper must never run its own release: dropping it
+                // here aborted the process with a double free on every call.
+                let borrowed_keywords =
+                    ManuallyDrop::new(MlxMapStringToArray::from_borrowed_raw(keyword_arguments));
                 callback(&inputs, &borrowed_keywords)
             })
         },

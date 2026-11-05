@@ -35,7 +35,7 @@ fn should_keep_pinned_pair_identity_stable() {
     // updating it must therefore always be a conscious act that rides a
     // deliberate pin or recipe bump, never an accident of refactoring or a
     // dependency upgrade changing how digests render. The current golden
-    // value is recipe-6-gap-shim: the recipe that added the gap shim as
-    // the third compiled prefix component.
-    assert_eq!(pinned_pair_identity(), "53e741f2d8752140");
+    // value is recipe-7-gguf-archive: the recipe that installs MLX's GGUF
+    // archive into the prefix so static consumers can link GGUF calls.
+    assert_eq!(pinned_pair_identity(), "42e9eb10de1046e1");
 }

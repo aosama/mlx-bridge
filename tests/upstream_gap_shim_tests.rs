@@ -65,18 +65,9 @@ fn should_transpose_the_last_two_dimensions_of_a_non_square_matrix() {
         .expect("the gap shim matrix_transpose should build on the GPU stream");
 
     assert_eq!(transposed.shape(), vec![3, 2]);
-    // MLX carries transpose as a lazy stride permutation, so the raw
-    // buffer keeps the original element order; reshaping forces the
-    // contiguous materialization whose values the comparison reads.
-    let transposed_contiguous = context
-        .reshape(&transposed, &[6])
-        .expect("the transposed view should materialize through reshape");
-    transposed_contiguous
-        .evaluate()
-        .expect("the materialized transpose should evaluate on the GPU stream");
-    let transposed_values = transposed_contiguous
+    let transposed_values = transposed
         .to_vec_f32()
-        .expect("the evaluated transpose should copy back to host memory");
+        .expect("the transposed view should copy back in its logical order");
     assert_eq!(transposed_values, vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0]);
 }
 

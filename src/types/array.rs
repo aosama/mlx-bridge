@@ -243,123 +243,93 @@ impl MlxArray {
         check_status(status, "evaluate an MLX array")
     }
 
-    /// Evaluates and copies a contiguous float32 array into Rust-owned memory.
+    /// Evaluates the array and copies its float32 elements into Rust-owned
+    /// memory in row-major order. Views such as transposes, reversals, and
+    /// strided slices read in their logical order.
     ///
-    /// MLX keeps a slice of an evaluated parent as a strided view over the
-    /// parent's buffer, and the raw data pointer ignores those strides, so
-    /// this readout is only valid for contiguous arrays. Read a strided view
-    /// through `MlxRuntime::array_to_vec_f32`, whose flat reshape forces one
-    /// contiguous materialization.
+    /// # Errors
+    /// Fails when the array is not float32 or evaluation fails.
     pub fn to_vec_f32(&self) -> Result<Vec<f32>, MlxCError> {
-        if self.dtype() != MlxDtype::Float32 {
-            return Err(MlxCError {
-                operation: "copy an MLX float32 array",
-                description: "array dtype is not float32".to_owned(),
-            });
-        }
-        self.evaluate()?;
-        let element_count = self.element_count();
-        if element_count == 0 {
-            return Ok(Vec::new());
-        }
-        // SAFETY: Evaluation materializes contiguous readable storage owned by
-        // the live array for at least `element_count` float32 values.
-        let values_pointer = unsafe { raw::mlx_array_data_float32(self.raw_array) };
-        if values_pointer.is_null() {
-            return Err(MlxCError {
-                operation: "copy an MLX float32 array",
-                description: "MLX returned a null data pointer after evaluation".to_owned(),
-            });
-        }
-        // SAFETY: The evaluated MLX array establishes the pointer's exact
-        // element count; values are copied before the borrow ends.
-        Ok(unsafe { std::slice::from_raw_parts(values_pointer, element_count) }.to_vec())
+        self.copy_host_values(
+            MlxDtype::Float32,
+            raw::mlx_array_data_float32,
+            "copy an MLX float32 array",
+        )
     }
 
-    pub fn to_vec_u32(&self) -> Result<Vec<u32>, MlxCError> {
-        if self.dtype() != MlxDtype::UInt32 {
-            return Err(MlxCError {
-                operation: "copy an MLX uint32 array",
-                description: "array dtype is not uint32".to_owned(),
-            });
-        }
-        self.evaluate()?;
-        self.copy_evaluated_u32_values()
-    }
-
-    /// Evaluates and copies a uint8 array into Rust-owned memory.
-    pub fn to_vec_u8(&self) -> Result<Vec<u8>, MlxCError> {
-        if self.dtype() != MlxDtype::UInt8 {
-            return Err(MlxCError {
-                operation: "copy an MLX uint8 array",
-                description: "array dtype is not uint8".to_owned(),
-            });
-        }
-        self.evaluate()?;
-        self.copy_evaluated_u8_values()
-    }
-
-    /// Copies an already evaluated contiguous uint8 array in one host transfer.
-    pub fn copy_evaluated_u8_values(&self) -> Result<Vec<u8>, MlxCError> {
-        if self.dtype() != MlxDtype::UInt8 {
-            return Err(MlxCError {
-                operation: "copy an evaluated MLX uint8 array",
-                description: "array dtype is not uint8".to_owned(),
-            });
-        }
-        let element_count = self.element_count();
-        if element_count == 0 {
-            return Ok(Vec::new());
-        }
-        // SAFETY: The caller evaluated contiguous storage that remains owned by
-        // this live array for at least `element_count` uint8 values.
-        let values_pointer = unsafe { raw::mlx_array_data_uint8(self.raw_array) };
-        if values_pointer.is_null() {
-            return Err(MlxCError {
-                operation: "copy an evaluated MLX uint8 array",
-                description: "MLX returned a null data pointer for an evaluated array".to_owned(),
-            });
-        }
-        // SAFETY: The evaluated array establishes the pointer's exact element
-        // count and the values are copied before the array can be released.
-        Ok(unsafe { std::slice::from_raw_parts(values_pointer, element_count) }.to_vec())
-    }
-
-    /// Copies an already evaluated uint32 array into Rust-owned memory.
+    /// Evaluates the array and copies its uint32 elements into Rust-owned
+    /// memory in row-major order.
     ///
-    /// Callers must evaluate the array first. This split exists so performance
-    /// attribution can distinguish the synchronization wait from the small host copy.
+    /// # Errors
+    /// Fails when the array is not uint32 or evaluation fails.
+    pub fn to_vec_u32(&self) -> Result<Vec<u32>, MlxCError> {
+        self.copy_host_values(
+            MlxDtype::UInt32,
+            raw::mlx_array_data_uint32,
+            "copy an MLX uint32 array",
+        )
+    }
+
+    /// Evaluates the array and copies its uint8 elements into Rust-owned
+    /// memory in row-major order.
+    ///
+    /// # Errors
+    /// Fails when the array is not uint8 or evaluation fails.
+    pub fn to_vec_u8(&self) -> Result<Vec<u8>, MlxCError> {
+        self.copy_host_values(
+            MlxDtype::UInt8,
+            raw::mlx_array_data_uint8,
+            "copy an MLX uint8 array",
+        )
+    }
+
+    /// Copies a contiguous uint8 array in one host transfer.
+    ///
+    /// Evaluate first so any wait is attributed to that call; an unevaluated
+    /// array is evaluated here rather than read as absent storage.
+    ///
+    /// # Errors
+    /// Fails when the array is not uint8, or when its storage is a view: this
+    /// method exists to attribute one direct transfer, so it never copies
+    /// through a materialization the way `to_vec_u8` does.
+    pub fn copy_evaluated_u8_values(&self) -> Result<Vec<u8>, MlxCError> {
+        self.copy_direct_transfer_values(
+            MlxDtype::UInt8,
+            raw::mlx_array_data_uint8,
+            "copy an evaluated MLX uint8 array",
+        )
+    }
+
+    /// Copies a contiguous uint32 array in one host transfer.
+    ///
+    /// This split exists so performance attribution can distinguish the
+    /// synchronization wait from the small host copy: evaluate first so any
+    /// wait is attributed to that call; an unevaluated array is evaluated here
+    /// rather than read as absent storage.
+    ///
+    /// # Errors
+    /// Fails when the array is not uint32, or when its storage is a view: this
+    /// method never copies through a materialization the way `to_vec_u32` does.
     pub fn copy_evaluated_u32_values(&self) -> Result<Vec<u32>, MlxCError> {
-        if self.dtype() != MlxDtype::UInt32 {
-            return Err(MlxCError {
-                operation: "copy an evaluated MLX uint32 array",
-                description: "array dtype is not uint32".to_owned(),
-            });
-        }
-        let element_count = self.element_count();
-        if element_count == 0 {
-            return Ok(Vec::new());
-        }
-        // SAFETY: Evaluation materializes contiguous readable storage owned by
-        // the live array for at least `element_count` uint32 values.
-        let values_pointer = unsafe { raw::mlx_array_data_uint32(self.raw_array) };
-        if values_pointer.is_null() {
-            return Err(MlxCError {
-                operation: "copy an evaluated MLX uint32 array",
-                description: "MLX returned a null data pointer for an evaluated array".to_owned(),
-            });
-        }
-        // SAFETY: The evaluated MLX array establishes the pointer's exact
-        // element count; values are copied before the borrow ends.
-        Ok(unsafe { std::slice::from_raw_parts(values_pointer, element_count) }.to_vec())
+        self.copy_direct_transfer_values(
+            MlxDtype::UInt32,
+            raw::mlx_array_data_uint32,
+            "copy an evaluated MLX uint32 array",
+        )
     }
 
     /// Evaluates a scalar array and copies its value as an unsigned token ID.
+    ///
+    /// # Errors
+    /// Fails when the array is not a uint32 scalar. MLX validates the size but
+    /// reinterprets rather than converts the element, so the type is checked
+    /// here.
     pub fn item_u32(&self) -> Result<u32, MlxCError> {
+        self.require_dtype(MlxDtype::UInt32, "read an MLX uint32 scalar")?;
         self.evaluate()?;
         let mut scalar_value = 0_u32;
         // SAFETY: The output pointer is valid writable storage and `self` owns
-        // a live evaluated array. MLX validates scalar shape and conversion.
+        // a live evaluated uint32 array. MLX validates the scalar size.
         let status = unsafe { raw::mlx_array_item_uint32(&mut scalar_value, self.raw_array) };
         check_status(status, "read an MLX uint32 scalar")?;
         Ok(scalar_value)

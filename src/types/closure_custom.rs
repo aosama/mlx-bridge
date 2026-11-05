@@ -234,6 +234,22 @@ impl Drop for MlxClosureCustomJvp {
     }
 }
 
+/// Borrows an index list MLX loaned to a trampoline.
+///
+/// MLX hands over an empty list's null data pointer, and building a slice from
+/// a null pointer is undefined behavior even at length zero.
+///
+/// # Safety
+/// A non-null `values` must address `value_count` integers that stay live for
+/// the returned lifetime.
+unsafe fn borrowed_i32_list<'call>(values: *const i32, value_count: usize) -> &'call [i32] {
+    if values.is_null() {
+        return &[];
+    }
+    // SAFETY: The caller guarantees the non-null pointer's extent and lifetime.
+    unsafe { std::slice::from_raw_parts(values, value_count) }
+}
+
 unsafe extern "C" fn custom_jvp_callback_trampoline<F>(
     output: *mut raw::mlx_vector_array,
     primals: raw::mlx_vector_array,
@@ -253,8 +269,7 @@ where
             let owned_tangents = owned_input_arrays(tangents)?;
             // SAFETY: MLX loans the index storage owned by the live call
             // arguments for the trampoline's duration.
-            let borrowed_indices =
-                unsafe { std::slice::from_raw_parts(output_indices, output_index_count) };
+            let borrowed_indices = unsafe { borrowed_i32_list(output_indices, output_index_count) };
             callback(&owned_primals, &owned_tangents, borrowed_indices)
         },
     ) else {
@@ -379,7 +394,7 @@ where
             let owned_inputs = owned_input_arrays(inputs)?;
             // SAFETY: MLX loans the axis storage owned by the live call
             // arguments for the trampoline's duration.
-            let borrowed_axes = unsafe { std::slice::from_raw_parts(input_axes, input_axis_count) };
+            let borrowed_axes = unsafe { borrowed_i32_list(input_axes, input_axis_count) };
             callback(&owned_inputs, borrowed_axes)
         },
     ) else {

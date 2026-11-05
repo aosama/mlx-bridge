@@ -5,69 +5,8 @@ use crate::MlxCError;
 use crate::error::check_status;
 use crate::raw;
 use crate::types::device::MlxDeviceHandle;
+use crate::types::stream::MlxStream;
 use crate::types::vectors::MlxVectorStream;
-
-/// Owned MLX stream handle used to preserve runtime thread affinity.
-#[derive(Debug)]
-pub struct MlxStream(raw::mlx_stream);
-
-impl MlxStream {
-    pub fn default_cpu() -> Result<Self, MlxCError> {
-        // SAFETY: The runtime error handler is installed and the returned
-        // stream is placed immediately under RAII ownership.
-        let raw_stream = unsafe { raw::mlx_default_cpu_stream_new() };
-        Self::from_raw(raw_stream, "acquire the default MLX CPU stream")
-    }
-
-    pub fn default_gpu() -> Result<Self, MlxCError> {
-        // SAFETY: The runtime error handler is installed and the returned
-        // stream is placed immediately under RAII ownership.
-        let raw_stream = unsafe { raw::mlx_default_gpu_stream_new() };
-        Self::from_raw(raw_stream, "acquire the default MLX GPU stream")
-    }
-
-    /// Renders the stream description text.
-    pub fn to_string_lossy(&self) -> Result<String, MlxCError> {
-        let operation: &'static str = "describe an MLX stream";
-        let mut output = crate::MlxString::empty();
-        // SAFETY: `self` owns a live stream and the output pointer is valid
-        // writable storage for one string handle.
-        let status = unsafe { raw::mlx_stream_tostring(output.raw_mut(), self.0) };
-        check_status(status, operation)?;
-        output.require_populated(operation)?;
-        Ok(output.to_string_lossy())
-    }
-
-    pub const fn raw(&self) -> raw::mlx_stream {
-        self.0
-    }
-
-    fn from_raw(raw_stream: raw::mlx_stream, operation: &'static str) -> Result<Self, MlxCError> {
-        if raw_stream.ctx.is_null() {
-            return Err(MlxCError {
-                operation,
-                description: "MLX returned an empty stream handle".to_owned(),
-            });
-        }
-        Ok(Self(raw_stream))
-    }
-
-    pub(crate) fn from_live_raw(
-        raw_stream: raw::mlx_stream,
-        operation: &'static str,
-    ) -> Result<Self, MlxCError> {
-        Self::from_raw(raw_stream, operation)
-    }
-}
-
-impl Drop for MlxStream {
-    fn drop(&mut self) {
-        // SAFETY: This owner releases its live stream handle exactly once.
-        unsafe {
-            raw::mlx_stream_free(self.0);
-        }
-    }
-}
 
 /// Per-thread MLX stream slot for one device.
 #[derive(Debug)]
@@ -134,7 +73,19 @@ impl MlxStream {
         // SAFETY: The device handle is live and the returned stream enters
         // RAII ownership.
         let raw_stream = unsafe { raw::mlx_stream_new_device(device.raw()) };
-        Self::from_raw(raw_stream, "create an MLX stream on a device")
+        Self::from_live_raw(raw_stream, "create an MLX stream on a device")
+    }
+
+    /// Renders the stream description text.
+    pub fn to_string_lossy(&self) -> Result<String, MlxCError> {
+        let operation: &'static str = "describe an MLX stream";
+        let mut output = crate::MlxString::empty();
+        // SAFETY: `self` owns a live stream and the output pointer is valid
+        // writable storage for one string handle.
+        let status = unsafe { raw::mlx_stream_tostring(output.raw_mut(), self.0) };
+        check_status(status, operation)?;
+        output.require_populated(operation)?;
+        Ok(output.to_string_lossy())
     }
 
     /// Copies the source stream handle into this handle.
@@ -193,7 +144,7 @@ impl MlxStream {
         // writable storage for one stream handle.
         let status = unsafe { raw::mlx_get_default_stream(&mut raw_stream, device.raw()) };
         check_status(status, operation)?;
-        Self::from_raw(raw_stream, operation)
+        Self::from_live_raw(raw_stream, operation)
     }
 
     /// Every stream created in this process.

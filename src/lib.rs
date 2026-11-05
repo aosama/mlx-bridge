@@ -4,7 +4,7 @@
 //! into idiomatic Rust. It holds the bindgen-generated raw declarations, the
 //! captured-error machinery, the owned handle types (`MlxArray`, `MlxDtype`,
 //! `MlxArrayVector`, `MlxStream`), the per-worker bindings context
-//! (`MlxBindingsContext`: GPU stream and linked version), and every operation
+//! (`MlxBindingsContext`: submission stream and linked version), and every operation
 //! wrapper family: creation, shape, padding, elementwise math, activation,
 //! normalization, convolution, random, rope, quantized operations,
 //! quantization construction, NVFP4, attention, the compiled-graph family,
@@ -49,10 +49,12 @@
 //!
 //! Tests that never touch MLX-C symbols (the error-channel machinery) live
 //! in this crate's test tree. Anything exercising the bindings themselves
-//! needs an MLX-C library at link time, discovered through the
-//! `MLX_C_RUST_MLX_C_PREFIX` environment variable or `pkg-config mlx-c`
-//! (see the build script and README); without one, library compilation and
-//! documentation builds still succeed and only test binaries fail to link.
+//! needs an MLX-C library at link time, resolved by the build script's
+//! ladder: the `MLX_C_RUST_MLX_C_PREFIX` environment variable, Homebrew,
+//! `pkg-config mlx-c`, and finally the pinned pair compiled into the
+//! machine-shared prefix (see the build script and README). When no rung
+//! resolves, library compilation and documentation builds still succeed and
+//! only test binaries fail to link.
 
 mod bindings;
 mod compile;

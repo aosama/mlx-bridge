@@ -36,6 +36,16 @@ guide is the shortest path from idea to merged change.
    (built automatically on first use, or through
    `cargo xtask build-native`).
 
+## What belongs in this test suite
+
+A contract belongs here only if a defect in this repository could make it
+fail: argument order, flags and optional arguments reaching the right C
+parameter, a wrapper bound to the right C function, result ordering,
+ownership, the closure trampolines, the I/O vtable, error translation, and
+this repository's own compiled graphs. MLX's semantics (broadcasting,
+promotion, edge values, numerical accuracy, statistical quality) are proven by
+MLX's own tests at the pinned release and are not restated here.
+
 ## Writing the pull request body
 
 The template's `## Linked issue` section is scanned by the compliance

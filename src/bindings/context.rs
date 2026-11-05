@@ -1,4 +1,5 @@
-//! The per-worker MLX bindings context: the GPU stream and the linked version.
+//! The per-worker MLX bindings context: its submission stream and the linked
+//! version.
 //!
 //! The context holds exactly the bindings-owned state (which stream work is
 //! submitted to, which upstream version is linked), while embedding policy —
@@ -12,7 +13,7 @@ use crate::{MlxCError, MlxStream, error::check_status, raw};
 /// Process-global official MLX C bindings context configured for one worker.
 #[derive(Debug)]
 pub struct MlxBindingsContext {
-    gpu_stream: MlxStream,
+    submission_stream: MlxStream,
     version: String,
 }
 
@@ -21,16 +22,37 @@ impl MlxBindingsContext {
     /// installed: reads the linked version and acquires the default GPU stream.
     pub fn new() -> Result<Self, MlxCError> {
         let version = read_mlx_version()?;
-        let gpu_stream = MlxStream::default_gpu()?;
+        let submission_stream = MlxStream::default_gpu()?;
         Ok(Self {
-            gpu_stream,
+            submission_stream,
             version,
         })
     }
 
-    /// The GPU stream every worker submission targets.
+    /// Creates a context whose submissions target the default CPU stream.
+    ///
+    /// MLX implements several families only on the CPU, including matrix
+    /// factorization, inversion, and solving, and its GPU backend rejects
+    /// float64. Every wrapper submits to its context's stream, so those
+    /// families are reachable only through a context built here.
+    pub fn on_cpu() -> Result<Self, MlxCError> {
+        let version = read_mlx_version()?;
+        let submission_stream = MlxStream::default_cpu()?;
+        Ok(Self {
+            submission_stream,
+            version,
+        })
+    }
+
+    /// The stream every submission from this context targets.
+    pub const fn stream(&self) -> &MlxStream {
+        &self.submission_stream
+    }
+
+    /// The submission stream under its original name, which is the GPU stream
+    /// unless the context was built through `on_cpu`; prefer `stream`.
     pub const fn gpu_stream(&self) -> &MlxStream {
-        &self.gpu_stream
+        self.stream()
     }
 
     /// The linked upstream MLX version.

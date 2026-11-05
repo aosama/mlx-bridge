@@ -2,8 +2,9 @@
 //! with their iterators.
 
 use std::ffi::{CStr, CString};
+use std::marker::PhantomData;
 
-use crate::error::check_status;
+use crate::error::{MLX_C_ENTRY_ABSENT_STATUS, check_status};
 use crate::raw;
 use crate::{MlxArray, MlxCError};
 
@@ -62,15 +63,16 @@ impl MlxMapStringToArray {
         let status = unsafe {
             raw::mlx_map_string_to_array_get(output.raw_mut(), self.0, key_argument.as_ptr())
         };
-        check_status(status, operation)?;
-        if output.is_empty() {
+        if status == MLX_C_ENTRY_ABSENT_STATUS {
             return Ok(None);
         }
+        check_status(status, operation)?;
+        output.require_populated(operation)?;
         Ok(Some(output))
     }
 
-    /// An owned iterator over the map's entries.
-    pub fn iter(&self) -> Result<MlxMapStringToArrayIterator, MlxCError> {
+    /// An iterator over the map's entries, borrowing the map while it lives.
+    pub fn iter(&self) -> Result<MlxMapStringToArrayIterator<'_>, MlxCError> {
         let operation: &'static str = "iterate an MLX string-to-array map";
         // SAFETY: The map handle is live and the returned iterator enters
         // RAII ownership.
@@ -81,7 +83,7 @@ impl MlxMapStringToArray {
                 description: "MLX returned an empty map iterator handle".to_owned(),
             });
         }
-        Ok(MlxMapStringToArrayIterator(raw_iterator))
+        Ok(MlxMapStringToArrayIterator(raw_iterator, PhantomData))
     }
 
     pub(crate) const fn raw(&self) -> raw::mlx_map_string_to_array {
@@ -92,7 +94,8 @@ impl MlxMapStringToArray {
         &mut self.0
     }
 
-    /// A borrowed view over a live map handle owned elsewhere.
+    /// A wrapper over a live map handle owned elsewhere. The caller must keep
+    /// it in `ManuallyDrop`: this type's destructor releases the handle.
     pub(crate) fn from_borrowed_raw(raw_map: raw::mlx_map_string_to_array) -> Self {
         Self(raw_map)
     }
@@ -110,9 +113,14 @@ impl Drop for MlxMapStringToArray {
 
 /// Owned iterator over an MLX string-to-array map.
 #[derive(Debug)]
-pub struct MlxMapStringToArrayIterator(raw::mlx_map_string_to_array_iterator);
+pub struct MlxMapStringToArrayIterator<'map>(
+    raw::mlx_map_string_to_array_iterator,
+    // MLX-C's iterator stores a pointer into the map, so the borrow is what
+    // keeps a safe `next_entry` from reading a released map.
+    PhantomData<&'map MlxMapStringToArray>,
+);
 
-impl MlxMapStringToArrayIterator {
+impl MlxMapStringToArrayIterator<'_> {
     /// Advances the iterator, copying the next entry if one remains.
     pub fn next_entry(&mut self) -> Result<Option<(String, MlxArray)>, MlxCError> {
         let operation: &'static str = "advance an MLX string-to-array map iterator";
@@ -123,10 +131,10 @@ impl MlxMapStringToArrayIterator {
         let status = unsafe {
             raw::mlx_map_string_to_array_iterator_next(&mut key_pointer, value.raw_mut(), self.0)
         };
-        check_status(status, operation)?;
-        if key_pointer.is_null() {
+        if status == MLX_C_ENTRY_ABSENT_STATUS {
             return Ok(None);
         }
+        check_status(status, operation)?;
         // SAFETY: MLX loans the null-terminated key from the live map; the
         // text is copied before this call returns.
         let key = unsafe { CStr::from_ptr(key_pointer) }
@@ -136,7 +144,7 @@ impl MlxMapStringToArrayIterator {
     }
 }
 
-impl Drop for MlxMapStringToArrayIterator {
+impl Drop for MlxMapStringToArrayIterator<'_> {
     fn drop(&mut self) {
         // SAFETY: This owner releases its live iterator exactly once and
         // never accesses the handle afterward.
@@ -208,18 +216,18 @@ impl MlxMapStringToString {
         let status = unsafe {
             raw::mlx_map_string_to_string_get(&mut value_pointer, self.0, key_argument.as_ptr())
         };
-        check_status(status, operation)?;
-        if value_pointer.is_null() {
+        if status == MLX_C_ENTRY_ABSENT_STATUS {
             return Ok(None);
         }
+        check_status(status, operation)?;
         // SAFETY: MLX loans the null-terminated value from the live map; the
         // text is copied before this call returns.
         let borrowed = unsafe { CStr::from_ptr(value_pointer) };
         Ok(Some(borrowed.to_string_lossy().into_owned()))
     }
 
-    /// An owned iterator over the map's entries.
-    pub fn iter(&self) -> Result<MlxMapStringToStringIterator, MlxCError> {
+    /// An iterator over the map's entries, borrowing the map while it lives.
+    pub fn iter(&self) -> Result<MlxMapStringToStringIterator<'_>, MlxCError> {
         let operation: &'static str = "iterate an MLX string-to-string map";
         // SAFETY: The map handle is live and the returned iterator enters
         // RAII ownership.
@@ -230,7 +238,7 @@ impl MlxMapStringToString {
                 description: "MLX returned an empty map iterator handle".to_owned(),
             });
         }
-        Ok(MlxMapStringToStringIterator(raw_iterator))
+        Ok(MlxMapStringToStringIterator(raw_iterator, PhantomData))
     }
 
     pub(crate) const fn raw(&self) -> raw::mlx_map_string_to_string {
@@ -254,9 +262,14 @@ impl Drop for MlxMapStringToString {
 
 /// Owned iterator over an MLX string-to-string map.
 #[derive(Debug)]
-pub struct MlxMapStringToStringIterator(raw::mlx_map_string_to_string_iterator);
+pub struct MlxMapStringToStringIterator<'map>(
+    raw::mlx_map_string_to_string_iterator,
+    // MLX-C's iterator stores a pointer into the map, so the borrow is what
+    // keeps a safe `next_entry` from reading a released map.
+    PhantomData<&'map MlxMapStringToString>,
+);
 
-impl MlxMapStringToStringIterator {
+impl MlxMapStringToStringIterator<'_> {
     /// Advances the iterator, copying the next entry if one remains.
     pub fn next_entry(&mut self) -> Result<Option<(String, String)>, MlxCError> {
         let operation: &'static str = "advance an MLX string-to-string map iterator";
@@ -271,10 +284,10 @@ impl MlxMapStringToStringIterator {
                 self.0,
             )
         };
-        check_status(status, operation)?;
-        if key_pointer.is_null() {
+        if status == MLX_C_ENTRY_ABSENT_STATUS {
             return Ok(None);
         }
+        check_status(status, operation)?;
         // SAFETY: MLX loans the null-terminated entries from the live map;
         // both texts are copied before this call returns.
         let key = unsafe { CStr::from_ptr(key_pointer) }
@@ -292,7 +305,7 @@ impl MlxMapStringToStringIterator {
     }
 }
 
-impl Drop for MlxMapStringToStringIterator {
+impl Drop for MlxMapStringToStringIterator<'_> {
     fn drop(&mut self) {
         // SAFETY: This owner releases its live iterator exactly once and
         // never accesses the handle afterward.
