@@ -56,10 +56,10 @@ warnings = "deny"
 # runtime library search (a library crate cannot inject an rpath into
 # consumers' binaries, so dylibs would be unloadable there); prefixes you
 # provide yourself may carry dylibs — an rpath rides along for those.
-# Tests run SERIALIZED —
-# `cargo test -- --test-threads=1` — because MLX's default stream, default
-# device, and the installed error handler are process-global state; the
-# `native-test` alias below carries that flag for you. One mode change to
+# Tests run through cargo-nextest, one process per test, because MLX's default
+# stream, default device, and the installed error handler are process-global
+# state; the `native-test` alias below carries that for you, and plain `cargo
+# test` needs `-- --test-threads=1` for the same reason. One mode change to
 # know about: depending with default-features = false removes the link
 # ladder entirely (bindings-only — the consumer owns the linker), so
 # nothing above applies to that mode.
@@ -88,13 +88,10 @@ xtask = "run -p xtask --"
 # size-ceiling pass the Ubuntu lane runs, minus the platform-specific
 # bindgen behavior (a macOS host needs none of the Linux arguments above).
 verify = "xtask verify"
-# Tests need the linked MLX-C library (see "Linking and tests" above) and
-# must serialize on MLX's process-global state. Extra words you append go
-# to the test binary, so filters work: `cargo native-test should_clone`.
-# Each suite in tests/ maps to one production module family, so one family
-# runs through `cargo test --test types_closures_tests -- --test-threads=1`.
-# Suites prove this repository's translation layer, not MLX's semantics:
-# CONTRIBUTING.md states the scope rule.
-# For cargo-LEVEL flags use the full `cargo test ... -- --test-threads=1`
-# form — an alias already consumed the `--` separator.
-native-test = "test -- --test-threads=1"
+# Tests need the linked MLX-C library (see "Linking and tests" above). Words you
+# append go to nextest, so filters and targets work: `cargo native-test
+# should_keep`, or `cargo native-test --test types_closures_tests` for one
+# module family. --workspace includes xtask's contracts. Suites prove this
+# repository's translation layer, not MLX's semantics: CONTRIBUTING.md states
+# the scope rule. Install the runner once with `cargo install cargo-nextest`.
+native-test = "nextest run --workspace"

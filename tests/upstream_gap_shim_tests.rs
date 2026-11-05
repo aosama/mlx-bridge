@@ -2,8 +2,7 @@
 //! functions the vendored MLX-C pin has not wrapped, exercised end to end
 //! through the bridge — the shim compiles in the native prefix, binds
 //! through the combined parse, and behaves like any MLX-C family: real
-//! values, captured errors, owned handles. These run serialized with the
-//! rest of the native-linked tree (`cargo native-test`).
+//! values, captured errors, owned handles.
 
 use mlx_c_rust::{
     MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxDtype, broadcast_shapes,

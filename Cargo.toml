@@ -29,6 +29,7 @@ exclude = [
   "xtask",
   ".github",
   ".cargo",
+  ".config",
   "rust-toolchain.toml",
   "vendor/mlx-c/README.md",
   "vendor/mlx-c/docs",

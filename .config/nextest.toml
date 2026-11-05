@@ -1,0 +1,12 @@
+# cargo-nextest configuration. Every test runs in its own process, which is why
+# these suites can run in parallel: MLX's default stream, default device, and
+# error handler are process-global, so a process per test isolates them.
+
+[profile.default]
+# Per-test hang budget: reported slow at 30 seconds and terminated at 60, so a
+# hung test names itself instead of consuming the whole job's time limit.
+slow-timeout = { period = "30s", terminate-after = 2 }
+
+[profile.ci]
+# One run should report every failure, not stop at the first.
+fail-fast = false

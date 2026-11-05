@@ -27,12 +27,12 @@ guide is the shortest path from idea to merged change.
 
    ```
    cargo xtask verify
-   cargo test -- --test-threads=1
+   cargo nextest run --workspace
    ```
 
    The first checks the size ceiling, formatting, clippy, and
    documentation for the shipped `aarch64-apple-darwin` target; the
-   second runs the test suite against the machine-shared native prefix
+   second runs the test suite, one process per test, against the machine-shared native prefix
    (built automatically on first use, or through
    `cargo xtask build-native`).
 
