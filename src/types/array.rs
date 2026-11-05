@@ -24,7 +24,7 @@ pub enum MlxDtype {
 }
 
 impl MlxDtype {
-    fn from_raw(raw_dtype: raw::mlx_dtype) -> Self {
+    pub(crate) fn from_raw(raw_dtype: raw::mlx_dtype) -> Self {
         match raw_dtype {
             raw::mlx_dtype__MLX_BOOL => Self::Bool,
             raw::mlx_dtype__MLX_UINT8 => Self::UInt8,
@@ -76,65 +76,55 @@ impl MlxArray {
     /// builders embed scalar constants (the softplus graph's ln 2, the
     /// verification window's attention-mask boundary values).
     pub fn from_f32(values: &[f32], shape: &[i32]) -> Result<Self, MlxCError> {
-        validate_shape(values.len(), shape)?;
-        let dimension_count = i32::try_from(shape.len()).map_err(|_| MlxCError {
-            operation: "create an MLX float32 array",
-            description: "array rank exceeds the C API integer range".to_owned(),
-        })?;
-        // SAFETY: The slices remain valid for this copying constructor, their
-        // lengths were validated, and the returned handle enters RAII ownership.
-        let raw_array = unsafe {
-            raw::mlx_array_new_data(
-                values.as_ptr().cast(),
-                shape.as_ptr(),
-                dimension_count,
-                raw::mlx_dtype__MLX_FLOAT32,
-            )
-        };
-        let array = Self { raw_array };
-        array.require_populated("create an MLX float32 array")?;
-        Ok(array)
+        Self::from_host_values(
+            values,
+            shape,
+            MlxDtype::Float32,
+            "create an MLX float32 array",
+        )
     }
 
     pub fn from_i32(values: &[i32], shape: &[i32]) -> Result<Self, MlxCError> {
-        validate_shape(values.len(), shape)?;
-        let dimension_count = i32::try_from(shape.len()).map_err(|_| MlxCError {
-            operation: "create an MLX int32 array",
-            description: "array rank exceeds the C API integer range".to_owned(),
-        })?;
-        // SAFETY: The slices remain valid for this copying constructor, their
-        // lengths were validated, and the returned handle enters RAII ownership.
-        let raw_array = unsafe {
-            raw::mlx_array_new_data(
-                values.as_ptr().cast(),
-                shape.as_ptr(),
-                dimension_count,
-                raw::mlx_dtype__MLX_INT32,
-            )
-        };
-        let array = Self { raw_array };
-        array.require_populated("create an MLX int32 array")?;
-        Ok(array)
+        Self::from_host_values(values, shape, MlxDtype::Int32, "create an MLX int32 array")
     }
 
     pub fn from_u32(values: &[u32], shape: &[i32]) -> Result<Self, MlxCError> {
+        Self::from_host_values(
+            values,
+            shape,
+            MlxDtype::UInt32,
+            "create an MLX uint32 array",
+        )
+    }
+
+    /// The one path host values take into MLX. Callers pair `T` with the
+    /// element type whose storage layout it matches.
+    pub(crate) fn from_host_values<T>(
+        values: &[T],
+        shape: &[i32],
+        dtype: MlxDtype,
+        operation: &'static str,
+    ) -> Result<Self, MlxCError> {
         validate_shape(values.len(), shape)?;
-        let dimension_count = i32::try_from(shape.len()).map_err(|_| MlxCError {
-            operation: "create an MLX uint32 array",
-            description: "array rank exceeds the C API integer range".to_owned(),
-        })?;
+        let Ok(dimension_count) = i32::try_from(shape.len()) else {
+            return Err(MlxCError {
+                operation,
+                description: "array rank exceeds the C API integer range".to_owned(),
+            });
+        };
         // SAFETY: The slices remain valid for this copying constructor, their
-        // lengths were validated, and the returned handle enters RAII ownership.
+        // lengths were validated against the shape, the caller's `T` matches
+        // `dtype`'s layout, and the returned handle enters RAII ownership.
         let raw_array = unsafe {
             raw::mlx_array_new_data(
                 values.as_ptr().cast(),
                 shape.as_ptr(),
                 dimension_count,
-                raw::mlx_dtype__MLX_UINT32,
+                dtype.to_raw(),
             )
         };
         let array = Self { raw_array };
-        array.require_populated("create an MLX uint32 array")?;
+        array.require_populated(operation)?;
         Ok(array)
     }
 
@@ -241,81 +231,6 @@ impl MlxArray {
         // any Rust borrow beyond this call.
         let status = unsafe { raw::mlx_array_eval(self.raw_array) };
         check_status(status, "evaluate an MLX array")
-    }
-
-    /// Evaluates the array and copies its float32 elements into Rust-owned
-    /// memory in row-major order. Views such as transposes, reversals, and
-    /// strided slices read in their logical order.
-    ///
-    /// # Errors
-    /// Fails when the array is not float32 or evaluation fails.
-    pub fn to_vec_f32(&self) -> Result<Vec<f32>, MlxCError> {
-        self.copy_host_values(
-            MlxDtype::Float32,
-            raw::mlx_array_data_float32,
-            "copy an MLX float32 array",
-        )
-    }
-
-    /// Evaluates the array and copies its uint32 elements into Rust-owned
-    /// memory in row-major order.
-    ///
-    /// # Errors
-    /// Fails when the array is not uint32 or evaluation fails.
-    pub fn to_vec_u32(&self) -> Result<Vec<u32>, MlxCError> {
-        self.copy_host_values(
-            MlxDtype::UInt32,
-            raw::mlx_array_data_uint32,
-            "copy an MLX uint32 array",
-        )
-    }
-
-    /// Evaluates the array and copies its uint8 elements into Rust-owned
-    /// memory in row-major order.
-    ///
-    /// # Errors
-    /// Fails when the array is not uint8 or evaluation fails.
-    pub fn to_vec_u8(&self) -> Result<Vec<u8>, MlxCError> {
-        self.copy_host_values(
-            MlxDtype::UInt8,
-            raw::mlx_array_data_uint8,
-            "copy an MLX uint8 array",
-        )
-    }
-
-    /// Copies a contiguous uint8 array in one host transfer.
-    ///
-    /// Evaluate first so any wait is attributed to that call; an unevaluated
-    /// array is evaluated here rather than read as absent storage.
-    ///
-    /// # Errors
-    /// Fails when the array is not uint8, or when its storage is a view: this
-    /// method exists to attribute one direct transfer, so it never copies
-    /// through a materialization the way `to_vec_u8` does.
-    pub fn copy_evaluated_u8_values(&self) -> Result<Vec<u8>, MlxCError> {
-        self.copy_direct_transfer_values(
-            MlxDtype::UInt8,
-            raw::mlx_array_data_uint8,
-            "copy an evaluated MLX uint8 array",
-        )
-    }
-
-    /// Copies a contiguous uint32 array in one host transfer.
-    ///
-    /// This split exists so performance attribution can distinguish the
-    /// synchronization wait from the small host copy: evaluate first so any
-    /// wait is attributed to that call; an unevaluated array is evaluated here
-    /// rather than read as absent storage.
-    ///
-    /// # Errors
-    /// Fails when the array is not uint32, or when its storage is a view: this
-    /// method never copies through a materialization the way `to_vec_u32` does.
-    pub fn copy_evaluated_u32_values(&self) -> Result<Vec<u32>, MlxCError> {
-        self.copy_direct_transfer_values(
-            MlxDtype::UInt32,
-            raw::mlx_array_data_uint32,
-            "copy an evaluated MLX uint32 array",
-        )
     }
 
     /// Evaluates a scalar array and copies its value as an unsigned token ID.

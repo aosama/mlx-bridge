@@ -243,3 +243,60 @@ fn should_read_final_values_after_asynchronous_evaluation_and_synchronization() 
 
     assert_eq!(floats_of(&doubled), vec![2.0, 4.0]);
 }
+
+#[test]
+fn should_submit_work_to_a_context_bound_to_a_custom_stream() {
+    gpu_context();
+    let custom_stream = MlxStream::on_device(&gpu_device()).unwrap();
+    let expected_index = custom_stream.index().unwrap();
+    let context = MlxBindingsContext::on_stream(custom_stream).unwrap();
+    let values = float_array(&[1.0, 2.0], &[2]);
+
+    let doubled = context.add(&values, &values).unwrap();
+
+    assert_eq!(context.stream().index().unwrap(), expected_index);
+    assert_eq!(floats_of(&doubled), vec![2.0, 4.0]);
+}
+
+#[test]
+fn should_compute_on_a_stream_registered_outside_any_thread() {
+    gpu_context();
+    // SAFETY: This test is the stream's only user, so nothing can race on it.
+    let unsynchronized_stream = unsafe { MlxStream::new_thread_unsafe(&gpu_device()) }.unwrap();
+    let context = MlxBindingsContext::on_stream(unsynchronized_stream).unwrap();
+    let values = float_array(&[3.0], &[1]);
+
+    assert_eq!(
+        floats_of(&context.add(&values, &values).unwrap()),
+        vec![6.0]
+    );
+}
+
+#[test]
+fn should_find_an_existing_default_stream_without_creating_one() {
+    gpu_context();
+    let default_stream = MlxStream::default_for_device(&gpu_device()).unwrap();
+
+    let peeked = MlxStream::peek_default_for_device(&gpu_device())
+        .unwrap()
+        .expect("the default stream exists on this thread");
+
+    assert!(peeked.equals(&default_stream));
+}
+
+fn peek_on_a_fresh_thread_finds_nothing() -> bool {
+    // Only the handler: building a context would create the default stream.
+    mlx_c_rust::install_non_terminating_error_handler();
+    MlxStream::peek_default_for_device(&gpu_device())
+        .expect("the peek should work")
+        .is_none()
+}
+
+#[test]
+fn should_report_no_default_stream_on_a_thread_that_never_created_one() {
+    gpu_context();
+
+    let spawned = std::thread::spawn(peek_on_a_fresh_thread_finds_nothing);
+
+    assert!(spawned.join().expect("the thread should finish"));
+}

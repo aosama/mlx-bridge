@@ -13,7 +13,7 @@ MLX-C exposes the full power of MLX through a stable C Application Programming I
 
 The design keeps the crate at one job:
 
-- **Complete**: every function, type, and enum variant in the vendored MLX-C headers has a Rust path in.
+- **Complete**: every function, type, and enum variant in the vendored MLX-C headers has a Rust path in, and `cargo xtask verify` fails when one has neither a safe wrapper nor a written reason why nobody needs it directly. MLX functions MLX-C leaves unwrapped, such as `vmap` and `stft`, reach Rust through this repository's gap shim.
 - **Low-level**: thin, predictable wrappers over the C calls; no neural-network modules, optimizers, or model loading.
 - **Policy-free**: no memory limits, no Metal library path selection, no scheduling opinions. Bring your own policy on top.
 - **Exact ownership**: array and stream handles are move-only with deterministic release — when a handle drops, its C resource is released, with no hidden reference counting to surprise memory-sensitive code.

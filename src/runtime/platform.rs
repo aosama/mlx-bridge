@@ -179,7 +179,7 @@ impl MlxDistributedGroup {
         self.0
     }
 
-    fn require_populated(&self, operation: &'static str) -> Result<(), MlxCError> {
+    pub(crate) fn require_populated(&self, operation: &'static str) -> Result<(), MlxCError> {
         if self.0.ctx.is_null() {
             return Err(MlxCError {
                 operation,

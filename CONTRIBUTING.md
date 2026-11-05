@@ -46,6 +46,16 @@ this repository's own compiled graphs. MLX's semantics (broadcasting,
 promotion, edge values, numerical accuracy, statistical quality) are proven by
 MLX's own tests at the pinned release and are not restated here.
 
+## Nobody should need a workaround
+
+A programmer holding this crate should never have to reach into `raw` or work
+around a missing capability. `cargo xtask verify` enforces this: every vendored
+MLX-C function needs a safe wrapper or a written reason in
+`xtask/src/safe_wrapper_coverage.rs`, and every public MLX function needs an
+MLX-C wrapper, a gap-shim entry, or a written reason in
+`xtask/src/audit_upstream_surface.rs`. Those registries are for functions nobody
+needs directly, not a backlog.
+
 ## Writing the pull request body
 
 The template's `## Linked issue` section is scanned by the compliance

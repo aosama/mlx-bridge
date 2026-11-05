@@ -11,6 +11,7 @@ mod cache_prune;
 mod hooks;
 mod inventory_records;
 mod repository;
+mod safe_wrapper_coverage;
 mod source_size;
 mod surface_parsing;
 mod verify;

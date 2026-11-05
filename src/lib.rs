@@ -29,6 +29,10 @@
 //! can fail on. The recorded state for the current pin lives in this crate's
 //! `COVERAGE_INVENTORY.md`.
 //!
+//! Reaching into `raw` should never be necessary: `cargo xtask verify` fails
+//! when a vendored function has neither a safe wrapper nor a written reason why
+//! nobody needs it directly.
+//!
 //! Source-reference audits must never drive removals here: a wrapper with no
 //! caller yet is the expected steady state of a complete bridge — the crate
 //! exists precisely so that every MLX-C capability is reachable without
@@ -48,7 +52,8 @@
 //! # Test placement
 //!
 //! Tests that never touch MLX-C symbols (the error-channel machinery) live
-//! in this crate's test tree. Anything exercising the bindings themselves
+//! in this crate's test tree, except private trampolines, whose contracts sit
+//! beside them because nothing outside the module can reach them. Anything exercising the bindings themselves
 //! needs an MLX-C library at link time, resolved by the build script's
 //! ladder: the `MLX_C_RUST_MLX_C_PREFIX` environment variable, Homebrew,
 //! `pkg-config mlx-c`, and finally the pinned pair compiled into the
@@ -90,10 +95,15 @@ pub use metal::kernel::{
     apply_metal_kernel_in_graph,
 };
 pub use metal::metallib::set_metallib_path;
+pub use operations::upstream_gap::{
+    MlxEinsumPath, broadcast_shapes, einsum_path, normalize_axis_index,
+};
+pub use runtime::distributed_all_gather::initialize_distributed_with_all_gather;
 pub use runtime::export::{
     GraphOutputFile, MlxFunctionExporter, MlxImportedFunction, MlxNodeNamer, export_function,
     export_function_with_keywords, export_graph_to_dot, print_graph,
 };
+pub use runtime::formatting::{MlxPrintFormat, print_format, set_print_format};
 pub use runtime::io::{
     MlxIoGguf, MlxIoReader, MlxIoWriter, load_array_from_reader, load_safetensors,
     load_safetensors_from_reader, save_array_to_writer, save_safetensors,
@@ -116,6 +126,7 @@ pub use types::array_vector::MlxArrayVector;
 pub use types::closure_custom::{MlxClosureCustom, MlxClosureCustomJvp, MlxClosureCustomVmap};
 pub use types::closures::{MlxClosure, MlxClosureKwargs, MlxClosureValueAndGrad};
 pub use types::device::{MlxDeviceHandle, MlxDeviceInfo};
+pub use types::dtype_info::{MlxFloatInfo, result_type};
 pub use types::maps::{
     MlxMapStringToArray, MlxMapStringToArrayIterator, MlxMapStringToString,
     MlxMapStringToStringIterator,

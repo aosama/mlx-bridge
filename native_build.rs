@@ -37,6 +37,7 @@ pub const PINNED_MLX_C_TARBALL_SHA256: &str =
 const PINNED_TARBALL_BASE_URL: &str = "https://github.com";
 
 /// Version of the build recipe itself, folded into the prefix identity.
+/// Recipe 9 widens the gap shim to the MLX functions MLX-C leaves unwrapped.
 /// Recipe 8 moves to MLX-C v0.8.0, the release pairing with MLX v0.32.4:
 /// the gather_qmm forward edit drops and two gap-shim entries retire.
 /// Recipe 7 installs MLX's GGUF archive into the prefix: MLX builds
@@ -65,7 +66,7 @@ const PINNED_TARBALL_BASE_URL: &str = "https://github.com";
 /// the pair. Bump this when the recipe's build semantics change, so
 /// machines holding a prefix built the old way orphan it exactly like a
 /// pin bump would.
-const PINNED_PAIR_BUILD_RECIPE: &str = "recipe-8-mlx-c-0.8.0";
+const PINNED_PAIR_BUILD_RECIPE: &str = "recipe-9-widened-gap-shim";
 
 /// The forward edit set this engine applies to the extracted MLX-C tree
 /// between extraction and configure. It lives in its own self-contained,

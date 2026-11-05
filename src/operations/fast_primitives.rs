@@ -1,4 +1,5 @@
-//! The fast gated-delta update, new with MLX-C v0.8.0.
+//! MLX's fast primitives without a family of their own: the gated-delta update
+//! and fused cross entropy.
 
 use crate::error::check_status;
 use crate::raw;
@@ -47,5 +48,31 @@ impl MlxBindingsContext {
         };
         check_status(status, operation)?;
         Ok(outputs)
+    }
+
+    /// Applies MLX-C `mlx_fast_cross_entropy` over `logits` and class `targets`.
+    ///
+    /// # Errors
+    /// Returns the captured MLX-C description when the graph cannot be built.
+    pub fn fast_cross_entropy(
+        &self,
+        logits: &MlxArray,
+        targets: &MlxArray,
+    ) -> Result<MlxArray, MlxCError> {
+        let operation: &'static str = "apply MLX fast cross entropy";
+        let mut output = MlxArray::empty();
+        // SAFETY: Every array handle and the stream are live and the output is
+        // uniquely writable.
+        let status = unsafe {
+            raw::mlx_fast_cross_entropy(
+                output.raw_mut(),
+                logits.raw(),
+                targets.raw(),
+                self.stream().raw(),
+            )
+        };
+        check_status(status, operation)?;
+        output.require_populated(operation)?;
+        Ok(output)
     }
 }

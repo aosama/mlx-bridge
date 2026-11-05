@@ -35,6 +35,7 @@ use std::process::ExitCode;
 
 use crate::inventory_records::{audit_coverage_inventory_record, audit_gap_shim_record};
 use crate::repository;
+use crate::safe_wrapper_coverage::audit_safe_wrapper_coverage;
 use crate::surface_parsing::{
     cpp_public_free_function_names, function_names_in_c_source, function_names_with_prefix,
     quoted_includes,
@@ -46,18 +47,6 @@ use crate::surface_parsing::{
 /// pair MLX v0.32.4 + MLX-C v0.8.0 (the vendored header tree).
 const REVIEWED_UNWRAPPED_MLX_FUNCTIONS: &[(&str, &str)] = &[
     (
-        "broadcast_shapes",
-        "shape-algebra helper on std::vector<int>; no wrapper in the MLX-C v0.8.0 pin",
-    ),
-    (
-        "einsum_path",
-        "einsum path-search API; no wrapper in the MLX-C v0.8.0 pin",
-    ),
-    (
-        "get_global_formatter",
-        "iostream printing configuration; the C API carries no printing surface",
-    ),
-    (
         "exporter",
         "served by the mlx_function_exporter_* family under the exporter-suffix naming",
     ),
@@ -66,43 +55,12 @@ const REVIEWED_UNWRAPPED_MLX_FUNCTIONS: &[(&str, &str)] = &[
         "served by the mlx_imported_function_* family under the imported naming",
     ),
     (
-        "istft",
-        "short-time Fourier transform; no wrapper in the MLX-C v0.8.0 pin",
-    ),
-    (
-        "peek_default_stream",
-        "default-stream accessor; no wrapper in the MLX-C v0.8.0 pin",
-    ),
-    (
         "precompiled_cuda_kernel",
-        "precompiled cuda-kernel construction; no wrapper in the MLX-C v0.8.0 pin",
-    ),
-    (
-        "result_type",
-        "type-promotion helper; no wrapper in the MLX-C v0.8.0 pin",
-    ),
-    (
-        "normalize_axis_index",
-        "axis-normalization helper; no wrapper in the MLX-C v0.8.0 pin",
-    ),
-    (
-        "set_printoptions",
-        "iostream printing configuration; the C API carries no printing surface",
-    ),
-    (
-        "stft",
-        "short-time Fourier transform; no wrapper in the MLX-C v0.8.0 pin",
+        "CUDA runs only on CUDA hardware; this crate ships one target, Apple silicon",
     ),
     (
         "to_stream",
         "converts the C++ StreamOrDevice variant, which the C API does not model",
-    ),
-    (
-        "vmap",
-        "no direct C wrapper in the MLX-C v0.8.0 pin: the transform is reachable \
-         only through the detail machinery (mlx_detail_vmap_trace/_replace) and the \
-         optional fun_vmap closure of mlx_custom_function; revisit when an MLX-C \
-         release pairs with this MLX",
     ),
 ];
 
@@ -177,8 +135,11 @@ pub fn run(arguments: &[String]) -> ExitCode {
         vendored_c_functions.len()
     );
 
+    let safe_wrappers_complete =
+        audit_safe_wrapper_coverage(&repository_root, &vendored_c_functions);
     let inventory_in_sync =
-        audit_coverage_inventory_record(&repository_root, &vendored_c_functions);
+        audit_coverage_inventory_record(&repository_root, &vendored_c_functions)
+            && safe_wrappers_complete;
     let gap_shim_functions = extract_gap_shim_functions(&repository_root);
     if gap_shim_functions.is_empty() {
         eprintln!("audit-upstream-surface: no gap shim functions found under native_gap_shim/");
@@ -339,10 +300,13 @@ fn extract_gap_shim_functions(repository_root: &Path) -> BTreeSet<String> {
         .collect()
 }
 
-/// The shim entry serving one MLX function, if any: an exact
-/// `mlxrs_<name>` match or a shim entry the repository named by extending
-/// the C++ name (the C++ `minmax` overloads carry the axes/axis suffix the
-/// C ABI needs as separate entry points).
+/// The suffixes a shim entry adds when one C++ overload set needs separate C
+/// entry points. Only these count as overloads: `mlxrs_einsum_path` serves the
+/// separate public function `einsum_path`, not an overload of `einsum`.
+const GAP_SHIM_OVERLOAD_SUFFIXES: &[&str] = &["axes", "axis"];
+
+/// The shim entry serving one MLX function, if any: an exact `mlxrs_<name>`
+/// match, or one of its overload entry points.
 fn gap_shim_entry_for(
     function_name: &str,
     gap_shim_functions: &BTreeSet<String>,
@@ -351,11 +315,13 @@ fn gap_shim_entry_for(
     if gap_shim_functions.contains(&exact_shim_symbol) {
         return Some(exact_shim_symbol);
     }
-    let extended_prefix = format!("mlxrs_{function_name}_");
-    gap_shim_functions
-        .iter()
-        .find(|shim_symbol| shim_symbol.starts_with(&extended_prefix))
-        .cloned()
+    for overload_suffix in GAP_SHIM_OVERLOAD_SUFFIXES {
+        let overload_symbol = format!("mlxrs_{function_name}_{overload_suffix}");
+        if gap_shim_functions.contains(&overload_symbol) {
+            return Some(overload_symbol);
+        }
+    }
+    None
 }
 
 /// The upstream leg: map every MLX public function onto the vendored C
@@ -529,6 +495,17 @@ mod tests {
                 .is_some_and(|shim_symbol| shim_symbol.starts_with("mlxrs_minmax_"))
         );
         assert_eq!(gap_shim_entry_for("vmap", &shim_surface), None);
+    }
+
+    #[test]
+    fn should_not_treat_a_separate_public_function_as_an_overload() {
+        let shim_surface: BTreeSet<String> = ["mlxrs_einsum_path".to_owned()].into_iter().collect();
+
+        assert_eq!(gap_shim_entry_for("einsum", &shim_surface), None);
+        assert_eq!(
+            gap_shim_entry_for("einsum_path", &shim_surface),
+            Some("mlxrs_einsum_path".to_owned())
+        );
     }
 
     #[test]

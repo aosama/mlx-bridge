@@ -443,3 +443,15 @@ fn should_reject_a_managed_buffer_whose_size_disagrees_with_the_shape() {
 
     assert!(failure.description.contains("byte count"), "{failure}");
 }
+
+#[test]
+fn should_report_a_reversed_view_with_a_negative_stride() {
+    let context = gpu_context();
+    let values = float_array(&[1.0, 2.0], &[2]);
+    values.evaluate().expect("the parent should evaluate");
+
+    let reversed = context.flip(&values).expect("flip should build");
+    reversed.evaluate().expect("the view should evaluate");
+
+    assert_eq!(reversed.strides(), vec![-1]);
+}

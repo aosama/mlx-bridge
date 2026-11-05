@@ -14,7 +14,7 @@ recorded below is exactly the vendored MLX-C v0.8.0 surface.
 - Public upstream types: 85
 - Bridged functions: 675
 - Bridged types: 85
-- Gap shim functions: 2
+- Gap shim functions: 13
 - Exclusions: 1
 
 ## Functions
@@ -797,8 +797,19 @@ MLX-C equivalent has arrived.
 
 | shim symbol | wraps |
 |---|---|
+| `mlxrs_broadcast_shapes` | MLX core `broadcast_shapes` |
+| `mlxrs_einsum_path` | MLX core `einsum_path` |
+| `mlxrs_finfo` | MLX core `finfo` |
+| `mlxrs_get_global_formatter` | MLX core `get_global_formatter` |
+| `mlxrs_istft` | MLX `fft::istft` |
 | `mlxrs_minmax_axes` | MLX core `minmax`, the axes overload |
 | `mlxrs_minmax_axis` | MLX core `minmax`, the axis overload |
+| `mlxrs_normalize_axis_index` | MLX core `normalize_axis_index` |
+| `mlxrs_peek_default_stream` | MLX core `peek_default_stream` |
+| `mlxrs_result_type` | MLX core `result_type` |
+| `mlxrs_set_printoptions` | MLX core `set_printoptions` |
+| `mlxrs_stft` | MLX `fft::stft` |
+| `mlxrs_vmap` | MLX core `vmap` |
 
 ## Exclusion registry
 

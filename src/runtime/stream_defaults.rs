@@ -76,6 +76,39 @@ impl MlxStream {
         Self::from_live_raw(raw_stream, "create an MLX stream on a device")
     }
 
+    /// Creates a stream registered globally rather than per thread, so it can
+    /// be evaluated from any thread.
+    ///
+    /// # Safety
+    /// MLX applies no synchronization to these streams, so the caller must rule
+    /// out data races on it.
+    pub unsafe fn new_thread_unsafe(device: &MlxDeviceHandle) -> Result<Self, MlxCError> {
+        // SAFETY: The device handle is live and the returned stream enters
+        // RAII ownership; the caller carries the synchronization contract.
+        let raw_stream = unsafe { raw::mlx_stream_new_thread_unsafe(device.raw()) };
+        Self::from_live_raw(raw_stream, "create a thread-unsafe MLX stream")
+    }
+
+    /// The device's default stream on this thread if one exists yet, without
+    /// creating it.
+    pub fn peek_default_for_device(device: &MlxDeviceHandle) -> Result<Option<Self>, MlxCError> {
+        let operation: &'static str = "peek at the MLX default stream";
+        let mut raw_stream = raw::mlx_stream {
+            ctx: std::ptr::null_mut(),
+        };
+        let mut has_stream = false;
+        // SAFETY: The device handle is live and both output pointers are valid
+        // writable storage; the stream is written only when one exists.
+        let status = unsafe {
+            raw::mlxrs_peek_default_stream(&mut raw_stream, &mut has_stream, device.raw())
+        };
+        check_status(status, operation)?;
+        if !has_stream {
+            return Ok(None);
+        }
+        Ok(Some(Self::from_live_raw(raw_stream, operation)?))
+    }
+
     /// Renders the stream description text.
     pub fn to_string_lossy(&self) -> Result<String, MlxCError> {
         let operation: &'static str = "describe an MLX stream";
