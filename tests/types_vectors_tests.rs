@@ -197,3 +197,68 @@ fn should_copy_a_nested_vector_through_set() {
 
     assert_eq!(copy.len(), 1);
 }
+
+#[test]
+fn should_build_and_grow_a_string_vector_from_one_and_many_strings() {
+    let mut vector = MlxVectorString::from_string("first").expect("should build");
+
+    vector
+        .append_strings(&["second", "third"])
+        .expect("the append should work");
+
+    assert_eq!(vector.len(), 3);
+    assert_eq!(vector.string_at(2).unwrap(), "third");
+    assert!(vector.append_strings(&["a\0b"]).is_err());
+}
+
+#[test]
+fn should_build_replace_and_grow_a_stream_vector() {
+    let gpu_stream = MlxStream::default_gpu().expect("the GPU stream should exist");
+    let cpu_stream = MlxStream::default_cpu().expect("the CPU stream should exist");
+
+    let mut vector = MlxVectorStream::from_stream(&gpu_stream).expect("should build");
+    vector
+        .append_streams(&[&cpu_stream, &gpu_stream])
+        .expect("the append should work");
+    assert_eq!(vector.len(), 3);
+    assert!(vector.stream_at(1).unwrap().equals(&cpu_stream));
+
+    vector
+        .set_stream(&cpu_stream)
+        .expect("the replacement should work");
+    assert_eq!(vector.len(), 1);
+
+    vector
+        .set_streams(&[&gpu_stream, &cpu_stream])
+        .expect("the replacement should work");
+    assert_eq!(vector.len(), 2);
+}
+
+#[test]
+fn should_build_replace_and_grow_a_nested_vector() {
+    let array = float_array(&[1.0], &[1]);
+    let one_array = vector_of(&[&array]);
+    let two_arrays = vector_of(&[&array, &array]);
+
+    let mut nested = MlxVectorVectorArray::from_vector(&one_array).expect("should build");
+    nested
+        .append_vector(&two_arrays)
+        .expect("the append should work");
+    assert_eq!(nested.len(), 2);
+    assert_eq!(nested.vector_at(1).unwrap().len(), 2);
+
+    nested
+        .append_vectors(&[vector_of(&[]), vector_of(&[])])
+        .expect("the append should work");
+    assert_eq!(nested.len(), 4);
+
+    nested
+        .set_vector(&two_arrays)
+        .expect("the replacement should work");
+    assert_eq!(nested.len(), 1);
+
+    nested
+        .set_vectors(&[vector_of(&[]), vector_of(&[])])
+        .expect("the replacement should work");
+    assert_eq!(nested.len(), 2);
+}

@@ -44,6 +44,18 @@ impl MlxBindingsContext {
         })
     }
 
+    /// Creates a context whose submissions target `stream`, such as one from
+    /// `MlxStream::on_device`. Streams are thread affine unless built through
+    /// `MlxStream::new_thread_unsafe`, so use this context on the thread that
+    /// created the stream.
+    pub fn on_stream(stream: MlxStream) -> Result<Self, MlxCError> {
+        let version = read_mlx_version()?;
+        Ok(Self {
+            submission_stream: stream,
+            version,
+        })
+    }
+
     /// The stream every submission from this context targets.
     pub const fn stream(&self) -> &MlxStream {
         &self.submission_stream

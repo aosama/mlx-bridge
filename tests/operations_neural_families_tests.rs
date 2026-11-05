@@ -300,3 +300,26 @@ fn should_translate_swapped_gated_delta_arguments_into_an_error() {
 
     assert_eq!(failure.operation, "apply the MLX gated-delta update");
 }
+
+#[test]
+fn should_compute_cross_entropy_from_logits_and_targets_in_order() {
+    let context = gpu_context();
+    let uniform_logits = float_array(&[0.0, 0.0], &[1, 2]);
+    let target = int_array(&[1], &[1]);
+
+    let loss = context
+        .fast_cross_entropy(&uniform_logits, &target)
+        .unwrap();
+
+    // Uniform logits over two classes leave ln 2 whichever class is the target.
+    assert_floats_close(
+        &floats_of(&loss),
+        &[std::f32::consts::LN_2],
+        FLOAT_TOLERANCE,
+    );
+    assert!(
+        context
+            .fast_cross_entropy(&target, &uniform_logits)
+            .is_err()
+    );
+}

@@ -5,7 +5,6 @@ use crate::error::check_status;
 use crate::raw;
 use crate::types::closure_custom::{MlxClosureCustom, MlxClosureCustomJvp, MlxClosureCustomVmap};
 use crate::types::closures::{MlxClosure, MlxClosureValueAndGrad};
-use crate::types::vectors::MlxVectorInt;
 use crate::{MlxArray, MlxArrayVector, MlxCError};
 
 impl MlxClosure {
@@ -284,10 +283,8 @@ pub fn vmap_replace(
 }
 
 /// Traces a closure for the VMAP transform, producing traced inputs and
-/// outputs.
-///
-/// The third returned value is always empty: MLX-C's trace reports no axes,
-/// so `vmap_replace` takes the output axes from the caller.
+/// outputs. `MlxClosure::vmapped` is the whole transform; this and
+/// `vmap_replace` are its two building blocks.
 ///
 /// # Errors
 /// Returns the captured MLX-C description when tracing fails.
@@ -295,11 +292,10 @@ pub fn vmap_trace(
     function: &MlxClosure,
     inputs: &MlxArrayVector,
     input_axes: &[i32],
-) -> Result<(MlxArrayVector, MlxArrayVector, MlxVectorInt), MlxCError> {
+) -> Result<(MlxArrayVector, MlxArrayVector), MlxCError> {
     let operation: &'static str = "apply the MLX VMAP trace";
     let mut traced_inputs = MlxArrayVector::empty(operation)?;
     let mut traced_outputs = MlxArrayVector::empty(operation)?;
-    let output_axes = MlxVectorInt::empty();
     // SAFETY: All handles are live, the slice remains valid for the call,
     // and all output pointers are valid writable storage.
     let status = unsafe {
@@ -313,7 +309,34 @@ pub fn vmap_trace(
         )
     };
     check_status(status, operation)?;
-    Ok((traced_inputs, traced_outputs, output_axes))
+    Ok((traced_inputs, traced_outputs))
+}
+
+impl MlxClosure {
+    /// Vectorizes this closure: arguments map over `input_axes` and outputs
+    /// stack along `output_axes`. An empty list means axis 0 throughout.
+    ///
+    /// # Errors
+    /// Returns the captured MLX-C description when the transform fails.
+    pub fn vmapped(&self, input_axes: &[i32], output_axes: &[i32]) -> Result<Self, MlxCError> {
+        let operation: &'static str = "vectorize an MLX closure";
+        let mut output = Self::empty();
+        // SAFETY: Both handles are live, the slices remain valid for the call,
+        // and the output pointer is valid writable storage.
+        let status = unsafe {
+            raw::mlxrs_vmap(
+                output.raw_mut(),
+                self.raw(),
+                input_axes.as_ptr(),
+                input_axes.len(),
+                output_axes.as_ptr(),
+                output_axes.len(),
+            )
+        };
+        check_status(status, operation)?;
+        output.require_populated(operation)?;
+        Ok(output)
+    }
 }
 
 impl MlxArray {

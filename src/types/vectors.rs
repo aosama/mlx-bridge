@@ -165,6 +165,29 @@ impl MlxVectorStream {
         check_status(status, "copy an MLX stream vector")
     }
 
+    /// Creates an owned vector holding one copied stream handle.
+    pub fn from_stream(stream: &MlxStream) -> Result<Self, MlxCError> {
+        Self::from_streams(&[stream])
+    }
+
+    /// Replaces the vector contents with copies of the provided stream handles.
+    pub fn set_streams(&mut self, streams: &[&MlxStream]) -> Result<(), MlxCError> {
+        self.set(&Self::from_streams(streams)?)
+    }
+
+    /// Replaces the vector contents with one copied stream handle.
+    pub fn set_stream(&mut self, stream: &MlxStream) -> Result<(), MlxCError> {
+        self.set_streams(&[stream])
+    }
+
+    /// Appends copies of the provided stream handles.
+    pub fn append_streams(&mut self, streams: &[&MlxStream]) -> Result<(), MlxCError> {
+        for stream in streams {
+            self.append_stream(stream)?;
+        }
+        Ok(())
+    }
+
     /// Appends one copied stream handle.
     pub fn append_stream(&mut self, stream: &MlxStream) -> Result<(), MlxCError> {
         // SAFETY: The stream handle is live and copied into the vector.
@@ -273,6 +296,38 @@ impl MlxVectorVectorArray {
         self.len() == 0
     }
 
+    /// Creates an owned nested vector holding one copied array vector.
+    pub fn from_vector(vector: &MlxArrayVector) -> Result<Self, MlxCError> {
+        let mut nested = Self::empty();
+        nested.append_vector(vector)?;
+        Ok(nested)
+    }
+
+    /// Appends one copied array vector.
+    pub fn append_vector(&mut self, vector: &MlxArrayVector) -> Result<(), MlxCError> {
+        // SAFETY: Both handles are live and the array vector is copied.
+        let status = unsafe { raw::mlx_vector_vector_array_append_value(self.0, vector.raw()) };
+        check_status(status, "append to an MLX nested array vector")
+    }
+
+    /// Appends copies of the provided array vectors.
+    pub fn append_vectors(&mut self, vectors: &[MlxArrayVector]) -> Result<(), MlxCError> {
+        for vector in vectors {
+            self.append_vector(vector)?;
+        }
+        Ok(())
+    }
+
+    /// Replaces the nested contents with copies of the provided array vectors.
+    pub fn set_vectors(&mut self, vectors: &[MlxArrayVector]) -> Result<(), MlxCError> {
+        self.set(&Self::from_vectors(vectors)?)
+    }
+
+    /// Replaces the nested contents with one copied array vector.
+    pub fn set_vector(&mut self, vector: &MlxArrayVector) -> Result<(), MlxCError> {
+        self.set(&Self::from_vector(vector)?)
+    }
+
     /// Copies the vector at `element_index` into an owned handle.
     pub fn vector_at(&self, element_index: usize) -> Result<MlxArrayVector, MlxCError> {
         let operation: &'static str = "read an MLX nested array vector element";
@@ -324,6 +379,19 @@ impl MlxVectorString {
         // and the returned handle enters RAII ownership.
         let raw_vector = unsafe { raw::mlx_vector_string_new() };
         Self(raw_vector)
+    }
+
+    /// Creates an owned vector holding a copy of one string.
+    pub fn from_string(value: &str) -> Result<Self, MlxCError> {
+        Self::from_strings(&[value])
+    }
+
+    /// Appends copies of the provided strings, stopping at the first failure.
+    pub fn append_strings(&mut self, values: &[&str]) -> Result<(), MlxCError> {
+        for value in values {
+            self.append_one(value)?;
+        }
+        Ok(())
     }
 
     /// Creates an owned vector holding copies of the provided strings.

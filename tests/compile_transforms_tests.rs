@@ -171,7 +171,7 @@ fn should_map_a_callable_over_the_batch_axis() {
     let batch = float_array(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
     let inputs = vector_of(&[&batch]);
 
-    let (traced_inputs, traced_outputs, _output_axes) =
+    let (traced_inputs, traced_outputs) =
         vmap_trace(&function, &inputs, &[0]).expect("the trace should work");
     let mapped_outputs = vmap_replace(&inputs, &traced_inputs, &traced_outputs, &[0], &[0])
         .expect("the replacement should work");
@@ -188,7 +188,7 @@ fn should_place_the_mapped_axis_where_the_output_axes_ask() {
     let batch = float_array(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3]);
     let inputs = vector_of(&[&batch]);
 
-    let (traced_inputs, traced_outputs, _output_axes) =
+    let (traced_inputs, traced_outputs) =
         vmap_trace(&function, &inputs, &[0]).expect("the trace should work");
     let mapped_outputs = vmap_replace(&inputs, &traced_inputs, &traced_outputs, &[0], &[1])
         .expect("the replacement should work");
@@ -399,4 +399,72 @@ fn should_keep_values_when_evaluating_after_dependencies() {
         .expect("the dependency should schedule");
 
     assert_eq!(floats_of(&array_at(&outputs, 0)), vec![1.0, 2.0]);
+}
+
+#[test]
+fn should_vectorize_a_closure_over_axis_zero_by_default() {
+    gpu_context();
+    let function = MlxClosure::from_fn(doubled).expect("the closure should build");
+    let vectorized = function
+        .vmapped(&[], &[])
+        .expect("the transform should build");
+    let batch = float_array(&[1.0, 2.0, 3.0, 4.0], &[2, 2]);
+
+    let outputs = vectorized
+        .apply(&vector_of(&[&batch]))
+        .expect("apply should work");
+
+    assert_eq!(array_at(&outputs, 0).shape(), vec![2, 2]);
+    assert_eq!(floats_of(&array_at(&outputs, 0)), vec![2.0, 4.0, 6.0, 8.0]);
+}
+
+#[test]
+fn should_forward_the_input_and_output_axes_to_the_vectorized_closure() {
+    gpu_context();
+    let function = MlxClosure::from_fn(doubled).expect("the closure should build");
+    let vectorized = function
+        .vmapped(&[1], &[0])
+        .expect("the transform should build");
+    let batch = float_array(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3]);
+
+    let outputs = vectorized
+        .apply(&vector_of(&[&batch]))
+        .expect("apply should work");
+
+    // Mapping over axis 1 and stacking on axis 0 moves those three columns first.
+    assert_eq!(array_at(&outputs, 0).shape(), vec![3, 2]);
+}
+
+#[test]
+fn should_keep_a_vectorized_closure_usable_after_its_source_drops() {
+    gpu_context();
+    let function = MlxClosure::from_fn(doubled).expect("the closure should build");
+    let vectorized = function
+        .vmapped(&[0], &[0])
+        .expect("the transform should build");
+    let batch = float_array(&[1.0, 2.0], &[2, 1]);
+
+    drop(function);
+
+    let outputs = vectorized
+        .apply(&vector_of(&[&batch]))
+        .expect("apply should work");
+    assert_eq!(floats_of(&array_at(&outputs, 0)), vec![2.0, 4.0]);
+}
+
+#[test]
+fn should_surface_a_callback_failure_from_a_vectorized_closure() {
+    gpu_context();
+    let function = MlxClosure::from_fn(refusing_callback).expect("the closure should build");
+    let vectorized = function.vmapped(&[], &[]).expect("building is lazy");
+    let batch = float_array(&[1.0, 2.0], &[2, 1]);
+
+    assert!(vectorized.apply(&vector_of(&[&batch])).is_err());
+}
+
+#[test]
+fn should_refuse_to_vectorize_an_empty_closure() {
+    gpu_context();
+
+    assert!(MlxClosure::empty().vmapped(&[], &[]).is_err());
 }
