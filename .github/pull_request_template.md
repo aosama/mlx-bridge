@@ -32,7 +32,7 @@ Describe the implemented solution and any removed complexity.
 
 ## Verification
 
-List the exact checks that passed: `cargo xtask verify` (size ceiling, formatting, clippy, documentation) and `cargo test -- --test-threads=1` against the shared native prefix, plus any focused tests you added. State any hardware-dependent acceptance that could not run.
+List the exact checks that passed: `cargo xtask verify` (size ceiling, formatting, clippy, documentation) and `cargo nextest run --workspace` against the shared native prefix, plus any focused tests you added. State any hardware-dependent acceptance that could not run.
 
 ## Safety
 

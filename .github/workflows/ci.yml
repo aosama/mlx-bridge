@@ -263,10 +263,30 @@ jobs:
             mlx-c-rust-v1-sccache-${{ runner.os }}-${{ runner.arch }}-
       - name: Build the pinned pair (typed, live progress)
         run: cargo xtask build-native
-      # No configuration: the build script must find the machine-shared
-      # prefix the step above built — the adopter experience, proven.
-      - name: Test against the shared prefix
-        run: cargo test -- --test-threads=1
+      # install-action verifies the release's SHA-256 from inside the pinned
+      # action commit; fallback: none forbids a silent source build if the
+      # pinned release is absent.
+      - name: Provision pinned cargo-nextest
+        timeout-minutes: 1
+        uses: taiki-e/install-action@1919c4a95903d2c33e4a221102edca87309fc14b # v2.89.0
+        with:
+          tool: cargo-nextest@0.9.149
+          fallback: none
+      # Compiling and testing are separate steps so a slow run names which one
+      # is slow, and each has its own limit. --workspace includes xtask, whose
+      # contracts guard the audit and coverage gates. No configuration: the build
+      # script must find the machine-shared prefix the step above built — the
+      # adopter experience, proven.
+      - name: Compile the test binaries
+        timeout-minutes: 3
+        run: cargo nextest run --workspace --no-run
+      - name: Run the tests
+        timeout-minutes: 2
+        run: cargo nextest run --workspace --profile ci
+      # Nextest does not run documentation tests, so they keep their own step.
+      - name: Run the documentation tests
+        timeout-minutes: 2
+        run: cargo test --workspace --doc
       - name: Print compiler cache statistics
         if: ${{ !cancelled() }}
         run: sccache --show-stats
