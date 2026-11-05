@@ -418,4 +418,46 @@ impl MlxBindingsContext {
             unsafe { raw::mlx_view(output, a.raw(), dtype.to_raw(), stream) }
         })
     }
+
+    /// Transposes the last two dimensions through MLX-C `mlx_matrix_transpose`.
+    pub fn matrix_transpose(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
+        self.output_array("apply MLX matrix_transpose", |output, stream| {
+            // SAFETY: Inputs and stream are live and output is uniquely writable.
+            unsafe { raw::mlx_matrix_transpose(output, a.raw(), stream) }
+        })
+    }
+
+    /// Applies MLX-C `mlx_unique`. `size` is the exact unique count the result
+    /// carries: fewer actual uniques get padded (with `fill_value` when
+    /// supplied), so callers either know the count a priori or pass the array
+    /// size and trim. The returned vector carries the unique values first, then
+    /// the `return_index`, `return_inverse`, and `return_counts` arrays in that
+    /// order when requested.
+    pub fn unique(
+        &self,
+        a: &MlxArray,
+        size: i32,
+        return_index: bool,
+        return_inverse: bool,
+        return_counts: bool,
+        fill_value: Option<&MlxArray>,
+    ) -> Result<MlxArrayVector, MlxCError> {
+        let fill_value_argument = fill_value.map_or_else(MlxArray::empty_raw, MlxArray::raw);
+        self.output_vector_array("apply MLX unique", |output, stream| {
+            // SAFETY: Inputs and stream are live and output is uniquely
+            // writable; MLX reads a null fill value handle as absent.
+            unsafe {
+                raw::mlx_unique(
+                    output,
+                    a.raw(),
+                    size,
+                    return_index,
+                    return_inverse,
+                    return_counts,
+                    fill_value_argument,
+                    stream,
+                )
+            }
+        })
+    }
 }

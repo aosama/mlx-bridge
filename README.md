@@ -5,7 +5,7 @@
 
 A complete, low-level, policy-free Rust bridge to the public [MLX-C](https://github.com/ml-explore/mlx-c) C API of Apple's [MLX](https://github.com/ml-explore/mlx) array framework for Apple silicon.
 
-**Current release: [`0.32.4-alpha.3`](https://crates.io/crates/mlx-c-rust/0.32.4-alpha.3) — verified against MLX `v0.32.4`, binding the complete MLX-C `v0.7.0` surface and carrying it forward to that MLX with this repository's reviewed bridge adaptations, plus the gap shim for the MLX functions that MLX-C pin has not wrapped.** The crate version always names the MLX release it is verified against — the number you search for and install — while the bound MLX-C release and the forward adaptations are recorded here and in `COVERAGE_INVENTORY.md`. Published on [crates.io](https://crates.io/crates/mlx-c-rust); documentation builds on [docs.rs](https://docs.rs/mlx-c-rust).
+**Current release: [`0.32.4-alpha.3`](https://crates.io/crates/mlx-c-rust/0.32.4-alpha.3) — verified against MLX `v0.32.4`, binding the complete MLX-C `v0.8.0` surface, the MLX-C release pairing with that MLX, plus this repository's gap shim for the MLX functions that release leaves unwrapped.** The crate version always names the MLX release it is verified against — the number you search for and install — while the bound MLX-C release and the forward adaptations are recorded here and in `COVERAGE_INVENTORY.md`. Published on [crates.io](https://crates.io/crates/mlx-c-rust); documentation builds on [docs.rs](https://docs.rs/mlx-c-rust).
 
 ## The goal
 
@@ -23,7 +23,7 @@ What this crate is *not*: a high-level framework. For neural-network layers, opt
 
 ## Status
 
-Early public extraction, versioned to name the verified MLX release (crate `0.32.4` is verified against MLX `v0.32.4`, binding MLX-C `v0.7.0` carried forward by this repository's reviewed bridge adaptations). The bridge was hardened inside a production local-model serving stack before extraction. The completeness guarantee covers symbol *presence*; per-wrapper behavioral test coverage is growing and tracked in `COVERAGE_INVENTORY.md`.
+Early public extraction, versioned to name the verified MLX release (crate `0.32.4` is verified against MLX `v0.32.4`, binding MLX-C `v0.8.0`). The bridge was hardened inside a production local-model serving stack before extraction. The completeness guarantee covers symbol *presence*; per-wrapper behavioral test coverage is growing and tracked in `COVERAGE_INVENTORY.md`.
 
 ## Building
 

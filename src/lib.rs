@@ -100,12 +100,13 @@ pub use runtime::io::{
     save_safetensors_to_writer,
 };
 pub use runtime::memory::{
-    active_memory_bytes, cache_memory_bytes, clear_allocator_cache, memory_limit_bytes,
-    peak_memory_bytes, reset_peak_memory, set_cache_limit, set_memory_limit, synchronize,
+    active_memory_bytes, array_buffer_size_bytes, cache_memory_bytes, clear_allocator_cache,
+    memory_limit_bytes, peak_memory_bytes, reset_peak_memory, set_cache_limit, set_memory_limit,
+    synchronize,
 };
 pub use runtime::platform::{
-    MlxDistributedGroup, cuda_is_available, distributed_is_available, initialize_distributed,
-    metal_is_available, metallib_path, set_wired_limit,
+    MlxDistributedGroup, clear_distributed_backends, cuda_is_available, distributed_is_available,
+    initialize_distributed, metal_is_available, metallib_path, set_wired_limit,
 };
 pub use runtime::stream_defaults::{
     MlxStreamThreadLocal, clear_streams, set_default_stream, synchronize_all_defaults,

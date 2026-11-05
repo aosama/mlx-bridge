@@ -8,8 +8,9 @@ mod bridge_fixtures;
 use bridge_fixtures::{array_at, gpu_context, vector_of};
 use mlx_c_rust::{
     MlxArray, MlxBindingsContext, MlxCError, MlxClosure, MlxDtype, MlxMapStringToArray,
-    active_memory_bytes, cache_memory_bytes, clear_allocator_cache, memory_limit_bytes,
-    peak_memory_bytes, reset_peak_memory, set_cache_limit, set_memory_limit, synchronize,
+    active_memory_bytes, array_buffer_size_bytes, cache_memory_bytes, clear_allocator_cache,
+    memory_limit_bytes, peak_memory_bytes, reset_peak_memory, set_cache_limit, set_memory_limit,
+    synchronize,
 };
 
 /// 64 MiB of float32 elements.
@@ -194,4 +195,26 @@ fn should_empty_the_allocator_cache_when_cleared() {
     clear_allocator_cache().unwrap();
 
     assert_eq!(cache_memory_bytes().unwrap(), 0);
+}
+
+#[test]
+fn should_report_the_buffer_bytes_of_evaluated_arrays() {
+    gpu_context();
+    let first = MlxArray::from_f32(&[1.0, 2.0], &[2]).expect("the fixture should be valid");
+    let second = MlxArray::from_f32(&[3.0], &[1]).expect("the fixture should be valid");
+    first.evaluate().expect("the array should evaluate");
+    second.evaluate().expect("the array should evaluate");
+
+    assert_eq!(array_buffer_size_bytes(&vector_of(&[&first])).unwrap(), 8);
+    assert_eq!(
+        array_buffer_size_bytes(&vector_of(&[&first, &second])).unwrap(),
+        12
+    );
+}
+
+#[test]
+fn should_report_no_buffer_bytes_for_an_empty_vector() {
+    gpu_context();
+
+    assert_eq!(array_buffer_size_bytes(&vector_of(&[])).unwrap(), 0);
 }

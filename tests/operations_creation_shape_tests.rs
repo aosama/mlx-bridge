@@ -270,3 +270,101 @@ fn should_raise_a_scalar_to_the_minimum_rank_through_the_atleast_family() {
     assert_eq!(context.atleast_2d(&scalar).unwrap().shape(), vec![1, 1]);
     assert_eq!(context.atleast_3d(&scalar).unwrap().shape(), vec![1, 1, 1]);
 }
+
+#[test]
+fn should_transpose_the_last_two_dimensions_of_a_non_square_matrix() {
+    let context = gpu_context();
+
+    let values = context
+        .array_from_f32(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3])
+        .expect("the input array should be valid");
+
+    let transposed = context
+        .matrix_transpose(&values)
+        .expect("matrix_transpose should build on the GPU stream");
+
+    assert_eq!(transposed.shape(), vec![3, 2]);
+    let transposed_values = transposed
+        .to_vec_f32()
+        .expect("the transposed view should copy back in its logical order");
+    assert_eq!(transposed_values, vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0]);
+}
+
+#[test]
+fn should_return_unique_values_inverse_and_counts() {
+    let context = gpu_context();
+
+    let values = context
+        .array_from_f32(&[4.0, 1.0, 4.0, 1.0, 2.0], &[5])
+        .expect("the input array should be valid");
+
+    let unique_outputs = context
+        .unique(&values, 3, false, true, true, None)
+        .expect("unique should build on the GPU stream");
+
+    assert_eq!(
+        unique_outputs.len(),
+        3,
+        "unique plus inverse plus counts makes three outputs"
+    );
+    let unique_values_array = unique_outputs
+        .array_at(0, "read the unique values")
+        .expect("the unique values array should be readable");
+    unique_values_array
+        .evaluate()
+        .expect("the unique values should evaluate on the GPU stream");
+    let unique_values = unique_values_array
+        .to_vec_f32()
+        .expect("the evaluated unique values should copy back to host memory");
+    assert_eq!(unique_values, vec![1.0, 2.0, 4.0]);
+}
+
+#[test]
+fn should_pad_unique_to_the_requested_size_with_a_fill_value() {
+    let context = gpu_context();
+
+    let values = context
+        .array_from_f32(&[4.0, 1.0, 4.0, 1.0, 2.0], &[5])
+        .expect("the input array should be valid");
+    let fill_value = context
+        .array_from_f32(&[9.0], &[1])
+        .expect("the scalar fill value array should be valid");
+
+    let unique_outputs = context
+        .unique(&values, 5, false, false, false, Some(&fill_value))
+        .expect("the padded unique should build on the GPU stream");
+
+    let unique_values_array = unique_outputs
+        .array_at(0, "read the padded unique values")
+        .expect("the padded unique values array should be readable");
+    unique_values_array
+        .evaluate()
+        .expect("the padded unique values should evaluate on the GPU stream");
+    let padded_unique_values = unique_values_array
+        .to_vec_f32()
+        .expect("the evaluated padded unique values should copy back to host memory");
+    assert_eq!(
+        padded_unique_values,
+        vec![1.0, 2.0, 4.0, 9.0, 9.0],
+        "three actual uniques padded to the requested size with the fill value"
+    );
+}
+
+#[test]
+fn should_return_only_the_unique_values_when_no_extras_are_requested() {
+    let context = gpu_context();
+
+    let values = context
+        .array_from_f32(&[3.0, 1.0, 3.0], &[3])
+        .expect("the input array should be valid");
+
+    let unique_outputs = context
+        .unique(&values, 2, false, false, false, None)
+        .expect("unique should build on the GPU stream");
+
+    assert_eq!(
+        unique_outputs.len(),
+        1,
+        "no return_index, return_inverse, or return_counts means one output"
+    );
+}

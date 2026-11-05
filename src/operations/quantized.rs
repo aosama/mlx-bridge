@@ -151,6 +151,8 @@ impl MlxBindingsContext {
                     optional_group_size,
                     optional_bits,
                     c"affine".as_ptr(),
+                    // MLX reads a global scale only in its NVFP4 mode.
+                    MlxArray::empty_raw(),
                     sorted_indices,
                     stream,
                 )

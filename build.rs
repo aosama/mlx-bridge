@@ -198,7 +198,7 @@ fn emit_link_instructions() {
         emit_prefix_link_flags(&prefix);
         return;
     }
-    if let Ok(mlx_c) = PkgConfig::new().atleast_version("0.7.0").probe("mlx-c") {
+    if let Ok(mlx_c) = PkgConfig::new().atleast_version("0.8.0").probe("mlx-c") {
         for library_name in &mlx_c.libs {
             println!("cargo:rustc-link-lib={library_name}");
         }

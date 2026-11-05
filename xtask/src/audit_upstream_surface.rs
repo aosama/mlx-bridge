@@ -43,27 +43,15 @@ use crate::surface_parsing::{
 /// MLX public functions that MLX-C verifiably does not wrap, kept reviewed
 /// so the audit fails only on NEW gaps. Every entry pairs the C++ function
 /// name with the reason the gap is accepted. Verified against the pinned
-/// pair MLX v0.32.4 + MLX-C v0.7.0 (the vendored header tree).
+/// pair MLX v0.32.4 + MLX-C v0.8.0 (the vendored header tree).
 const REVIEWED_UNWRAPPED_MLX_FUNCTIONS: &[(&str, &str)] = &[
     (
         "broadcast_shapes",
-        "shape-algebra helper on std::vector<int>; no wrapper in the MLX-C v0.7.0 pin",
-    ),
-    (
-        "clear_backends",
-        "distributed backend teardown; no wrapper in the MLX-C v0.7.0 pin",
+        "shape-algebra helper on std::vector<int>; no wrapper in the MLX-C v0.8.0 pin",
     ),
     (
         "einsum_path",
-        "einsum path-search API; no wrapper in the MLX-C v0.7.0 pin",
-    ),
-    (
-        "gated_delta_update",
-        "fast gated-delta op; no wrapper in the MLX-C v0.7.0 pin",
-    ),
-    (
-        "get_array_buffer_size",
-        "memory introspection; no wrapper in the MLX-C v0.7.0 pin",
+        "einsum path-search API; no wrapper in the MLX-C v0.8.0 pin",
     ),
     (
         "get_global_formatter",
@@ -79,23 +67,23 @@ const REVIEWED_UNWRAPPED_MLX_FUNCTIONS: &[(&str, &str)] = &[
     ),
     (
         "istft",
-        "short-time Fourier transform; no wrapper in the MLX-C v0.7.0 pin",
+        "short-time Fourier transform; no wrapper in the MLX-C v0.8.0 pin",
     ),
     (
         "peek_default_stream",
-        "default-stream accessor; no wrapper in the MLX-C v0.7.0 pin",
+        "default-stream accessor; no wrapper in the MLX-C v0.8.0 pin",
     ),
     (
         "precompiled_cuda_kernel",
-        "precompiled cuda-kernel construction; no wrapper in the MLX-C v0.7.0 pin",
+        "precompiled cuda-kernel construction; no wrapper in the MLX-C v0.8.0 pin",
     ),
     (
         "result_type",
-        "type-promotion helper; no wrapper in the MLX-C v0.7.0 pin",
+        "type-promotion helper; no wrapper in the MLX-C v0.8.0 pin",
     ),
     (
         "normalize_axis_index",
-        "axis-normalization helper; no wrapper in the MLX-C v0.7.0 pin",
+        "axis-normalization helper; no wrapper in the MLX-C v0.8.0 pin",
     ),
     (
         "set_printoptions",
@@ -103,7 +91,7 @@ const REVIEWED_UNWRAPPED_MLX_FUNCTIONS: &[(&str, &str)] = &[
     ),
     (
         "stft",
-        "short-time Fourier transform; no wrapper in the MLX-C v0.7.0 pin",
+        "short-time Fourier transform; no wrapper in the MLX-C v0.8.0 pin",
     ),
     (
         "to_stream",
@@ -111,7 +99,7 @@ const REVIEWED_UNWRAPPED_MLX_FUNCTIONS: &[(&str, &str)] = &[
     ),
     (
         "vmap",
-        "no direct C wrapper in the MLX-C v0.7.0 pin: the transform is reachable \
+        "no direct C wrapper in the MLX-C v0.8.0 pin: the transform is reachable \
          only through the detail machinery (mlx_detail_vmap_trace/_replace) and the \
          optional fun_vmap closure of mlx_custom_function; revisit when an MLX-C \
          release pairs with this MLX",

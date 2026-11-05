@@ -105,6 +105,18 @@ pub fn initialize_distributed(
     Ok(output)
 }
 
+/// Clears MLX's cached distributed backends so the next initialization starts
+/// fresh.
+///
+/// # Errors
+/// Returns the captured MLX-C description when clearing fails.
+pub fn clear_distributed_backends() -> Result<(), MlxCError> {
+    // SAFETY: Clearing takes no inputs and reports status through the
+    // captured-error machinery.
+    let status = unsafe { raw::mlx_distributed_clear_backends() };
+    check_status(status, "clear the MLX distributed backends")
+}
+
 /// Owned MLX distributed group handle released exactly once.
 #[derive(Debug)]
 pub struct MlxDistributedGroup(raw::mlx_distributed_group);
@@ -118,17 +130,29 @@ impl MlxDistributedGroup {
     }
 
     /// This process's rank in the group.
-    #[must_use]
-    pub fn rank(&self) -> i32 {
-        // SAFETY: `self` owns a live group handle.
-        unsafe { raw::mlx_distributed_group_rank(self.0) }
+    ///
+    /// # Errors
+    /// Returns the captured MLX-C description when the query fails.
+    pub fn rank(&self) -> Result<i32, MlxCError> {
+        let mut rank = 0;
+        // SAFETY: `self` owns a live group handle and the output pointer is
+        // valid writable storage.
+        let status = unsafe { raw::mlx_distributed_group_get_rank(&mut rank, self.0) };
+        check_status(status, "read the MLX distributed group rank")?;
+        Ok(rank)
     }
 
     /// The group's world size.
-    #[must_use]
-    pub fn size(&self) -> i32 {
-        // SAFETY: `self` owns a live group handle.
-        unsafe { raw::mlx_distributed_group_size(self.0) }
+    ///
+    /// # Errors
+    /// Returns the captured MLX-C description when the query fails.
+    pub fn size(&self) -> Result<i32, MlxCError> {
+        let mut world_size = 0;
+        // SAFETY: `self` owns a live group handle and the output pointer is
+        // valid writable storage.
+        let status = unsafe { raw::mlx_distributed_group_get_size(&mut world_size, self.0) };
+        check_status(status, "read the MLX distributed group size")?;
+        Ok(world_size)
     }
 
     /// Splits the group by color and key.

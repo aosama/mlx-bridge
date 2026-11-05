@@ -267,7 +267,7 @@ impl MlxBindingsContext {
         inclusive: bool,
     ) -> Result<MlxArray, MlxCError> {
         self.output_array("compute MLX cumulative sum", |output, stream| {
-            // mlx-c v0.7.0 splits the axis-taking variant into mlx_cumsum_axis;
+            // MLX-C splits the axis-taking variant into mlx_cumsum_axis;
             // the dtype stays absent, preserving the previous float-identity
             // behavior of the axis-taking overload.
             let absent_cumulative_dtype = raw::mlx_optional_dtype {

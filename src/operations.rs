@@ -10,6 +10,7 @@ pub(crate) mod creation;
 pub(crate) mod cumulative;
 pub(crate) mod elementwise_math;
 pub(crate) mod fft;
+pub(crate) mod gated_delta;
 pub(crate) mod general;
 pub(crate) mod indexing;
 pub(crate) mod linear_algebra;
