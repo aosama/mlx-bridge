@@ -43,10 +43,10 @@ jobs:
   check:
     name: Lint and document exactly as docs.rs builds it
     runs-on: ubuntu-latest
-    # The build script skips the native ladder on non-mac hosts, so this
-    # lane never pays a native compile; the cap only covers dependency
-    # compilation.
-    timeout-minutes: 20
+    # The hard limit for every job in this workflow. The build script skips
+    # the native ladder on non-mac hosts, so this lane normally takes about a
+    # minute; anything near the limit is a stall, and it should fail loudly.
+    timeout-minutes: 10
     env:
       RUSTC_WRAPPER: sccache
     steps:
@@ -55,13 +55,25 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+      # bindgen needs libclang even though it parses only the vendored headers.
+      # Cached and bounded because an uncached apt-get once stalled on an Ubuntu
+      # mirror for thirteen minutes while the rest of this job took one.
       - name: Install libclang and the C headers for bindgen
-        # bindgen only parses the vendored headers, but its clang still
-        # pulls in the host <stdint.h>. The build script supplies the
-        # distribution's multiarch include directory explicitly (some
-        # libclang builds never add it themselves); this step provides the
-        # headers both pieces need.
-        run: sudo apt-get update && sudo apt-get install -y libclang-dev libc6-dev
+        timeout-minutes: 3
+        uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+        with:
+          packages: libclang-dev libc6-dev
+          version: mlx-c-rust-v1
+      # The pinned nightly restores instead of downloading, so a run does not
+      # depend on the Rust distribution servers.
+      - name: Restore the Rust toolchain
+        id: rust-toolchain-cache
+        uses: ./.github/actions/mlx-c-rust-cache
+        with:
+          operation: restore
+          owner: rust-toolchain
+          path: ~/.rustup/toolchains
+          key: mlx-c-rust-v1-rust-toolchain-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
       # `rustup show` installs the toolchain pinned by rust-toolchain.toml.
       - name: Activate the pinned toolchain
         run: rustup show
@@ -83,8 +95,10 @@ jobs:
       # prefix fallback keeps hits coming when only the lockfile moved.
       - name: Restore cargo downloads
         id: cargo-downloads-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: ./.github/actions/mlx-c-rust-cache
         with:
+          operation: restore
+          owner: cargo-downloads
           path: |
             ~/.cargo/registry
             ~/.cargo/git
@@ -96,8 +110,10 @@ jobs:
       # serves a stale object, so prefix fallbacks are safe.
       - name: Restore sccache
         id: sccache-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: ./.github/actions/mlx-c-rust-cache
         with:
+          operation: restore
+          owner: sccache
           path: ~/.cache/mlx-c-rust/sccache
           key: mlx-c-rust-v1-sccache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
           restore-keys: |
@@ -141,10 +157,20 @@ jobs:
       - name: Print compiler cache statistics
         if: ${{ !cancelled() }}
         run: sccache --show-stats
+      - name: Save the Rust toolchain
+        if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && steps.rust-toolchain-cache.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/mlx-c-rust-cache
+        with:
+          operation: save
+          owner: rust-toolchain
+          path: ~/.rustup/toolchains
+          key: mlx-c-rust-v1-rust-toolchain-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
       - name: Save cargo downloads
         if: ${{ !cancelled() && steps.cargo-downloads-cache.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: ./.github/actions/mlx-c-rust-cache
         with:
+          operation: save
+          owner: cargo-downloads
           path: |
             ~/.cargo/registry
             ~/.cargo/git
@@ -154,15 +180,19 @@ jobs:
       # ref-scoped duplicate burning the repository cache budget.
       - name: Save sccache
         if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && steps.sccache-cache.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: ./.github/actions/mlx-c-rust-cache
         with:
+          operation: save
+          owner: sccache
           path: ~/.cache/mlx-c-rust/sccache
           key: mlx-c-rust-v1-sccache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
 
   native:
     name: Adopt, build, and test — the one macOS journey
     runs-on: macos-latest
-    timeout-minutes: 45
+    # A warm run takes about two minutes and a full compile of the pinned pair
+    # about eight, the cold-native gate included, so ten is a real ceiling.
+    timeout-minutes: 10
     # Pruning surplus caches needs actions:write; everything else this job
     # touches stays read-only.
     permissions:
@@ -176,6 +206,16 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+      # The pinned nightly restores instead of downloading, so a run does not
+      # depend on the Rust distribution servers.
+      - name: Restore the Rust toolchain
+        id: rust-toolchain-cache
+        uses: ./.github/actions/mlx-c-rust-cache
+        with:
+          operation: restore
+          owner: rust-toolchain
+          path: ~/.rustup/toolchains
+          key: mlx-c-rust-v1-rust-toolchain-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
       - name: Activate the pinned toolchain
         run: rustup show
       - name: Pin the sccache directory
@@ -184,8 +224,10 @@ jobs:
         uses: mozilla/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
       - name: Restore cargo downloads
         id: cargo-downloads-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: ./.github/actions/mlx-c-rust-cache
         with:
+          operation: restore
+          owner: cargo-downloads
           path: |
             ~/.cargo/registry
             ~/.cargo/git
@@ -193,20 +235,27 @@ jobs:
           restore-keys: mlx-c-rust-v1-cargo-downloads-${{ runner.os }}-${{ runner.arch }}-
       # The native pair is compiled once per pin into the machine-shared
       # prefix, by the same typed engine consumers use. The cache key hashes
-      # the engine module (which carries the pin tags and checksums), so a
-      # pin bump misses the cache and the cold journey proves itself exactly
-      # then; every other push reuses and finishes in seconds.
+      # everything that decides the compiled output: the engine, its forward
+      # edits, and the gap shim. A change to any of them misses, so the cold
+      # journey proves itself exactly then, and every other push reuses the
+      # pair in seconds. GitHub scopes caches by ref, so main cannot read what a
+      # pull request saved: a change compiles once on its pull request and once
+      # on main, and later pull requests restore main's copy.
       - name: Restore the compiled pinned pair
         id: native-pair-cache
         if: ${{ github.event_name != 'workflow_dispatch' || !inputs.cold-native }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: ./.github/actions/mlx-c-rust-cache
         with:
-          key: native-pair-${{ hashFiles('native_build.rs') }}
+          operation: restore
+          owner: native-pair
+          key: native-pair-${{ hashFiles('native_build.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**') }}
           path: ~/.cache/mlx-c-rust/native
       - name: Restore sccache
         id: sccache-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: ./.github/actions/mlx-c-rust-cache
         with:
+          operation: restore
+          owner: sccache
           path: ~/.cache/mlx-c-rust/sccache
           key: mlx-c-rust-v1-sccache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
           restore-keys: |
@@ -221,24 +270,38 @@ jobs:
       - name: Print compiler cache statistics
         if: ${{ !cancelled() }}
         run: sccache --show-stats
+      - name: Save the Rust toolchain
+        if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && steps.rust-toolchain-cache.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/mlx-c-rust-cache
+        with:
+          operation: save
+          owner: rust-toolchain
+          path: ~/.rustup/toolchains
+          key: mlx-c-rust-v1-rust-toolchain-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
       - name: Save cargo downloads
         if: ${{ !cancelled() && steps.cargo-downloads-cache.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: ./.github/actions/mlx-c-rust-cache
         with:
+          operation: save
+          owner: cargo-downloads
           path: |
             ~/.cargo/registry
             ~/.cargo/git
           key: mlx-c-rust-v1-cargo-downloads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
       - name: Save the compiled pinned pair
         if: ${{ !cancelled() && steps.native-pair-cache.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: ./.github/actions/mlx-c-rust-cache
         with:
-          key: native-pair-${{ hashFiles('native_build.rs') }}
+          operation: save
+          owner: native-pair
+          key: native-pair-${{ hashFiles('native_build.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**') }}
           path: ~/.cache/mlx-c-rust/native
       - name: Save sccache
         if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && steps.sccache-cache.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: ./.github/actions/mlx-c-rust-cache
         with:
+          operation: save
+          owner: sccache
           path: ~/.cache/mlx-c-rust/sccache
           key: mlx-c-rust-v1-sccache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
       # Surplus generations (an old lockfile key, an oversize sccache entry)

@@ -18,7 +18,9 @@ updates:
         patterns:
           - "*"
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /
+      - /.github/actions/*
     schedule:
       interval: daily
     open-pull-requests-limit: 5
