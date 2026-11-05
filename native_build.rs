@@ -37,6 +37,10 @@ pub const PINNED_MLX_C_TARBALL_SHA256: &str =
 const PINNED_TARBALL_BASE_URL: &str = "https://github.com";
 
 /// Version of the build recipe itself, folded into the prefix identity.
+/// Recipe 7 installs MLX's GGUF archive into the prefix: MLX builds
+/// libgguflib.a but its install rule omits it, because a shared libmlx
+/// absorbs it, so since recipe 4 every static consumer referencing GGUF
+/// failed to link with undefined gguf_* symbols.
 /// Recipe 6 adds the gap shim as the third compiled component: the
 /// repository's own mlxrs_* C ABI over the pinned MLX C++ surface for the
 /// functions the vendored MLX-C pin has not wrapped, so an MLX capability
@@ -59,7 +63,9 @@ const PINNED_TARBALL_BASE_URL: &str = "https://github.com";
 /// the pair. Bump this when the recipe's build semantics change, so
 /// machines holding a prefix built the old way orphan it exactly like a
 /// pin bump would.
-const PINNED_PAIR_BUILD_RECIPE: &str = "recipe-6-gap-shim";
+const PINNED_PAIR_BUILD_RECIPE: &str = "recipe-7-gguf-archive";
+
+const GGUF_ARCHIVE_FILE_NAME: &str = "libgguflib.a";
 
 /// The forward edit set this engine applies to the extracted MLX-C tree
 /// between extraction and configure. It lives in its own self-contained,
@@ -132,6 +138,26 @@ pub fn prefix_carries_mlxc_library(prefix: &Path) -> bool {
     let library_directory = prefix.join("lib");
     library_directory.join("libmlxc.dylib").is_file()
         || library_directory.join("libmlxc.a").is_file()
+}
+
+/// Copies MLX's GGUF archive into the prefix, which MLX's own install omits.
+/// Idempotent, so a resumed build that skips the MLX phase still completes it.
+fn install_gguf_archive(mlx_build: &Path, prefix: &Path) -> std::io::Result<()> {
+    if prefix_carries_gguf_archive(prefix) {
+        return Ok(());
+    }
+    let built_archive = mlx_build.join("mlx/io").join(GGUF_ARCHIVE_FILE_NAME);
+    std::fs::copy(
+        built_archive,
+        prefix.join("lib").join(GGUF_ARCHIVE_FILE_NAME),
+    )?;
+    Ok(())
+}
+
+/// Reports whether `prefix/lib` holds MLX's GGUF archive. MLX makes GGUF
+/// support optional, so a prefix the consumer built may omit it.
+pub fn prefix_carries_gguf_archive(prefix: &Path) -> bool {
+    prefix.join("lib").join(GGUF_ARCHIVE_FILE_NAME).is_file()
 }
 
 /// Reports whether `prefix/lib` holds the gap shim library. The shim is
@@ -398,6 +424,14 @@ pub fn ensure_pinned_pair() -> NativeBuildOutcome {
         }
         operation.complete("ok");
         let _ = std::fs::write(&mlx_marker, b"complete");
+    }
+
+    if let Err(gguf_install_error) = install_gguf_archive(&mlx_build, &prefix) {
+        println!(
+            "cargo:warning=failed to install MLX's GGUF archive into the prefix: \
+             {gguf_install_error}"
+        );
+        return NativeBuildOutcome::Failed;
     }
 
     // MLX's install ships jaccl's imported targets without the package

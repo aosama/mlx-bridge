@@ -25,6 +25,12 @@ use crate::raw;
 
 static ERROR_HANDLER_INSTALLATION: Once = Once::new();
 
+/// The status MLX-C's map lookups, map iterators, and GGUF metadata probes
+/// return for an absent key or an exhausted iterator. It reports nothing
+/// through the handler because neither case is a failure, so these callers
+/// must not treat it as one.
+pub(crate) const MLX_C_ENTRY_ABSENT_STATUS: i32 = 2;
+
 thread_local! {
     /// MLX C reports an error immediately before returning nonzero on the same
     /// calling thread. Thread-local storage preserves that operation pairing

@@ -3,7 +3,7 @@ use crate::raw;
 
 /// Owned MLX stream handle used to preserve runtime thread affinity.
 #[derive(Debug)]
-pub struct MlxStream(raw::mlx_stream);
+pub struct MlxStream(pub(crate) raw::mlx_stream);
 
 impl MlxStream {
     pub fn default_cpu() -> Result<Self, MlxCError> {

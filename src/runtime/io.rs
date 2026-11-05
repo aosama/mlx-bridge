@@ -3,7 +3,7 @@
 
 use std::os::raw::c_void;
 
-use crate::error::check_status;
+use crate::error::{MLX_C_ENTRY_ABSENT_STATUS, check_status};
 use crate::raw;
 use crate::types::maps::{MlxMapStringToArray, MlxMapStringToString};
 use crate::types::vectors::MlxVectorString;
@@ -456,6 +456,9 @@ impl MlxIoGguf {
         // SAFETY: `self` owns a live container, the key outlives the call,
         // and the output pointer is valid writable storage.
         let status = unsafe { probe(&mut exists, self.0, key_argument.as_ptr()) };
+        if status == MLX_C_ENTRY_ABSENT_STATUS {
+            return Ok(false);
+        }
         check_status(status, operation)?;
         Ok(exists)
     }

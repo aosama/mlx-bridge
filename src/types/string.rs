@@ -30,6 +30,11 @@ impl MlxString {
     /// Copies the owned string text into Rust memory.
     #[must_use]
     pub fn to_string_lossy(&self) -> String {
+        // MLX-C reports a null handle through its error handler, which ends the
+        // process when none is installed, so an empty string never reaches it.
+        if self.0.ctx.is_null() {
+            return String::new();
+        }
         // SAFETY: `self` owns a live string handle whose data pointer stays
         // valid for the duration of this call.
         let data_pointer = unsafe { raw::mlx_string_data(self.0) };

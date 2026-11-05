@@ -47,9 +47,11 @@ warnings = "deny"
 # -----------------
 # Compilation and documentation builds succeed on any host (the build
 # script's link ladder stops with a warning on non-mac hosts). Test
-# binaries are the one thing that must LINK an MLX-C library, discovered
-# through MLX_C_RUST_MLX_C_PREFIX=<prefix> or `pkg-config mlx-c`; build it
-# once per machine with `cargo xtask build-native`. The automatic path
+# binaries are the one thing that must LINK an MLX-C library, resolved
+# first-match through MLX_C_RUST_MLX_C_PREFIX=<prefix>, Homebrew,
+# `pkg-config mlx-c`, and finally the pinned pair compiled into the
+# machine-shared prefix; `cargo xtask build-native` builds that pair up
+# front with live progress. The automatic path
 # builds the pair STATICALLY: consumer binaries embed it and run with no
 # runtime library search (a library crate cannot inject an rpath into
 # consumers' binaries, so dylibs would be unloadable there); prefixes you
@@ -88,6 +90,10 @@ verify = "xtask verify"
 # Tests need the linked MLX-C library (see "Linking and tests" above) and
 # must serialize on MLX's process-global state. Extra words you append go
 # to the test binary, so filters work: `cargo native-test should_clone`.
+# Each suite in tests/ maps to one production module family, so one family
+# runs through `cargo test --test types_closures_tests -- --test-threads=1`.
+# Suites prove this repository's translation layer, not MLX's semantics:
+# CONTRIBUTING.md states the scope rule.
 # For cargo-LEVEL flags use the full `cargo test ... -- --test-threads=1`
 # form — an alias already consumed the `--` separator.
 native-test = "test -- --test-threads=1"

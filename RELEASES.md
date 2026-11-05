@@ -7,14 +7,15 @@ prefix and warm caches. The proof runs on fresh runners with nothing.
 
 ## Classify the change — this decides the version
 
-The crate version names the MLX release it is verified against; our own
-fixes ride as patch bumps (see the Versioning section of the README).
+The crate version names the MLX release it is verified against, so all
+three numeric slots belong to MLX; our own fixes advance the pre-release
+counter (see the Versioning section of the README).
 
 | Change | Version | Extra obligation |
 |---|---|---|
-| Defect fix in the bridge (safety, wrong semantics, leak) | Patch (`0.32.4` → `0.32.5`) | Release notes state whether the unsafe boundary was touched |
-| New bindings for symbols already in the vendored headers | Patch | `COVERAGE_INVENTORY.md` updated |
-| MLX-C header pin bump within the same MLX release | Patch | Inventory note; checksums enforced by `native_build.rs` |
+| Defect fix in the bridge (safety, wrong semantics, leak) | Next alpha (`0.32.4-alpha.3` → `0.32.4-alpha.4`) | Release notes state whether the unsafe boundary was touched |
+| New bindings for symbols already in the vendored headers | Next alpha | `COVERAGE_INVENTORY.md` updated |
+| MLX-C header pin bump within the same MLX release | Next alpha | Inventory note; checksums enforced by `native_build.rs` |
 | Verification against a new MLX release | Version rides MLX (`0.33.0-alpha.1` …) | The native cache key changes with the pin, so the cold journey proves itself exactly then |
 | Breaking Rust API change | Rides the next MLX-release alpha window | While pre-stable, an urgent one may ship as an alpha of the current series with explicit breaking-change notes |
 
@@ -24,6 +25,12 @@ cargo reads `0.32.4 → 0.33.0` as breaking, but `0.33.0` *means*
 "verified against MLX 0.33". Breaking changes therefore wait for the
 next MLX-release bump and ride its alpha window; once the crate declares
 stability, breaking changes only ever ride an MLX release bump.
+
+**Stable fix slot (open — settle before the first stable release):** a
+stable `0.32.4` leaves no number for a crate-only fix. `0.32.5` would
+claim verification against an MLX `0.32.5` that may not exist, and a
+pre-release suffix sorts below the release it would be fixing. The
+pre-release counter carries every fix until this is decided.
 
 ## The release pull request
 
@@ -76,8 +83,8 @@ maintain, no merge conflicts in release pull requests.
 ## Defect response after a release
 
 - A defect in the latest release: fix through the normal pipeline, then
-  a patch release through the same gates. Never patch a tag; history is
+  a follow-up release through the same gates. Never patch a tag; history is
   linear and immutable.
 - **Yank criteria (decided in advance):** yank only for unsoundness, a
   security problem, or a package that cannot compile at all. Everything
-  else deserves a patch release. Yanking is loud and public.
+  else deserves a follow-up release. Yanking is loud and public.

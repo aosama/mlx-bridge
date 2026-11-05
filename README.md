@@ -31,7 +31,7 @@ Nothing to configure: `cargo add mlx-c-rust`, then `cargo build`. With no enviro
 
 Working in this repository, the same engine is available as typed tooling: `cargo xtask build-native` (add `--force` to recompile) builds the pair up front with live progress, so later builds reuse it in milliseconds.
 
-To link against an MLX-C you provide yourself instead, in first-match order:
+To link against an MLX-C you provide yourself instead, in first-match order (each of these takes precedence over the automatic build, which runs only when none resolves):
 
 1. `MLX_C_RUST_MLX_C_PREFIX` — a prefix whose `lib/` holds the libraries (an embedded rpath means no run-time environment variables).
 2. The standard Homebrew prefixes, after `brew install mlx-c`.
@@ -41,7 +41,7 @@ To link against an MLX-C you provide yourself instead, in first-match order:
 
 ## Versioning
 
-The crate version names the **MLX release it is verified against** (the scheme mlx-rs established for user-facing crates): crate `0.32.4.x` is verified against MLX `v0.32.4`. The bound MLX-C release rides in the README headline and `COVERAGE_INVENTORY.md`. MLX-C is the carrier for the C bridge, not the pace-setter: when no MLX-C release pairs with the newest MLX, the native build engine applies this repository's reviewed forward adaptations to the pinned MLX-C sources, and drops them when an MLX-C release catches up — so the crate tracks MLX releases even ahead of MLX-C. Both upstreams are pre-1.0, so minor releases may carry breaking changes when upstream does; our own fixes and same-MLX MLX-C surface changes ride as patch bumps.
+The crate version names the **MLX release it is verified against** (the scheme mlx-rs established for user-facing crates): crate `0.32.4-alpha.N` is verified against MLX `v0.32.4`. The bound MLX-C release rides in the README headline and `COVERAGE_INVENTORY.md`. MLX-C is the carrier for the C bridge, not the pace-setter: when no MLX-C release pairs with the newest MLX, the native build engine applies this repository's reviewed forward adaptations to the pinned MLX-C sources, and drops them when an MLX-C release catches up — so the crate tracks MLX releases even ahead of MLX-C. Both upstreams are pre-1.0, so minor releases may carry breaking changes when upstream does; our own fixes and same-MLX MLX-C surface changes advance the pre-release counter (`0.32.4-alpha.N`).
 
 **The gap shim** — a pinned MLX-C release can lag the pinned MLX, and where it does this repository carries its own C ABI instead of waiting: the gap shim (`native_gap_shim/`, compiled by the native build engine as the third prefix component) wraps the missing MLX functions behind `mlxrs_*` entry points with MLX-C's exact conventions, and the bridge exposes them through the same owned-handle, captured-error wrappers as every MLX-C family. When an MLX-C release wraps a function, the shim entry retires — `cargo xtask audit-upstream-surface` (upstream leg with `--mlx-source <mlx checkout>`, record legs always, also run by `cargo xtask verify`) flags both missing wrappers and entries whose MLX-C equivalent has arrived.
 

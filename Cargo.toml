@@ -13,9 +13,10 @@ edition = "2024"
 # MLX-C v0.7.0 headers, carried forward to MLX v0.32.4 by this repository's
 # reviewed bridge adaptations (the forward edit set in native_forward_edits.rs),
 # until an MLX-C release pairs with that MLX. The bound pair is recorded
-# here, in the README, and in COVERAGE_INVENTORY.md. Our own fixes ride as
-# patch bumps; an MLX-C surface change within the same MLX release also
-# rides as a patch bump with an inventory note.
+# here, in the README, and in COVERAGE_INVENTORY.md. MLX occupies all three
+# numeric slots, so our own fixes and same-MLX MLX-C surface changes advance
+# the pre-release counter (0.32.4-alpha.N), surface changes with an inventory
+# note; RELEASES.md records what the first stable release must settle.
 rust-version = "1.101"
 description = "A complete, low-level, policy-free Rust bridge to the MLX-C API of Apple's MLX for Apple silicon, tracking MLX releases. Version = the verified MLX release (0.32.4; carries MLX-C 0.7 forward)."
 license = "MIT OR Apache-2.0"
@@ -50,10 +51,11 @@ thiserror = "2"
 
 [features]
 default = ["link"]
-# The `link` feature carries the build script's entire link ladder: the
-# prefix variable, the machine-shared zero-configuration pair, Homebrew,
-# and pkg-config. Consumers who provide their OWN native MLX build — for
-# example a pinned, patched fork from their own native orchestration —
+# The `link` feature carries the build script's entire link ladder, first
+# match wins: the prefix variable, Homebrew, pkg-config, and finally the
+# machine-shared zero-configuration pair. Consumers who provide their OWN
+# native MLX build — for example a pinned, patched fork from their own native
+# orchestration —
 # depend with default-features = false and get the bindings-only mode: the
 # vendored-header declarations, the captured-error translation, the owned
 # handle types, and the operation wrapper families, with zero link

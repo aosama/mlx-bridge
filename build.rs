@@ -168,12 +168,12 @@ fn link_feature_is_enabled() -> bool {
 /// at a warning before any rung: the link line this ladder produces — a
 /// `libmlxc.dylib` plus Apple frameworks — could never work there, so even
 /// an explicit prefix variable would only yield unusable flags. On macOS,
-/// the ladder, first match wins: the prefix variable, the machine-shared
-/// identity-keyed prefix (building it if absent — the zero-configuration
-/// default), Homebrew, and pkg-config. When nothing resolves, a warning is
-/// printed and no link flags are emitted: library compilation and
-/// documentation builds still work, and the failure surfaces only when a
-/// consumer links a binary.
+/// the ladder, first match wins: the prefix variable, Homebrew, pkg-config,
+/// and finally the machine-shared identity-keyed prefix (building it if
+/// absent — the zero-configuration default on a machine that provides no
+/// MLX-C of its own). When nothing resolves, a warning is printed and no
+/// link flags are emitted: library compilation and documentation builds
+/// still work, and the failure surfaces only when a consumer links a binary.
 fn emit_link_instructions() {
     if !cfg!(target_os = "macos") {
         // The pinned pair compiles MLX, which needs Apple's Metal stack: a
@@ -273,8 +273,9 @@ fn homebrew_prefix_with_mlxc() -> Option<PathBuf> {
 /// Emits the link flags for a prefix whose `lib` holds the libraries: the
 /// two dylibs plus an embedded rpath (their install names are `@rpath/...`
 /// and they carry their own framework dependencies), or the static pair
-/// with everything MLX needs spelled out — the jaccl acceleration archive
-/// MLX v0.32.4 links as its own library, the Apple frameworks, and the
+/// with everything MLX needs spelled out — the GGUF archive and the jaccl
+/// acceleration archive MLX v0.32.4 links as its own libraries, the Apple
+/// frameworks, and the
 /// C++ runtime the dylibs used to carry transitively. Order matters for
 /// archives: mlxc references mlx, mlx references jaccl, and the linker
 /// resolves left to right.
@@ -302,6 +303,10 @@ fn emit_prefix_link_flags(prefix: &Path) {
         }
         println!("cargo:rustc-link-lib=static=mlxc");
         println!("cargo:rustc-link-lib=static=mlx");
+        // Follows mlx, which references it.
+        if native_build::prefix_carries_gguf_archive(prefix) {
+            println!("cargo:rustc-link-lib=static=gguflib");
+        }
         println!("cargo:rustc-link-lib=static=jaccl");
         for framework in ["Metal", "Foundation", "QuartzCore", "Accelerate"] {
             println!("cargo:rustc-link-lib=framework={framework}");

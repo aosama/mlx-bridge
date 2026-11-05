@@ -450,7 +450,7 @@ impl MlxBindingsContext {
         build_graph: impl FnOnce(*mut raw::mlx_array, raw::mlx_stream) -> i32,
     ) -> Result<MlxArray, MlxCError> {
         let mut output = MlxArray::empty();
-        let status = build_graph(output.raw_mut(), self.gpu_stream().raw());
+        let status = build_graph(output.raw_mut(), self.stream().raw());
         check_status(status, operation)?;
         output.require_populated(operation)?;
         Ok(output)

@@ -284,7 +284,10 @@ pub fn vmap_replace(
 }
 
 /// Traces a closure for the VMAP transform, producing traced inputs and
-/// outputs plus the resolved axes.
+/// outputs.
+///
+/// The third returned value is always empty: MLX-C's trace reports no axes,
+/// so `vmap_replace` takes the output axes from the caller.
 ///
 /// # Errors
 /// Returns the captured MLX-C description when tracing fails.

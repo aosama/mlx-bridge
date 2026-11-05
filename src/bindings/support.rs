@@ -86,19 +86,19 @@ pub(crate) fn raw_optional_dtype(value: Option<MlxDtype>) -> raw::mlx_optional_d
 }
 
 impl MlxBindingsContext {
-    /// Builds a vector-of-arrays result on the runtime GPU stream.
+    /// Builds a vector-of-arrays result on the context stream.
     pub(crate) fn output_vector_array(
         &self,
         operation: &'static str,
         build_graph: impl FnOnce(*mut raw::mlx_vector_array, raw::mlx_stream) -> i32,
     ) -> Result<MlxArrayVector, MlxCError> {
         let mut output = MlxArrayVector::empty(operation)?;
-        let status = build_graph(output.raw_mut(), self.gpu_stream().raw());
+        let status = build_graph(output.raw_mut(), self.stream().raw());
         check_status(status, operation)?;
         Ok(output)
     }
 
-    /// Builds two array results on the runtime GPU stream.
+    /// Builds two array results on the context stream.
     pub(crate) fn output_array_pair(
         &self,
         operation: &'static str,
@@ -109,7 +109,7 @@ impl MlxBindingsContext {
         let status = build_graph(
             first_output.raw_mut(),
             second_output.raw_mut(),
-            self.gpu_stream().raw(),
+            self.stream().raw(),
         );
         check_status(status, operation)?;
         first_output.require_populated(operation)?;
