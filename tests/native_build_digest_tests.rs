@@ -35,7 +35,7 @@ fn should_keep_pinned_pair_identity_stable() {
     // updating it must therefore always be a conscious act that rides a
     // deliberate pin or recipe bump, never an accident of refactoring or a
     // dependency upgrade changing how digests render. The current golden
-    // value is recipe-9-widened-gap-shim: the recipe that widens the gap shim
-    // to the MLX functions MLX-C leaves unwrapped.
-    assert_eq!(pinned_pair_identity(), "1d332b444ca219bb");
+    // value is recipe-10-library-only: the recipe that stops compiling MLX's
+    // own tests and examples.
+    assert_eq!(pinned_pair_identity(), "dc7fcf8d1fd13ddf");
 }

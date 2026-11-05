@@ -37,6 +37,7 @@ pub const PINNED_MLX_C_TARBALL_SHA256: &str =
 const PINNED_TARBALL_BASE_URL: &str = "https://github.com";
 
 /// Version of the build recipe itself, folded into the prefix identity.
+/// Recipe 10 stops compiling MLX's own tests and examples.
 /// Recipe 9 widens the gap shim to the MLX functions MLX-C leaves unwrapped.
 /// Recipe 8 moves to MLX-C v0.8.0, the release pairing with MLX v0.32.4:
 /// the gather_qmm forward edit drops and two gap-shim entries retire.
@@ -66,7 +67,7 @@ const PINNED_TARBALL_BASE_URL: &str = "https://github.com";
 /// the pair. Bump this when the recipe's build semantics change, so
 /// machines holding a prefix built the old way orphan it exactly like a
 /// pin bump would.
-const PINNED_PAIR_BUILD_RECIPE: &str = "recipe-9-widened-gap-shim";
+const PINNED_PAIR_BUILD_RECIPE: &str = "recipe-10-library-only";
 
 /// The forward edit set this engine applies to the extracted MLX-C tree
 /// between extraction and configure. It lives in its own self-contained,
@@ -146,6 +147,19 @@ pub fn prefix_carries_mlxc_library(prefix: &Path) -> bool {
     let library_directory = prefix.join("lib");
     library_directory.join("libmlxc.dylib").is_file()
         || library_directory.join("libmlxc.a").is_file()
+}
+
+/// How many compile jobs to run: Cargo's choice inside a build script, and
+/// otherwise this machine's core count, because xtask runs outside Cargo's
+/// build-script environment and a fixed guess leaves cores idle.
+fn build_job_count() -> String {
+    if let Ok(cargo_job_count) = std::env::var("NUM_JOBS") {
+        return cargo_job_count;
+    }
+    match std::thread::available_parallelism() {
+        Ok(core_count) => core_count.to_string(),
+        Err(_) => "4".to_owned(),
+    }
 }
 
 /// Reports whether `prefix/lib` holds the gap shim library. The shim is
@@ -329,7 +343,7 @@ pub fn ensure_pinned_pair() -> NativeBuildOutcome {
     }
     forward_edit_operation.complete("ok");
 
-    let parallelism = std::env::var("NUM_JOBS").unwrap_or_else(|_| "4".to_owned());
+    let parallelism = build_job_count();
     // The kernel build writes mlx.metallib directly into the prefix
     // (MLX_METAL_PATH), so the install directory must exist at build time,
     // not only after cmake --install creates it.
@@ -365,6 +379,11 @@ pub fn ensure_pinned_pair() -> NativeBuildOutcome {
                 // crate cannot inject an rpath into consumers' binaries).
                 .arg("-DBUILD_SHARED_LIBS=OFF")
                 .arg("-DMLX_METAL_JIT=ON")
+                // MLX defaults these on for a top-level build. Consumers link
+                // the library only, so compiling them spent most of the build
+                // and fetched doctest for nothing.
+                .arg("-DMLX_BUILD_TESTS=OFF")
+                .arg("-DMLX_BUILD_EXAMPLES=OFF")
                 .arg(format!("-DCMAKE_INSTALL_PREFIX={}", prefix.display())),
         );
         if configured.is_none() {
