@@ -245,6 +245,18 @@ Like `apply_metal_kernel`, also filling outputs with `output_initial_value` so a
 
 **Errors:** Fails when the launch dimensions or argument counts are invalid. A shader that does not compile fails later, when the output is evaluated.
 
+### `MlxBindingsContext::apply_metal_kernel_with_config`
+
+```rust
+pub fn apply_metal_kernel_with_config(&self, kernel: &MlxMetalKernel, input_arrays: &[&MlxArray], kernel_config: &MlxMetalKernelConfig) -> Result<Vec<MlxArray>, MlxCError>
+```
+
+Applies a kernel with a caller-built `MlxMetalKernelConfig`.
+
+MLX's kernel call takes `verbose` on the call, and MLX-C stores that flag on the config passed to `mlx_fast_metal_kernel_apply`. The convenience methods build a config with verbose left off, which is MLX's default, so `MlxMetalKernelConfig::set_verbose` only affects a launch that receives this config.
+
+**Errors:** Fails when the launch has no inputs, or MLX rejects the launch. A shader that does not compile fails later, when the output is evaluated.
+
 ### `apply_metal_kernel_in_graph`
 
 ```rust
@@ -253,7 +265,17 @@ pub fn apply_metal_kernel_in_graph(kernel: &MlxMetalKernel, input_arrays: &[&Mlx
 
 Applies one custom Metal kernel inside a compiled-graph trace.
 
-Identical to `MlxBindingsContext::apply_metal_kernel` minus the runtime handle: compiled-graph builders run without a runtime, on the stream the trace is being built for. Errors surface as plain status codes; the input contract (row-contiguous arrays, validated launch dimensions) is the builder's responsibility.
+Identical to `MlxBindingsContext::apply_metal_kernel` minus the runtime handle: compiled-graph builders run without a runtime, on the stream the trace is being built for. Errors surface as plain status codes. Launch dimensions are rejected by `MlxMetalKernelConfig::new` unless every component is positive.
+
+### `apply_metal_kernel_in_graph_with_config`
+
+```rust
+pub fn apply_metal_kernel_in_graph_with_config(kernel: &MlxMetalKernel, input_arrays: &[&MlxArray], kernel_config: &MlxMetalKernelConfig, gpu_stream: &MlxStream) -> Result<Vec<MlxArray>, i32>
+```
+
+Like `apply_metal_kernel_in_graph`, with a caller-built config so `MlxMetalKernelConfig::set_verbose` reaches the trace.
+
+**Errors:** Returns `1` when the launch has no inputs or a handle cannot be built, and MLX's own status when the apply call itself fails.
 
 ### `MlxMetalKernelConfig`
 
@@ -261,7 +283,7 @@ Identical to `MlxBindingsContext::apply_metal_kernel` minus the runtime handle: 
 pub struct MlxMetalKernelConfig
 ```
 
-One launch's configuration for a custom Metal kernel: its outputs, grid, thread group, and template arguments.
+One launch's configuration for a custom Metal kernel: its outputs, grid, thread group, template arguments, and whether MLX prints the generated shader.
 
 ### `MlxMetalKernelConfig::new`
 
@@ -271,7 +293,19 @@ pub fn new(output_specs: &[MlxMetalKernelOutput], grid: [i32; 3], thread_group: 
 
 Builds a launch configuration from output declarations, grid, thread group, and an optional output fill value.
 
-**Errors:** Fails when MLX rejects a configuration value.
+**Errors:** Fails when a grid or thread-group dimension is not positive, or when MLX rejects a configuration value.
+
+### `MlxMetalKernelConfig::add_template_arguments`
+
+```rust
+pub fn add_template_arguments(&mut self, template_arguments: &[MlxMetalKernelTemplateArgument]) -> Result<(), MlxCError>
+```
+
+Adds compile-time template arguments to this launch.
+
+The signature takes `&mut self` because the call writes into the config MLX already allocated. A shared reference would hide that write.
+
+**Errors:** Fails when a name contains an interior null byte, or MLX rejects a value.
 
 ### `MlxMetalKernelConfig::set_verbose`
 
@@ -279,7 +313,9 @@ Builds a launch configuration from output declarations, grid, thread group, and 
 pub fn set_verbose(&mut self, verbose: bool) -> Result<(), MlxCError>
 ```
 
-Toggles MLX's verbose logging for this kernel launch.
+Asks MLX to print the generated shader when this config is applied.
+
+This is the `verbose` argument of MLX's kernel call. It has no effect until the config is passed to `MlxBindingsContext::apply_metal_kernel_with_config` or `apply_metal_kernel_in_graph_with_config`. The convenience launch methods leave it off, which is MLX's default.
 
 ## `src/metal/metallib.rs`
 

@@ -181,36 +181,53 @@ impl MlxBindingsContext {
     ) -> Result<Vec<MlxArray>, MlxCError> {
         const OPERATION: &str = "apply an MLX custom Metal kernel";
         validate_kernel_launch(input_arrays, output_specs, grid, thread_group)?;
-        let input_vector = MlxArrayVector::new(input_arrays)?;
-        let kernel_config =
+        let mut kernel_config =
             MlxMetalKernelConfig::new(output_specs, grid, thread_group, output_initial_value)?;
         kernel_config.add_template_arguments(template_arguments)?;
-        let mut output_vector = MlxArrayVector::empty(OPERATION)?;
-        // SAFETY: Kernel, input vector, config, stream, and output vector are live;
-        // MLX populates the output vector synchronously as a lazy graph result.
-        let status = unsafe {
-            raw::mlx_fast_metal_kernel_apply(
-                output_vector.raw_mut(),
-                kernel.raw(),
-                input_vector.raw(),
-                kernel_config.raw(),
-                self.gpu_stream().raw(),
-            )
-        };
-        check_status(status, OPERATION)?;
-        let output_count = output_vector.len();
-        if output_count != output_specs.len() {
+        let outputs = launch_configured_metal_kernel(
+            kernel,
+            input_arrays,
+            &kernel_config,
+            self.gpu_stream(),
+            OPERATION,
+        )?;
+        if outputs.len() != output_specs.len() {
             return Err(MlxCError {
                 operation: OPERATION,
                 description: format!(
-                    "custom Metal kernel returned {output_count} outputs but {} were requested",
+                    "custom Metal kernel returned {} outputs but {} were requested",
+                    outputs.len(),
                     output_specs.len()
                 ),
             });
         }
-        (0..output_count)
-            .map(|output_index| output_vector.array_at(output_index, OPERATION))
-            .collect::<Result<Vec<_>, MlxCError>>()
+        Ok(outputs)
+    }
+
+    /// Applies a kernel with a caller-built [`MlxMetalKernelConfig`].
+    ///
+    /// MLX's kernel call takes `verbose` on the call, and MLX-C stores that flag
+    /// on the config passed to `mlx_fast_metal_kernel_apply`. The convenience
+    /// methods build a config with verbose left off, which is MLX's default, so
+    /// [`MlxMetalKernelConfig::set_verbose`] only affects a launch that receives
+    /// this config.
+    ///
+    /// # Errors
+    /// Fails when the launch has no inputs, or MLX rejects the launch. A shader
+    /// that does not compile fails later, when the output is evaluated.
+    pub fn apply_metal_kernel_with_config(
+        &self,
+        kernel: &MlxMetalKernel,
+        input_arrays: &[&MlxArray],
+        kernel_config: &MlxMetalKernelConfig,
+    ) -> Result<Vec<MlxArray>, MlxCError> {
+        launch_configured_metal_kernel(
+            kernel,
+            input_arrays,
+            kernel_config,
+            self.gpu_stream(),
+            "apply an MLX custom Metal kernel",
+        )
     }
 }
 
@@ -218,9 +235,8 @@ impl MlxBindingsContext {
 ///
 /// Identical to [`MlxBindingsContext::apply_metal_kernel`] minus the runtime handle:
 /// compiled-graph builders run without a runtime, on the stream the trace is
-/// being built for. Errors surface as plain status codes; the input contract
-/// (row-contiguous arrays, validated launch dimensions) is the builder's
-/// responsibility.
+/// being built for. Errors surface as plain status codes. Launch dimensions are
+/// rejected by [`MlxMetalKernelConfig::new`] unless every component is positive.
 #[allow(clippy::too_many_arguments)]
 pub fn apply_metal_kernel_in_graph(
     kernel: &MlxMetalKernel,
@@ -231,45 +247,52 @@ pub fn apply_metal_kernel_in_graph(
     template_arguments: &[MlxMetalKernelTemplateArgument],
     gpu_stream: &MlxStream,
 ) -> Result<Vec<MlxArray>, i32> {
-    let input_vector = MlxArrayVector::new(input_arrays).map_err(|_| 1)?;
-    let kernel_config =
-        MlxMetalKernelConfig::new(output_specs, grid, thread_group, None).map_err(|_| 1)?;
+    let mut kernel_config = MlxMetalKernelConfig::new(output_specs, grid, thread_group, None)
+        .map_err(graph_launch_failed)?;
     kernel_config
         .add_template_arguments(template_arguments)
-        .map_err(|_| 1)?;
-    let mut output_vector =
-        MlxArrayVector::empty("apply a Metal kernel in a graph trace").map_err(|_| 1)?;
-    // SAFETY: Kernel, input vector, config, stream, and output vector are live;
-    // MLX populates the output vector synchronously as a lazy graph result.
-    let status = unsafe {
-        raw::mlx_fast_metal_kernel_apply(
-            output_vector.raw_mut(),
-            kernel.raw(),
-            input_vector.raw(),
-            kernel_config.raw(),
-            gpu_stream.raw(),
-        )
-    };
-    if status != 0 {
-        return Err(status);
-    }
-    let output_count = output_vector.len();
-    if output_count != output_specs.len() {
+        .map_err(graph_launch_failed)?;
+    let outputs =
+        apply_metal_kernel_in_graph_with_config(kernel, input_arrays, &kernel_config, gpu_stream)?;
+    if outputs.len() != output_specs.len() {
         return Err(1);
-    }
-    let mut outputs = Vec::with_capacity(output_count);
-    for output_index in 0..output_count {
-        outputs.push(
-            output_vector
-                .array_at(output_index, "apply a Metal kernel in a graph trace")
-                .map_err(|_| 1)?,
-        );
     }
     Ok(outputs)
 }
 
+/// Like [`apply_metal_kernel_in_graph`], with a caller-built config so
+/// [`MlxMetalKernelConfig::set_verbose`] reaches the trace.
+///
+/// # Errors
+/// Returns `1` when the launch has no inputs or a handle cannot be built, and
+/// MLX's own status when the apply call itself fails.
+pub fn apply_metal_kernel_in_graph_with_config(
+    kernel: &MlxMetalKernel,
+    input_arrays: &[&MlxArray],
+    kernel_config: &MlxMetalKernelConfig,
+    gpu_stream: &MlxStream,
+) -> Result<Vec<MlxArray>, i32> {
+    const OPERATION: &str = "apply a Metal kernel in a graph trace";
+    if input_arrays.is_empty() {
+        return Err(1);
+    }
+    let input_vector = MlxArrayVector::new(input_arrays).map_err(graph_launch_failed)?;
+    let mut output_vector = MlxArrayVector::empty(OPERATION).map_err(graph_launch_failed)?;
+    let status = apply_metal_kernel_raw(
+        kernel,
+        &input_vector,
+        kernel_config,
+        gpu_stream,
+        &mut output_vector,
+    );
+    if status != 0 {
+        return Err(status);
+    }
+    collect_kernel_outputs(&output_vector, OPERATION).map_err(graph_launch_failed)
+}
+
 /// One launch's configuration for a custom Metal kernel: its outputs, grid, thread
-/// group, and template arguments.
+/// group, template arguments, and whether MLX prints the generated shader.
 #[derive(Debug)]
 pub struct MlxMetalKernelConfig {
     raw_config: raw::mlx_fast_metal_kernel_config,
@@ -280,7 +303,8 @@ impl MlxMetalKernelConfig {
     /// group, and an optional output fill value.
     ///
     /// # Errors
-    /// Fails when MLX rejects a configuration value.
+    /// Fails when a grid or thread-group dimension is not positive, or when MLX
+    /// rejects a configuration value.
     pub fn new(
         output_specs: &[MlxMetalKernelOutput],
         grid: [i32; 3],
@@ -288,6 +312,7 @@ impl MlxMetalKernelConfig {
         output_initial_value: Option<f32>,
     ) -> Result<Self, MlxCError> {
         const OPERATION: &str = "configure an MLX custom Metal kernel";
+        reject_non_positive_launch_dimensions(grid, thread_group, OPERATION)?;
         // SAFETY: The runtime error handler is installed before model loading,
         // and MLX returns one owned config handle.
         let raw_config = unsafe { raw::mlx_fast_metal_kernel_config_new() };
@@ -298,57 +323,85 @@ impl MlxMetalKernelConfig {
             });
         }
         let kernel_config = Self { raw_config };
+        kernel_config.set_output_initial_value(output_initial_value, OPERATION)?;
+        kernel_config.add_output_specs(output_specs, OPERATION)?;
+        kernel_config.set_launch_dimensions(grid, thread_group, OPERATION)?;
+        Ok(kernel_config)
+    }
+
+    fn set_output_initial_value(
+        &self,
+        output_initial_value: Option<f32>,
+        operation: &'static str,
+    ) -> Result<(), MlxCError> {
         if let Some(output_initial_value) = output_initial_value {
             // SAFETY: The scalar initialization value is copied by MLX.
             let status = unsafe {
-                raw::mlx_fast_metal_kernel_config_set_init_value(
-                    kernel_config.raw(),
-                    output_initial_value,
-                )
+                raw::mlx_fast_metal_kernel_config_set_init_value(self.raw(), output_initial_value)
             };
-            check_status(status, OPERATION)?;
+            check_status(status, operation)?;
         }
+        Ok(())
+    }
+
+    fn add_output_specs(
+        &self,
+        output_specs: &[MlxMetalKernelOutput],
+        operation: &'static str,
+    ) -> Result<(), MlxCError> {
         for output_spec in output_specs {
             // SAFETY: The shape slice remains live for this copying call.
             let status = unsafe {
                 raw::mlx_fast_metal_kernel_config_add_output_arg(
-                    kernel_config.raw(),
+                    self.raw(),
                     output_spec.shape.as_ptr(),
                     output_spec.shape.len(),
                     output_spec.dtype.to_raw(),
                 )
             };
-            check_status(status, OPERATION)?;
+            check_status(status, operation)?;
         }
-        // SAFETY: Scalar launch dimensions are validated before construction.
+        Ok(())
+    }
+
+    fn set_launch_dimensions(
+        &self,
+        grid: [i32; 3],
+        thread_group: [i32; 3],
+        operation: &'static str,
+    ) -> Result<(), MlxCError> {
+        // SAFETY: Non-positive grid components were rejected by `new`, so these
+        // three scalars are positive. The config handle is live and MLX copies them.
         let status = unsafe {
-            raw::mlx_fast_metal_kernel_config_set_grid(
-                kernel_config.raw(),
-                grid[0],
-                grid[1],
-                grid[2],
-            )
+            raw::mlx_fast_metal_kernel_config_set_grid(self.raw(), grid[0], grid[1], grid[2])
         };
-        check_status(status, OPERATION)?;
-        // SAFETY: Scalar launch dimensions are validated before construction.
+        check_status(status, operation)?;
+        // SAFETY: Non-positive thread-group components were rejected by `new`,
+        // so these three scalars are positive. The handle is live and MLX copies them.
         let status = unsafe {
             raw::mlx_fast_metal_kernel_config_set_thread_group(
-                kernel_config.raw(),
+                self.raw(),
                 thread_group[0],
                 thread_group[1],
                 thread_group[2],
             )
         };
-        check_status(status, OPERATION)?;
-        Ok(kernel_config)
+        check_status(status, operation)
     }
 
     const fn raw(&self) -> raw::mlx_fast_metal_kernel_config {
         self.raw_config
     }
 
-    fn add_template_arguments(
-        &self,
+    /// Adds compile-time template arguments to this launch.
+    ///
+    /// The signature takes `&mut self` because the call writes into the config
+    /// MLX already allocated. A shared reference would hide that write.
+    ///
+    /// # Errors
+    /// Fails when a name contains an interior null byte, or MLX rejects a value.
+    pub fn add_template_arguments(
+        &mut self,
         template_arguments: &[MlxMetalKernelTemplateArgument],
     ) -> Result<(), MlxCError> {
         const OPERATION: &str = "configure an MLX custom Metal kernel";
@@ -401,7 +454,13 @@ impl MlxMetalKernelConfig {
         Ok(())
     }
 
-    /// Toggles MLX's verbose logging for this kernel launch.
+    /// Asks MLX to print the generated shader when this config is applied.
+    ///
+    /// This is the `verbose` argument of MLX's kernel call. It has no effect
+    /// until the config is passed to
+    /// [`MlxBindingsContext::apply_metal_kernel_with_config`] or
+    /// [`apply_metal_kernel_in_graph_with_config`]. The convenience launch
+    /// methods leave it off, which is MLX's default.
     pub fn set_verbose(&mut self, verbose: bool) -> Result<(), MlxCError> {
         const OPERATION: &str = "configure MLX custom Metal kernel logging";
         // SAFETY: The config handle is live and the flag is a plain value.
@@ -461,6 +520,68 @@ impl Drop for MlxStringVector {
     }
 }
 
+fn launch_configured_metal_kernel(
+    kernel: &MlxMetalKernel,
+    input_arrays: &[&MlxArray],
+    kernel_config: &MlxMetalKernelConfig,
+    gpu_stream: &MlxStream,
+    operation: &'static str,
+) -> Result<Vec<MlxArray>, MlxCError> {
+    if input_arrays.is_empty() {
+        return Err(MlxCError {
+            operation,
+            description: "custom Metal kernel launches require at least one input".to_owned(),
+        });
+    }
+    let input_vector = MlxArrayVector::new(input_arrays)?;
+    let mut output_vector = MlxArrayVector::empty(operation)?;
+    let status = apply_metal_kernel_raw(
+        kernel,
+        &input_vector,
+        kernel_config,
+        gpu_stream,
+        &mut output_vector,
+    );
+    check_status(status, operation)?;
+    collect_kernel_outputs(&output_vector, operation)
+}
+
+fn apply_metal_kernel_raw(
+    kernel: &MlxMetalKernel,
+    input_vector: &MlxArrayVector,
+    kernel_config: &MlxMetalKernelConfig,
+    gpu_stream: &MlxStream,
+    output_vector: &mut MlxArrayVector,
+) -> i32 {
+    // SAFETY: Kernel, input vector, config, stream, and output vector are live.
+    // MLX writes the lazy outputs into the vector before returning.
+    unsafe {
+        raw::mlx_fast_metal_kernel_apply(
+            output_vector.raw_mut(),
+            kernel.raw(),
+            input_vector.raw(),
+            kernel_config.raw(),
+            gpu_stream.raw(),
+        )
+    }
+}
+
+fn collect_kernel_outputs(
+    output_vector: &MlxArrayVector,
+    operation: &'static str,
+) -> Result<Vec<MlxArray>, MlxCError> {
+    let output_count = output_vector.len();
+    let mut outputs = Vec::with_capacity(output_count);
+    for output_index in 0..output_count {
+        outputs.push(output_vector.array_at(output_index, operation)?);
+    }
+    Ok(outputs)
+}
+
+fn graph_launch_failed<T>(_launch_error: T) -> i32 {
+    1
+}
+
 fn validate_kernel_launch(
     input_arrays: &[&MlxArray],
     output_specs: &[MlxMetalKernelOutput],
@@ -475,16 +596,31 @@ fn validate_kernel_launch(
                 .to_owned(),
         });
     }
-    if grid.iter().any(|dimension| *dimension <= 0)
-        || thread_group.iter().any(|dimension| *dimension <= 0)
-    {
-        return Err(MlxCError {
-            operation: OPERATION,
-            description: "custom Metal kernel grid and threadgroup dimensions must be positive"
-                .to_owned(),
-        });
+    reject_non_positive_launch_dimensions(grid, thread_group, OPERATION)
+}
+
+fn reject_non_positive_launch_dimensions(
+    grid: [i32; 3],
+    thread_group: [i32; 3],
+    operation: &'static str,
+) -> Result<(), MlxCError> {
+    if dimensions_are_positive(grid) && dimensions_are_positive(thread_group) {
+        return Ok(());
     }
-    Ok(())
+    Err(MlxCError {
+        operation,
+        description: "custom Metal kernel grid and threadgroup dimensions must be positive"
+            .to_owned(),
+    })
+}
+
+fn dimensions_are_positive(dimensions: [i32; 3]) -> bool {
+    for dimension in dimensions {
+        if dimension <= 0 {
+            return false;
+        }
+    }
+    true
 }
 
 fn c_string(

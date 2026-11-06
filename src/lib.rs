@@ -155,7 +155,7 @@ pub use error::{
 pub use metal::cuda_kernel::{MlxCudaKernel, MlxCudaKernelConfig};
 pub use metal::kernel::{
     MlxMetalKernel, MlxMetalKernelConfig, MlxMetalKernelOutput, MlxMetalKernelTemplateArgument,
-    apply_metal_kernel_in_graph,
+    apply_metal_kernel_in_graph, apply_metal_kernel_in_graph_with_config,
 };
 pub use metal::metallib::set_metallib_path;
 pub use operations::upstream_gap::{
