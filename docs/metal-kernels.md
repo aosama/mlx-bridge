@@ -65,6 +65,34 @@ fn main() -> Result<(), MlxCError> {
 - `apply_metal_kernel_with_output_initialization` fills outputs first, so a shader can leave elements unwritten.
 - `apply_metal_kernel_in_graph` is for use inside graph builders.
 
+## Printing the generated shader
+
+MLX's kernel call takes `verbose=True` to print the shader it generates. That flag lives on the launch config, so build the config, turn logging on, and pass the config to the launch. Inside a graph trace, pass the same config to `apply_metal_kernel_in_graph_with_config`. The convenience methods leave it off.
+
+```rust
+use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, MlxMetalKernel, MlxMetalKernelConfig, MlxMetalKernelOutput, install_non_terminating_error_handler};
+
+const DOUBLING_SHADER: &str = "
+    uint element_position = thread_position_in_grid.x;
+    output_values[element_position] = input_values[element_position] * 2.0;
+";
+
+fn main() -> Result<(), MlxCError> {
+    install_non_terminating_error_handler();
+    let context = MlxBindingsContext::new()?;
+    let kernel = MlxMetalKernel::new("docs_verbose_doubling", &["input_values"], &["output_values"], DOUBLING_SHADER)?;
+    let input = MlxArray::from_f32(&[1.0, 2.0, 3.0], &[3])?;
+    let output_declarations = vec![MlxMetalKernelOutput::new(vec![3], MlxDtype::Float32)];
+    let mut kernel_config = MlxMetalKernelConfig::new(&output_declarations, [3, 1, 1], [1, 1, 1], None)?;
+    kernel_config.set_verbose(true)?;
+
+    let outputs = context.apply_metal_kernel_with_config(&kernel, &[&input], &kernel_config)?;
+
+    assert_eq!(outputs[0].to_vec_f32()?, vec![2.0, 4.0, 6.0]);
+    Ok(())
+}
+```
+
 ## Errors arrive in two stages
 
 The crate rejects a kernel with no inputs or outputs, a null byte in any string, or a grid or thread group with a non-positive dimension straight away. A shader that doesn't compile only fails when the output is evaluated, because compilation happens then.
