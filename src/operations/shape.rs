@@ -25,7 +25,7 @@ impl MlxBindingsContext {
     ///
     /// Qwen3.5-MoE uses this for learned positions, quantized text embeddings, and the
     /// dense global-expert-ID to compact-page-slot lookup used by paged expert execution.
-    /// This call records a lazy MLX operation on the runtime stream; it does not copy
+    /// This call records a lazy MLX operation on this context's stream; it does not copy
     /// indices to Rust or synchronously evaluate the resulting array.
     pub fn take_axis(
         &self,

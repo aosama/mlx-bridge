@@ -7,6 +7,13 @@ A complete, low-level, policy-free Rust bridge to the public [MLX-C](https://git
 
 **Current release: [`0.32.4-alpha.4`](https://crates.io/crates/mlx-c-rust/0.32.4-alpha.4) — verified against MLX `v0.32.4`, binding the complete MLX-C `v0.8.0` surface, the MLX-C release pairing with that MLX, plus this repository's gap shim for the MLX functions that release leaves unwrapped.** The crate version always names the MLX release it is verified against — the number you search for and install — while the bound MLX-C release and the forward adaptations are recorded here and in `COVERAGE_INVENTORY.md`. Published on [crates.io](https://crates.io/crates/mlx-c-rust); documentation builds on [docs.rs](https://docs.rs/mlx-c-rust).
 
+## Documentation
+
+- [Guides and API reference](docs/README.md): task guides whose examples all run in continuous integration, and a reference covering every public item.
+- [Getting started](docs/getting-started.md): from an empty project to your first computation.
+- [Migrating to 0.32.4-alpha.4](docs/migration.md): every breaking change with its replacement.
+- [API documentation on docs.rs](https://docs.rs/mlx-c-rust).
+
 ## The goal
 
 MLX-C exposes the full power of MLX through a stable C Application Programming Interface. This crate binds **every public symbol that API declares** — not a demand-driven subset — so any capability Apple ships is callable from Rust the day the pin moves. Completeness is enforced, not aspirational: the vendored headers are bindgen-translated in full, and the bridged-symbol inventory they produce feeds a coverage contract that fails when a new MLX-C release adds or removes surface.
@@ -27,13 +34,13 @@ Early public extraction, versioned to name the verified MLX release (crate `0.32
 
 ## Building
 
-Nothing to configure: `cargo add mlx-c-rust`, then `cargo build`. With no environment set, the build script's typed native engine downloads the pinned MLX and MLX-C source releases (SHA-256 verified), compiles them once with CMake into a **machine-shared, identity-keyed prefix** (`~/.cache/mlx-c-rust/native/<identity>/`) — statically, so consumer binaries embed the pair and load no MLX dylibs at runtime; Metal kernels are read from the metallib inside the same prefix (the path is baked into the compiled code), so the prefix is self-sufficient and the build tree is disposable. The pair compiles once per machine per pin, and every project using the crate reuses it. Requirements: an Apple Silicon Mac, the Rust toolchain pinned in `rust-toolchain.toml`, Clang for bindgen, and `curl`, `tar`, and `cmake` on PATH (a standard developer machine; `brew install cmake` covers the one that is usually missing).
+Nothing to configure: `cargo add mlx-c-rust`, then `cargo build`. With no environment set, the build script's typed native engine downloads the pinned MLX and MLX-C source releases (SHA-256 verified), compiles them once with CMake into a **machine-shared, identity-keyed prefix** (`~/.cache/mlx-c-rust/native/<identity>/`) — statically, so consumer binaries embed the pair and load no MLX dylibs at runtime, though they do read `mlx.metallib` from the prefix; Metal kernels are read from the metallib inside the same prefix (the path is baked into the compiled code), so the prefix is self-sufficient and the build tree is disposable. The pair compiles once per machine per pin, and every project using the crate reuses it. Requirements: an Apple Silicon Mac, the Rust toolchain pinned in `rust-toolchain.toml`, Clang for bindgen, and `curl`, `tar`, and `cmake` on PATH (a standard developer machine; `brew install cmake` covers the one that is usually missing).
 
 Working in this repository, the same engine is available as typed tooling: `cargo xtask build-native` (add `--force` to recompile) builds the pair up front with live progress, so later builds reuse it in milliseconds.
 
 To link against an MLX-C you provide yourself instead, in first-match order (each of these takes precedence over the automatic build, which runs only when none resolves):
 
-1. `MLX_C_RUST_MLX_C_PREFIX` — a prefix whose `lib/` holds the libraries (an embedded rpath means no run-time environment variables).
+1. `MLX_C_RUST_MLX_C_PREFIX` — a prefix whose `lib/` holds the libraries. If they are dylibs, your own build must add an rpath for them, because a library crate cannot add one to your binary.
 2. The standard Homebrew prefixes, after `brew install mlx-c`.
 3. `pkg-config mlx-c`.
 

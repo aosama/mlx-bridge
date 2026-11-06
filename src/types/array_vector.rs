@@ -6,6 +6,8 @@ use crate::{MlxArray, MlxCError, error::check_status};
 pub struct MlxArrayVector(raw::mlx_vector_array);
 
 impl MlxArrayVector {
+    /// Creates a vector holding no arrays. `operation` names the attempt in the
+    /// error if MLX cannot allocate the handle.
     pub fn empty(operation: &'static str) -> Result<Self, MlxCError> {
         // SAFETY: The runtime error handler is installed before model loading,
         // and the official API returns one owned vector handle.
@@ -19,6 +21,8 @@ impl MlxArrayVector {
         Ok(Self(raw_vector))
     }
 
+    /// Creates a vector holding copies of the given array handles, in order.
+    /// The arrays' data is shared rather than copied.
     pub fn new(arrays: &[&MlxArray]) -> Result<Self, MlxCError> {
         let raw_arrays = arrays.iter().map(|array| array.raw()).collect::<Vec<_>>();
         // SAFETY: `raw_arrays` remains valid for this copying constructor, and
@@ -34,10 +38,14 @@ impl MlxArrayVector {
         Ok(Self(raw_vector))
     }
 
+    /// The underlying MLX-C handle, still owned by this value, for calling
+    /// `raw` functions directly.
     pub const fn raw(&self) -> raw::mlx_vector_array {
         self.0
     }
 
+    /// A pointer to the underlying MLX-C handle, for `raw` functions that write
+    /// their result through an output parameter.
     pub fn raw_mut(&mut self) -> *mut raw::mlx_vector_array {
         &mut self.0
     }
@@ -55,6 +63,7 @@ impl MlxArrayVector {
         Ok(Self(raw_vector))
     }
 
+    /// The number of arrays the vector holds.
     pub fn len(&self) -> usize {
         // SAFETY: `self` owns a live MLX vector handle.
         unsafe { raw::mlx_vector_array_size(self.0) }
@@ -65,6 +74,11 @@ impl MlxArrayVector {
         self.len() == 0
     }
 
+    /// A handle to the array at `output_index`, which outlives this vector.
+    /// `operation` names the attempt in the error.
+    ///
+    /// # Errors
+    /// Fails when the index is past the end.
     pub fn array_at(
         &self,
         output_index: usize,

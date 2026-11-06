@@ -1,6 +1,6 @@
 //! Generated MLX-C wrappers for the random sampling family.
 //!
-//! Each wrapper maps one MLX-C operation onto the runtime GPU stream
+//! Each wrapper maps one MLX-C operation onto this context's stream
 //! with the crate's owned-handle and captured-error semantics. The
 //! coverage contract keeps this family in lockstep with the pinned
 //! upstream headers.
@@ -9,7 +9,7 @@ use crate::bindings::support::optional_i32_slice;
 use crate::raw;
 use crate::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype};
 impl MlxBindingsContext {
-    /// Applies MLX-C `mlx_random_bernoulli` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_bernoulli` on this context's stream.
     pub fn random_bernoulli(
         &self,
         p: &MlxArray,
@@ -31,7 +31,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_bits` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_bits` on this context's stream.
     pub fn random_bits(
         &self,
         shape: &[i32],
@@ -53,7 +53,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_categorical_num_samples` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_categorical_num_samples` on this context's stream.
     pub fn random_categorical_num_samples(
         &self,
         logits_: &MlxArray,
@@ -79,7 +79,7 @@ impl MlxBindingsContext {
         )
     }
 
-    /// Applies MLX-C `mlx_random_categorical_shape` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_categorical_shape` on this context's stream.
     pub fn random_categorical_shape(
         &self,
         logits: &MlxArray,
@@ -103,7 +103,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_gumbel` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_gumbel` on this context's stream.
     pub fn random_gumbel(
         &self,
         shape: &[i32],
@@ -125,7 +125,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_laplace` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_laplace` on this context's stream.
     pub fn random_laplace(
         &self,
         shape: &[i32],
@@ -151,7 +151,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_multivariate_normal` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_multivariate_normal` on this context's stream.
     pub fn random_multivariate_normal(
         &self,
         mean: &MlxArray,
@@ -177,7 +177,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_normal_broadcast` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_normal_broadcast` on this context's stream.
     pub fn random_normal_broadcast(
         &self,
         shape: &[i32],
@@ -203,7 +203,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_permutation` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_permutation` on this context's stream.
     pub fn random_permutation(
         &self,
         x: &MlxArray,
@@ -224,7 +224,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_permutation_arange` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_permutation_arange` on this context's stream.
     pub fn random_permutation_arange(
         &self,
         x: i32,
@@ -243,7 +243,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_randint` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_randint` on this context's stream.
     pub fn random_randint(
         &self,
         low: &MlxArray,
@@ -269,7 +269,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_split_num` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_split_num` on this context's stream.
     pub fn random_split_num(&self, key: &MlxArray, num: i32) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX random_split_num", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -277,7 +277,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_truncated_normal` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_truncated_normal` on this context's stream.
     pub fn random_truncated_normal(
         &self,
         lower: &MlxArray,
@@ -303,7 +303,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_random_uniform` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_random_uniform` on this context's stream.
     pub fn random_uniform(
         &self,
         low: &MlxArray,

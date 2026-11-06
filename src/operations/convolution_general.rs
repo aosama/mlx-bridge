@@ -1,6 +1,6 @@
 //! Generated MLX-C wrappers for the general convolution family.
 //!
-//! Each wrapper maps one MLX-C operation onto the runtime GPU stream
+//! Each wrapper maps one MLX-C operation onto this context's stream
 //! with the crate's owned-handle and captured-error semantics. The
 //! coverage contract keeps this family in lockstep with the pinned
 //! upstream headers.
@@ -9,7 +9,7 @@ use crate::bindings::support::optional_i32_slice;
 use crate::raw;
 use crate::{MlxArray, MlxBindingsContext, MlxCError};
 impl MlxBindingsContext {
-    /// Applies MLX-C `mlx_conv_general` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_conv_general` on this context's stream.
     /// The wide signature mirrors the MLX-C declaration one-to-one; grouping
     /// the parameters would hide which C argument each one feeds.
     #[allow(clippy::too_many_arguments)]
@@ -50,7 +50,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_conv_transpose1d` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_conv_transpose1d` on this context's stream.
     /// The wide signature mirrors the MLX-C declaration one-to-one; grouping
     /// the parameters would hide which C argument each one feeds.
     #[allow(clippy::too_many_arguments)]
@@ -82,7 +82,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_conv_transpose2d` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_conv_transpose2d` on this context's stream.
     /// The wide signature mirrors the MLX-C declaration one-to-one; grouping
     /// the parameters would hide which C argument each one feeds.
     #[allow(clippy::too_many_arguments)]
@@ -122,7 +122,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_conv_transpose3d` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_conv_transpose3d` on this context's stream.
     /// The wide signature mirrors the MLX-C declaration one-to-one; grouping
     /// the parameters would hide which C argument each one feeds.
     #[allow(clippy::too_many_arguments)]

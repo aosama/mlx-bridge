@@ -61,6 +61,69 @@
 //! resolves, library compilation and documentation builds still succeed and
 //! only test binaries fail to link.
 
+// Rustdoc only runs examples attached to items, so each guide attaches to one
+// here, which is what makes every example in docs/ compile and run under
+// `cargo test --doc`. Nothing here exists outside that run.
+#[cfg(doctest)]
+mod documentation_examples {
+    #[doc = include_str!("../docs/arrays.md")]
+    pub struct Arrays;
+
+    #[doc = include_str!("../docs/closures-and-transforms.md")]
+    pub struct ClosuresAndTransforms;
+
+    #[doc = include_str!("../docs/completeness.md")]
+    pub struct Completeness;
+
+    #[doc = include_str!("../docs/distributed.md")]
+    pub struct Distributed;
+
+    #[doc = include_str!("../docs/errors.md")]
+    pub struct Errors;
+
+    #[doc = include_str!("../docs/evaluation-and-streams.md")]
+    pub struct EvaluationAndStreams;
+
+    #[doc = include_str!("../docs/exporting-functions.md")]
+    pub struct ExportingFunctions;
+
+    #[doc = include_str!("../docs/getting-started.md")]
+    pub struct GettingStarted;
+
+    #[doc = include_str!("../docs/linear-algebra.md")]
+    pub struct LinearAlgebra;
+
+    #[doc = include_str!("../docs/memory-and-runtime.md")]
+    pub struct MemoryAndRuntime;
+
+    #[doc = include_str!("../docs/metal-kernels.md")]
+    pub struct MetalKernels;
+
+    #[doc = include_str!("../docs/migration.md")]
+    pub struct Migration;
+
+    #[doc = include_str!("../docs/model-primitives.md")]
+    pub struct ModelPrimitives;
+
+    #[doc = include_str!("../docs/native-build.md")]
+    pub struct NativeBuild;
+
+    #[doc = include_str!("../docs/operations.md")]
+    pub struct Operations;
+
+    #[doc = include_str!("../docs/random.md")]
+    pub struct Random;
+
+    #[doc = include_str!("../docs/serialization.md")]
+    pub struct Serialization;
+
+    #[doc = include_str!("../docs/signal-processing.md")]
+    pub struct SignalProcessing;
+
+    #[doc = include_str!("../docs/troubleshooting.md")]
+    pub struct Troubleshooting;
+}
+
 mod bindings;
 mod compile;
 mod metal;

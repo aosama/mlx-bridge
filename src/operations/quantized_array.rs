@@ -1,6 +1,6 @@
 //! Generated MLX-C wrappers for the quantized arrays family.
 //!
-//! Each wrapper maps one MLX-C operation onto the runtime GPU stream
+//! Each wrapper maps one MLX-C operation onto this context's stream
 //! with the crate's owned-handle and captured-error semantics. The
 //! coverage contract keeps this family in lockstep with the pinned
 //! upstream headers.
@@ -9,7 +9,7 @@ use crate::bindings::support::{c_string_argument, raw_optional_int};
 use crate::raw;
 use crate::{MlxArray, MlxBindingsContext, MlxCError};
 impl MlxBindingsContext {
-    /// Applies MLX-C `mlx_block_masked_mm` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_block_masked_mm` on this context's stream.
     pub fn block_masked_mm(
         &self,
         a: &MlxArray,
@@ -36,7 +36,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_gather_qqmm` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_gather_qqmm` on this context's stream.
     /// The wide signature mirrors the MLX-C declaration one-to-one; grouping
     /// the parameters would hide which C argument each one feeds.
     #[allow(clippy::too_many_arguments)]
@@ -77,7 +77,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_qqmm` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_qqmm` on this context's stream.
     /// The wide signature mirrors the MLX-C declaration one-to-one; grouping
     /// the parameters would hide which C argument each one feeds.
     #[allow(clippy::too_many_arguments)]

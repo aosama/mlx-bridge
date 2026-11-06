@@ -6,11 +6,13 @@
 #[path = "../../native_build.rs"]
 mod native_build;
 
+mod api_reference;
 mod audit_upstream_surface;
 mod cache_prune;
 mod hooks;
 mod inventory_records;
 mod repository;
+mod rust_item_parsing;
 mod safe_wrapper_coverage;
 mod source_size;
 mod surface_parsing;
@@ -25,6 +27,7 @@ fn main() -> ExitCode {
         Some("audit-upstream-surface") => {
             audit_upstream_surface::run(arguments.get(1..).unwrap_or(&[]))
         }
+        Some("generate-api-reference") => api_reference::run(arguments.get(1..).unwrap_or(&[])),
         Some("source-size") => source_size::run(arguments.get(1..).unwrap_or(&[])),
         Some("verify") => verify::run(),
         Some("prune-caches") => cache_prune::run(arguments.get(1..).unwrap_or(&[])),
@@ -44,10 +47,11 @@ fn main() -> ExitCode {
                 function record matches the vendored headers (--mlx-source points at a \
                 checkout of the pinned MLX tag for the upstream leg; the inventory leg \
                 always runs).\n  \
+                generate-api-reference [--check]  Regenerate docs/reference from the doc comments in src (--check only audits the pages and that every guide's examples run).\n  \
                 source-size [--staged] Enforce the per-file line ceiling on owned code \
                 files (--staged inspects only the index; default scans the repository).\n  \
                  verify                 Run the continuous-integration lint lane locally: \
-                 size ceiling, formatting, clippy, documentation.\n  \
+                 size ceiling, coverage records, API reference, formatting, clippy, documentation.\n  \
                  prune-caches [--dry-run] [--repo owner/name]\n \
                  \x20                       Delete surplus GitHub Actions cache generations \
                  so the repository stays under its cache budget.\n  \

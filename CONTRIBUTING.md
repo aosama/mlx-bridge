@@ -12,7 +12,7 @@ guide is the shortest path from idea to merged change.
 
 2. **Activate the local gates** (once per clone):
 
-   ```
+   ```bash
    cargo xtask install-hooks
    ```
 
@@ -25,14 +25,17 @@ guide is the shortest path from idea to merged change.
 
 3. **Verify locally** what the runners will verify:
 
-   ```
+   ```bash
    cargo xtask verify
    cargo nextest run --workspace
+   cargo test --workspace --doc
    ```
 
-   The first checks the size ceiling, formatting, clippy, and
-   documentation for the shipped `aarch64-apple-darwin` target; the
-   second runs the test suite, one process per test, against the machine-shared native prefix
+   The first checks the size ceiling, coverage records, API reference,
+   formatting, clippy, and documentation for the shipped
+   `aarch64-apple-darwin` target; the
+   second runs the test suite, one process per test, against the machine-shared
+   native prefix, and the third runs the examples in `docs/`, which nextest skips
    (built automatically on first use, or through
    `cargo xtask build-native`).
 
@@ -48,13 +51,11 @@ MLX's own tests at the pinned release and are not restated here.
 
 ## Nobody should need a workaround
 
-A programmer holding this crate should never have to reach into `raw` or work
-around a missing capability. `cargo xtask verify` enforces this: every vendored
-MLX-C function needs a safe wrapper or a written reason in
-`xtask/src/safe_wrapper_coverage.rs`, and every public MLX function needs an
-MLX-C wrapper, a gap-shim entry, or a written reason in
-`xtask/src/audit_upstream_surface.rs`. Those registries are for functions nobody
-needs directly, not a backlog.
+A programmer holding this crate should never have to reach into `raw` or work around a missing capability. `cargo xtask verify` and continuous integration fail when a vendored MLX-C function has neither a safe wrapper nor a written reason in `xtask/src/safe_wrapper_coverage.rs`. When the MLX pin moves, run `cargo xtask audit-upstream-surface --mlx-source <mlx checkout>` as well, which needs every public MLX function to have an MLX-C wrapper, a gap-shim entry, or a written reason in `xtask/src/audit_upstream_surface.rs`. Those registries are for functions nobody needs directly, not a backlog.
+
+## Documentation
+
+`docs/` holds task guides, and every Rust example in them runs under `cargo test --doc`, so an example that stops working fails the build. `docs/reference/` is generated: edit the doc comments in `src/`, then run `cargo xtask generate-api-reference`. `cargo xtask verify` fails when a public item has no doc comment or a generated page is stale. A change that adds or alters public behavior updates the relevant guide.
 
 ## Writing the pull request body
 

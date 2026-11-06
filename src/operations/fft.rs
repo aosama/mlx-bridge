@@ -1,6 +1,6 @@
 //! Generated MLX-C wrappers for the FFT family.
 //!
-//! Each wrapper maps one MLX-C operation onto the runtime GPU stream
+//! Each wrapper maps one MLX-C operation onto this context's stream
 //! with the crate's owned-handle and captured-error semantics. The
 //! coverage contract keeps this family in lockstep with the pinned
 //! upstream headers.
@@ -9,7 +9,7 @@ use crate::bindings::support::optional_i32_slice;
 use crate::raw;
 use crate::{MlxArray, MlxBindingsContext, MlxCError};
 impl MlxBindingsContext {
-    /// Applies MLX-C `mlx_fft_fft` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_fft` on this context's stream.
     pub fn fft_fft(
         &self,
         a: &MlxArray,
@@ -23,7 +23,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_fft2` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_fft2` on this context's stream.
     pub fn fft_fft2(
         &self,
         a: &MlxArray,
@@ -48,7 +48,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_fftfreq` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_fftfreq` on this context's stream.
     pub fn fft_fftfreq(&self, n: i32, d: f64) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX fft_fftfreq", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -56,7 +56,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_fftn` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_fftn` on this context's stream.
     pub fn fft_fftn(
         &self,
         a: &MlxArray,
@@ -81,7 +81,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_fftshift` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_fftshift` on this context's stream.
     pub fn fft_fftshift(&self, a: &MlxArray, axes: &[i32]) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX fft_fftshift", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -97,7 +97,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_ifft` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_ifft` on this context's stream.
     pub fn fft_ifft(
         &self,
         a: &MlxArray,
@@ -111,7 +111,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_ifft2` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_ifft2` on this context's stream.
     pub fn fft_ifft2(
         &self,
         a: &MlxArray,
@@ -136,7 +136,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_ifftn` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_ifftn` on this context's stream.
     pub fn fft_ifftn(
         &self,
         a: &MlxArray,
@@ -161,7 +161,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_ifftshift` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_ifftshift` on this context's stream.
     pub fn fft_ifftshift(&self, a: &MlxArray, axes: &[i32]) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX fft_ifftshift", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -177,7 +177,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_irfft` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_irfft` on this context's stream.
     pub fn fft_irfft(
         &self,
         a: &MlxArray,
@@ -191,7 +191,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_irfft2` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_irfft2` on this context's stream.
     pub fn fft_irfft2(
         &self,
         a: &MlxArray,
@@ -216,7 +216,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_irfftn` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_irfftn` on this context's stream.
     pub fn fft_irfftn(
         &self,
         a: &MlxArray,
@@ -241,7 +241,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_rfft` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_rfft` on this context's stream.
     pub fn fft_rfft(
         &self,
         a: &MlxArray,
@@ -255,7 +255,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_rfft2` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_rfft2` on this context's stream.
     pub fn fft_rfft2(
         &self,
         a: &MlxArray,
@@ -280,7 +280,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_rfftfreq` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_rfftfreq` on this context's stream.
     pub fn fft_rfftfreq(&self, n: i32, d: f64) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX fft_rfftfreq", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -288,7 +288,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_fft_rfftn` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_fft_rfftn` on this context's stream.
     pub fn fft_rfftn(
         &self,
         a: &MlxArray,

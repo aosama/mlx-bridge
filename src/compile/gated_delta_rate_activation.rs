@@ -7,10 +7,8 @@
 //! per-element arithmetic is the same primitive sequence the two separate
 //! launches ran — sigmoid untouched, and the decay chain identical to
 //! [`crate::compile::elementwise_graphs`]'s single-output graph — so the
-//! replay matches the composed path bit for bit; the fusion parity contract
-//! in the prism family's graphics-processor tests replays both routes over
-//! adversarial inputs to prove it (issue #1366: decode is bound by launches
-//! per token, and this removes one launch from every gated-delta layer).
+//! replay matches the composed path bit for bit. Decode speed is bound by
+//! launches per token, and this removes one launch from every gated-delta layer.
 
 use std::os::raw::c_int;
 

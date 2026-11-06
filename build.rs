@@ -8,12 +8,11 @@
 //!
 //! Linking a binary that uses this crate needs an MLX-C library. Discovery
 //! order, first match wins: the `MLX_C_RUST_MLX_C_PREFIX` environment
-//! variable, the machine-shared identity-keyed prefix that `cargo xtask
-//! build-native` (or a previous build of any consumer) compiled, the
-//! standard Homebrew prefixes, `pkg-config mlx-c`, and — the zero-
-//! configuration default — the typed native-build engine in `native_build.rs`
-//! (this crate's own code, no shell), which downloads the checksum-verified
-//! pinned sources and compiles them once into that same shared prefix. The
+//! variable, the standard Homebrew prefixes, `pkg-config mlx-c`, and — the
+//! zero-configuration default — the typed native-build engine in
+//! `native_build.rs` (this crate's own code, no shell), which reuses the
+//! machine-shared identity-keyed prefix or else downloads the checksum-verified
+//! pinned sources and compiles them once into it. The
 //! pair therefore compiles once per machine per pin, and every later
 //! consumer reuses it. Non-mac hosts never enter the ladder at all: the
 //! link line it emits is Apple-framework-shaped end to end, so those hosts

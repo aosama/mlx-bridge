@@ -1,6 +1,6 @@
 //! Generated MLX-C wrappers for the indexing family.
 //!
-//! Each wrapper maps one MLX-C operation onto the runtime GPU stream
+//! Each wrapper maps one MLX-C operation onto this context's stream
 //! with the crate's owned-handle and captured-error semantics. The
 //! coverage contract keeps this family in lockstep with the pinned
 //! upstream headers.
@@ -9,7 +9,7 @@ use crate::bindings::support::{c_string_argument, optional_i32_slice};
 use crate::raw;
 use crate::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError};
 impl MlxBindingsContext {
-    /// Applies MLX-C `mlx_einsum` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_einsum` on this context's stream.
     pub fn einsum(
         &self,
         subscripts: &str,
@@ -22,7 +22,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_gather` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_gather` on this context's stream.
     pub fn gather(
         &self,
         a: &MlxArray,
@@ -47,7 +47,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_gather_single` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_gather_single` on this context's stream.
     pub fn gather_single(
         &self,
         a: &MlxArray,
@@ -71,7 +71,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_masked_scatter` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_masked_scatter` on this context's stream.
     pub fn masked_scatter(
         &self,
         a: &MlxArray,
@@ -84,7 +84,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_scatter` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_scatter` on this context's stream.
     pub fn scatter(
         &self,
         a: &MlxArray,
@@ -108,7 +108,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_scatter_add` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_scatter_add` on this context's stream.
     pub fn scatter_add_along_axes(
         &self,
         a: &MlxArray,
@@ -132,7 +132,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_scatter_add_axis` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_scatter_add_axis` on this context's stream.
     pub fn scatter_add_axis(
         &self,
         a: &MlxArray,
@@ -155,7 +155,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_scatter_max` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_scatter_max` on this context's stream.
     pub fn scatter_max(
         &self,
         a: &MlxArray,
@@ -179,7 +179,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_scatter_max_single` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_scatter_max_single` on this context's stream.
     pub fn scatter_max_single(
         &self,
         a: &MlxArray,
@@ -202,7 +202,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_scatter_min` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_scatter_min` on this context's stream.
     pub fn scatter_min(
         &self,
         a: &MlxArray,
@@ -226,7 +226,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_scatter_min_single` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_scatter_min_single` on this context's stream.
     pub fn scatter_min_single(
         &self,
         a: &MlxArray,
@@ -249,7 +249,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_scatter_prod` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_scatter_prod` on this context's stream.
     pub fn scatter_prod(
         &self,
         a: &MlxArray,
@@ -273,7 +273,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_scatter_prod_single` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_scatter_prod_single` on this context's stream.
     pub fn scatter_prod_single(
         &self,
         a: &MlxArray,
@@ -296,7 +296,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_scatter_single` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_scatter_single` on this context's stream.
     pub fn scatter_single(
         &self,
         a: &MlxArray,
@@ -312,7 +312,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_searchsorted` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_searchsorted` on this context's stream.
     pub fn searchsorted(
         &self,
         sorted_sequence: &MlxArray,
@@ -334,7 +334,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_slice_dynamic` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_slice_dynamic` on this context's stream.
     pub fn slice_dynamic(
         &self,
         a: &MlxArray,
@@ -359,7 +359,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_slice_update_add` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_slice_update_add` on this context's stream.
     pub fn slice_update_add(
         &self,
         src: &MlxArray,
@@ -387,7 +387,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_slice_update_dynamic` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_slice_update_dynamic` on this context's stream.
     pub fn slice_update_dynamic(
         &self,
         src: &MlxArray,
@@ -411,7 +411,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_slice_update_max` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_slice_update_max` on this context's stream.
     pub fn slice_update_max(
         &self,
         src: &MlxArray,
@@ -439,7 +439,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_slice_update_min` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_slice_update_min` on this context's stream.
     pub fn slice_update_min(
         &self,
         src: &MlxArray,
@@ -467,7 +467,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_slice_update_prod` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_slice_update_prod` on this context's stream.
     pub fn slice_update_prod(
         &self,
         src: &MlxArray,
@@ -495,7 +495,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_take` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_take` on this context's stream.
     pub fn take(&self, a: &MlxArray, indices: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX take", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -503,7 +503,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_tensordot` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_tensordot` on this context's stream.
     pub fn tensordot(
         &self,
         a: &MlxArray,
@@ -528,7 +528,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_tensordot_axis` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_tensordot_axis` on this context's stream.
     pub fn tensordot_axis(
         &self,
         a: &MlxArray,
@@ -541,7 +541,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_vecdot` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_vecdot` on this context's stream.
     pub fn vecdot(&self, a: &MlxArray, b: &MlxArray, axis: i32) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX vecdot", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.

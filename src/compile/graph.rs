@@ -146,10 +146,6 @@ pub unsafe fn set_graph_output(
     unsafe { raw::mlx_vector_array_set_value(output_vector, graph_output.raw()) }
 }
 
-/// Appends one lazy output to a multi-output graph's result vector.
-///
-/// MLX appends through the vector's context pointer, so pass-by-value still
-/// mutates the caller's vector; the pointer is dereferenced once for the copy.
 /// Publishes a multi-output graph's complete ordered result vector at once.
 ///
 /// Compiled-graph tracing hands builders an output vector whose context may

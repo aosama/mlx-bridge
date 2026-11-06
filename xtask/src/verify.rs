@@ -7,6 +7,7 @@
 
 use std::process::{Command, ExitCode};
 
+use super::api_reference;
 use super::repository::repository_root;
 use super::source_size;
 
@@ -97,6 +98,21 @@ pub fn run() -> ExitCode {
     println!(
         "[verify] lane=inventory-records status=pass elapsed_seconds={:.1}",
         started_at.elapsed().as_secs_f64()
+    );
+
+    // A public item without a doc comment, a generated page that no longer matches
+    // the code, or a guide whose examples never run fails here rather than reaching
+    // readers.
+    let reference_started_at = std::time::Instant::now();
+    if !api_reference::audit_documentation(&repository_root()) {
+        eprintln!(
+            "[verify] lane=api-reference status=fail hint=document the items above, then run cargo xtask generate-api-reference"
+        );
+        return ExitCode::FAILURE;
+    }
+    println!(
+        "[verify] lane=api-reference status=pass elapsed_seconds={:.1}",
+        reference_started_at.elapsed().as_secs_f64()
     );
 
     for verification_lane in &VERIFICATION_LANES {

@@ -27,7 +27,7 @@ pub struct MlxEinsumPath {
 
 impl MlxBindingsContext {
     /// Applies the gap shim `mlxrs_minmax_axes` (MLX core `minmax`, the
-    /// axes overload) on the runtime GPU stream, producing the minima and
+    /// axes overload) on this context's stream, producing the minima and
     /// the maxima.
     pub fn minmax_axes(
         &self,
@@ -56,7 +56,7 @@ impl MlxBindingsContext {
     }
 
     /// Applies the gap shim `mlxrs_minmax_axis` (MLX core `minmax`, the
-    /// axis overload) on the runtime GPU stream, producing the minima and
+    /// axis overload) on this context's stream, producing the minima and
     /// the maxima.
     pub fn minmax_axis(
         &self,

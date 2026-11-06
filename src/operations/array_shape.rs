@@ -1,6 +1,6 @@
 //! Generated MLX-C wrappers for the array shape family.
 //!
-//! Each wrapper maps one MLX-C operation onto the runtime GPU stream
+//! Each wrapper maps one MLX-C operation onto this context's stream
 //! with the crate's owned-handle and captured-error semantics. The
 //! coverage contract keeps this family in lockstep with the pinned
 //! upstream headers.
@@ -9,7 +9,7 @@ use crate::bindings::support::{c_string_argument, optional_i32_slice};
 use crate::raw;
 use crate::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxDtype};
 impl MlxBindingsContext {
-    /// Applies MLX-C `mlx_atleast_1d` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_atleast_1d` on this context's stream.
     pub fn atleast_1d(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX atleast_1d", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -17,7 +17,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_atleast_2d` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_atleast_2d` on this context's stream.
     pub fn atleast_2d(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX atleast_2d", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -25,7 +25,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_atleast_3d` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_atleast_3d` on this context's stream.
     pub fn atleast_3d(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX atleast_3d", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -33,7 +33,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Builds the MLX-C `mlx_broadcast_arrays` outputs on the runtime GPU stream.
+    /// Builds the MLX-C `mlx_broadcast_arrays` outputs on this context's stream.
     pub fn broadcast_arrays(&self, inputs: &MlxArrayVector) -> Result<MlxArrayVector, MlxCError> {
         self.output_vector_array("apply MLX broadcast_arrays", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -41,7 +41,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_copy` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_copy` on this context's stream.
     pub fn copy(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX copy", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -64,7 +64,7 @@ impl MlxBindingsContext {
         Ok(output)
     }
 
-    /// Applies MLX-C `mlx_diag` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_diag` on this context's stream.
     pub fn diag(&self, a: &MlxArray, k: i32) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX diag", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -72,7 +72,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_diagonal` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_diagonal` on this context's stream.
     pub fn diagonal(
         &self,
         a: &MlxArray,
@@ -86,7 +86,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_expand_dims_axes` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_expand_dims_axes` on this context's stream.
     pub fn expand_dims_axes(&self, a: &MlxArray, axes: &[i32]) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX expand_dims_axes", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -102,7 +102,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_flatten` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_flatten` on this context's stream.
     pub fn flatten(
         &self,
         a: &MlxArray,
@@ -115,7 +115,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_flip` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_flip` on this context's stream.
     pub fn flip(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX flip", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -123,7 +123,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_flip_axes` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_flip_axes` on this context's stream.
     pub fn flip_axes(&self, a: &MlxArray, axes: &[i32]) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX flip_axes", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -139,7 +139,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_flip_axis` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_flip_axis` on this context's stream.
     pub fn flip_axis(&self, a: &MlxArray, axis: i32) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX flip_axis", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -147,7 +147,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_identity` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_identity` on this context's stream.
     pub fn identity(&self, n: i32, dtype: MlxDtype) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX identity", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -155,7 +155,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Builds the MLX-C `mlx_meshgrid` outputs on the runtime GPU stream.
+    /// Builds the MLX-C `mlx_meshgrid` outputs on this context's stream.
     pub fn meshgrid(
         &self,
         arrays: &MlxArrayVector,
@@ -177,7 +177,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_moveaxis` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_moveaxis` on this context's stream.
     pub fn moveaxis(
         &self,
         a: &MlxArray,
@@ -190,7 +190,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_repeat` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_repeat` on this context's stream.
     pub fn repeat(&self, arr: &MlxArray, repeats: i32) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX repeat", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -198,7 +198,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_roll` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_roll` on this context's stream.
     pub fn roll(&self, a: &MlxArray, shift: &[i32]) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX roll", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -214,7 +214,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_roll_axes` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_roll_axes` on this context's stream.
     pub fn roll_axes(
         &self,
         a: &MlxArray,
@@ -237,7 +237,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_roll_axis` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_roll_axis` on this context's stream.
     pub fn roll_axis(&self, a: &MlxArray, shift: &[i32], axis: i32) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX roll_axis", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -254,7 +254,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Builds the MLX-C `mlx_split` outputs on the runtime GPU stream.
+    /// Builds the MLX-C `mlx_split` outputs on this context's stream.
     pub fn split(
         &self,
         a: &MlxArray,
@@ -267,7 +267,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Builds the MLX-C `mlx_split_sections` outputs on the runtime GPU stream.
+    /// Builds the MLX-C `mlx_split_sections` outputs on this context's stream.
     pub fn split_sections(
         &self,
         a: &MlxArray,
@@ -289,7 +289,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_squeeze` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_squeeze` on this context's stream.
     pub fn squeeze(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX squeeze", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -297,7 +297,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_squeeze_axes` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_squeeze_axes` on this context's stream.
     pub fn squeeze_axes(&self, a: &MlxArray, axes: &[i32]) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX squeeze_axes", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -313,7 +313,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_swapaxes` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_swapaxes` on this context's stream.
     pub fn swapaxes(&self, a: &MlxArray, axis1: i32, axis2: i32) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX swapaxes", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -321,7 +321,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_tile` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_tile` on this context's stream.
     pub fn tile(&self, arr: &MlxArray, reps: &[i32]) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX tile", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -337,7 +337,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_trace` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_trace` on this context's stream.
     pub fn trace(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX trace", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -345,7 +345,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_trace_axes` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_trace_axes` on this context's stream.
     pub fn trace_axes(
         &self,
         a: &MlxArray,
@@ -370,7 +370,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_transpose` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_transpose` on this context's stream.
     pub fn transpose(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX transpose", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -378,7 +378,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_unflatten` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_unflatten` on this context's stream.
     pub fn unflatten(&self, a: &MlxArray, axis: i32, shape: &[i32]) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX unflatten", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -395,7 +395,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Builds the MLX-C `mlx_unstack` outputs on the runtime GPU stream.
+    /// Builds the MLX-C `mlx_unstack` outputs on this context's stream.
     pub fn unstack(&self, a: &MlxArray) -> Result<MlxArrayVector, MlxCError> {
         self.output_vector_array("apply MLX unstack", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -403,7 +403,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Builds the MLX-C `mlx_unstack_axis` outputs on the runtime GPU stream.
+    /// Builds the MLX-C `mlx_unstack_axis` outputs on this context's stream.
     pub fn unstack_axis(&self, a: &MlxArray, axis: i32) -> Result<MlxArrayVector, MlxCError> {
         self.output_vector_array("apply MLX unstack_axis", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -411,7 +411,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_view` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_view` on this context's stream.
     pub fn view(&self, a: &MlxArray, dtype: MlxDtype) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX view", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
