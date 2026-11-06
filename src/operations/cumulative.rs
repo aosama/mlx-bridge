@@ -1,6 +1,6 @@
 //! Generated MLX-C wrappers for the cumulative scan family.
 //!
-//! Each wrapper maps one MLX-C operation onto the runtime GPU stream
+//! Each wrapper maps one MLX-C operation onto this context's stream
 //! with the crate's owned-handle and captured-error semantics. The
 //! coverage contract keeps this family in lockstep with the pinned
 //! upstream headers.
@@ -9,7 +9,7 @@ use crate::bindings::support::raw_optional_dtype;
 use crate::raw;
 use crate::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype};
 impl MlxBindingsContext {
-    /// Applies MLX-C `mlx_cummax` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_cummax` on this context's stream.
     pub fn cummax(
         &self,
         a: &MlxArray,
@@ -22,7 +22,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_cummax_axis` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_cummax_axis` on this context's stream.
     pub fn cummax_axis(
         &self,
         a: &MlxArray,
@@ -36,7 +36,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_cummin` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_cummin` on this context's stream.
     pub fn cummin(
         &self,
         a: &MlxArray,
@@ -49,7 +49,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_cummin_axis` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_cummin_axis` on this context's stream.
     pub fn cummin_axis(
         &self,
         a: &MlxArray,
@@ -63,7 +63,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_cumprod` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_cumprod` on this context's stream.
     pub fn cumprod(
         &self,
         a: &MlxArray,
@@ -86,7 +86,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_cumprod_axis` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_cumprod_axis` on this context's stream.
     pub fn cumprod_axis(
         &self,
         a: &MlxArray,
@@ -111,7 +111,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_cumsum` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_cumsum` on this context's stream.
     pub fn cumsum_across_all_axes(
         &self,
         a: &MlxArray,
@@ -134,7 +134,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_logcumsumexp` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_logcumsumexp` on this context's stream.
     pub fn logcumsumexp(
         &self,
         a: &MlxArray,
@@ -147,7 +147,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_logcumsumexp_axis` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_logcumsumexp_axis` on this context's stream.
     pub fn logcumsumexp_axis(
         &self,
         a: &MlxArray,

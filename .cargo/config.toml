@@ -55,7 +55,8 @@ warnings = "deny"
 # builds the pair STATICALLY: consumer binaries embed it and run with no
 # runtime library search (a library crate cannot inject an rpath into
 # consumers' binaries, so dylibs would be unloadable there); prefixes you
-# provide yourself may carry dylibs — an rpath rides along for those.
+# provide yourself may carry dylibs, and an rpath reaches only this crate's own
+# tests and examples, so consumers of those must add their own.
 # Tests run through cargo-nextest, one process per test, because MLX's default
 # stream, default device, and the installed error handler are process-global
 # state; the `native-test` alias below carries that for you, and plain `cargo
@@ -76,7 +77,9 @@ warnings = "deny"
 # layer where coverage can be lost upstream of the mechanical bindgen
 # translation), that COVERAGE_INVENTORY.md's function record matches the
 # vendored headers, and that every vendored function has a safe wrapper or a
-# written reason (xtask/src/safe_wrapper_coverage.rs); `cargo xtask source-size [--staged]`
+# written reason (xtask/src/safe_wrapper_coverage.rs);
+# `cargo xtask generate-api-reference [--check]` regenerates or audits
+# docs/reference from the doc comments in src; `cargo xtask source-size [--staged]`
 # enforces the AGENTS.md per-file line ceiling; `cargo xtask verify` runs
 # the continuous-integration lint lane locally (what the pre-push hook
 # gates on); `cargo xtask prune-caches` keeps GitHub Actions cache
@@ -84,8 +87,8 @@ warnings = "deny"
 # activates the .githooks gates for a clone. The engine is the shared
 # native_build.rs module; there is no shell anywhere in the pipeline.
 xtask = "run -p xtask --"
-# The whole local gate in one command: the same fmt + clippy + doc +
-# size-ceiling pass the Ubuntu lane runs, minus the platform-specific
+# The whole local gate in one command: the same fmt + clippy + doc + coverage +
+# reference + size-ceiling pass the Ubuntu lane runs, minus the platform-specific
 # bindgen behavior (a macOS host needs none of the Linux arguments above).
 verify = "xtask verify"
 # Tests need the linked MLX-C library (see "Linking and tests" above). Words you
@@ -95,3 +98,6 @@ verify = "xtask verify"
 # repository's translation layer, not MLX's semantics: CONTRIBUTING.md states
 # the scope rule. Install the runner once with `cargo install cargo-nextest`.
 native-test = "nextest run --workspace"
+# Nextest skips documentation tests, so the examples in docs/ and in doc comments
+# run here. Run this as well as native-test before pushing.
+native-doc-test = "test --workspace --doc"

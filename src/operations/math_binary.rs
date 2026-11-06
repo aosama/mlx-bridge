@@ -1,6 +1,6 @@
 //! Generated MLX-C wrappers for the binary math family.
 //!
-//! Each wrapper maps one MLX-C operation onto the runtime GPU stream
+//! Each wrapper maps one MLX-C operation onto this context's stream
 //! with the crate's owned-handle and captured-error semantics. The
 //! coverage contract keeps this family in lockstep with the pinned
 //! upstream headers.
@@ -8,7 +8,7 @@
 use crate::raw;
 use crate::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError};
 impl MlxBindingsContext {
-    /// Applies MLX-C `mlx_allclose` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_allclose` on this context's stream.
     pub fn allclose(
         &self,
         a: &MlxArray,
@@ -23,7 +23,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_arctan2` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_arctan2` on this context's stream.
     pub fn arctan2(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX arctan2", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -31,7 +31,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_bitwise_and` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_bitwise_and` on this context's stream.
     pub fn bitwise_and(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX bitwise_and", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -39,7 +39,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_bitwise_invert` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_bitwise_invert` on this context's stream.
     pub fn bitwise_invert(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX bitwise_invert", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -47,7 +47,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_bitwise_or` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_bitwise_or` on this context's stream.
     pub fn bitwise_or(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX bitwise_or", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -55,7 +55,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_bitwise_xor` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_bitwise_xor` on this context's stream.
     pub fn bitwise_xor(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX bitwise_xor", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -63,7 +63,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Builds the MLX-C `mlx_divmod` outputs on the runtime GPU stream.
+    /// Builds the MLX-C `mlx_divmod` outputs on this context's stream.
     pub fn divmod(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArrayVector, MlxCError> {
         self.output_vector_array("apply MLX divmod", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -71,7 +71,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_equal` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_equal` on this context's stream.
     pub fn equal(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX equal", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -79,7 +79,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_inner` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_inner` on this context's stream.
     pub fn inner(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX inner", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -87,7 +87,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_isclose` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_isclose` on this context's stream.
     pub fn isclose(
         &self,
         a: &MlxArray,
@@ -102,7 +102,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_kron` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_kron` on this context's stream.
     pub fn kron(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX kron", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -110,7 +110,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_less_equal` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_less_equal` on this context's stream.
     pub fn less_equal(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX less_equal", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -118,7 +118,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_logical_and` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_logical_and` on this context's stream.
     pub fn logical_and(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX logical_and", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -126,7 +126,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_logical_not` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_logical_not` on this context's stream.
     pub fn logical_not(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX logical_not", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -134,7 +134,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_logical_or` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_logical_or` on this context's stream.
     pub fn logical_or(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX logical_or", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -142,7 +142,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_logical_xor` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_logical_xor` on this context's stream.
     pub fn logical_xor(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX logical_xor", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -150,7 +150,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_maximum` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_maximum` on this context's stream.
     pub fn maximum(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX maximum", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -158,7 +158,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_minimum` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_minimum` on this context's stream.
     pub fn minimum(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX minimum", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -166,7 +166,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_outer` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_outer` on this context's stream.
     pub fn outer(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX outer", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -174,7 +174,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_remainder` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_remainder` on this context's stream.
     pub fn remainder(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX remainder", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.

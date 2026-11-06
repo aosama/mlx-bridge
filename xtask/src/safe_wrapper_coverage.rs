@@ -6,6 +6,9 @@
 use std::collections::BTreeSet;
 use std::path::Path;
 
+use crate::repository::collect_rust_sources;
+use crate::rust_item_parsing::mentions_whole_word;
+
 /// MLX-C functions no safe code calls, each with why nobody needs them directly.
 const FUNCTIONS_WITHOUT_SAFE_WRAPPER: &[(&str, &str)] = &[
     (
@@ -110,44 +113,16 @@ const FUNCTIONS_WITHOUT_SAFE_WRAPPER: &[(&str, &str)] = &[
     ),
 ];
 
-/// Reads every Rust source under `directory` into `combined_source`.
-fn append_rust_sources(directory: &Path, combined_source: &mut String) -> std::io::Result<()> {
-    for directory_entry in std::fs::read_dir(directory)? {
-        let entry_path = directory_entry?.path();
-        if entry_path.is_dir() {
-            append_rust_sources(&entry_path, combined_source)?;
-        } else if entry_path.extension().is_some_and(is_rust_extension) {
-            combined_source.push_str(&std::fs::read_to_string(&entry_path)?);
-            combined_source.push('\n');
-        }
+/// Reads every Rust source under `directory` into one searchable text.
+fn combined_rust_source(directory: &Path) -> std::io::Result<String> {
+    let mut source_paths = Vec::new();
+    collect_rust_sources(directory, &mut source_paths)?;
+    let mut combined_source = String::new();
+    for source_path in &source_paths {
+        combined_source.push_str(&std::fs::read_to_string(source_path)?);
+        combined_source.push('\n');
     }
-    Ok(())
-}
-
-fn is_rust_extension(extension: &std::ffi::OsStr) -> bool {
-    extension == "rs"
-}
-
-/// Whether `identifier` appears in `source` as a whole word.
-fn source_mentions_identifier(source: &str, identifier: &str) -> bool {
-    let mut search_from = 0;
-    while let Some(found_at) = source[search_from..].find(identifier) {
-        let identifier_start = search_from + found_at;
-        let identifier_end = identifier_start + identifier.len();
-        let starts_at_boundary =
-            identifier_start == 0 || !is_identifier_byte(source.as_bytes()[identifier_start - 1]);
-        let ends_at_boundary = identifier_end == source.len()
-            || !is_identifier_byte(source.as_bytes()[identifier_end]);
-        if starts_at_boundary && ends_at_boundary {
-            return true;
-        }
-        search_from = identifier_end;
-    }
-    false
-}
-
-fn is_identifier_byte(byte: u8) -> bool {
-    byte.is_ascii_alphanumeric() || byte == b'_'
+    Ok(combined_source)
 }
 
 /// The vendored functions neither called nor reasoned about, and the registry
@@ -164,7 +139,7 @@ fn coverage_problems(
     let mut unreachable_functions = Vec::new();
     for function_name in vendored_functions {
         if !registered_names.contains(function_name)
-            && !source_mentions_identifier(safe_source, function_name)
+            && !mentions_whole_word(safe_source, function_name)
         {
             unreachable_functions.push(function_name.clone());
         }
@@ -172,7 +147,7 @@ fn coverage_problems(
     let mut stale_entries = Vec::new();
     for registered_name in &registered_names {
         if !vendored_functions.contains(registered_name)
-            || source_mentions_identifier(safe_source, registered_name)
+            || mentions_whole_word(safe_source, registered_name)
         {
             stale_entries.push(registered_name.clone());
         }
@@ -187,14 +162,16 @@ pub(crate) fn audit_safe_wrapper_coverage(
     vendored_functions: &BTreeSet<String>,
 ) -> bool {
     let source_root = repository_root.join("src");
-    let mut safe_source = String::new();
-    if let Err(read_error) = append_rust_sources(&source_root, &mut safe_source) {
-        eprintln!(
-            "[audit] cannot read {}: {read_error}",
-            source_root.display()
-        );
-        return false;
-    }
+    let safe_source = match combined_rust_source(&source_root) {
+        Ok(safe_source) => safe_source,
+        Err(read_error) => {
+            eprintln!(
+                "[audit] cannot read {}: {read_error}",
+                source_root.display()
+            );
+            return false;
+        }
+    };
     let (unreachable_functions, stale_entries) = coverage_problems(
         vendored_functions,
         &safe_source,
@@ -279,11 +256,5 @@ mod tests {
         let (_unreachable, stale) = coverage_problems(&functions, "", &[("mlx_gone", "removed")]);
 
         assert_eq!(stale, vec!["mlx_gone"]);
-    }
-
-    #[test]
-    fn should_recognize_an_identifier_at_the_very_end_of_the_source() {
-        assert!(source_mentions_identifier("raw::mlx_add", "mlx_add"));
-        assert!(!source_mentions_identifier("", "mlx_add"));
     }
 }

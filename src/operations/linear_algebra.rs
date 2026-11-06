@@ -1,6 +1,6 @@
 //! Generated MLX-C wrappers for the linear algebra family.
 //!
-//! Each wrapper maps one MLX-C operation onto the runtime GPU stream
+//! Each wrapper maps one MLX-C operation onto this context's stream
 //! with the crate's owned-handle and captured-error semantics. The
 //! coverage contract keeps this family in lockstep with the pinned
 //! upstream headers.
@@ -9,7 +9,7 @@ use crate::bindings::support::{c_string_argument, optional_i32_slice};
 use crate::raw;
 use crate::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError};
 impl MlxBindingsContext {
-    /// Applies MLX-C `mlx_linalg_cholesky` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_cholesky` on this context's stream.
     pub fn linalg_cholesky(&self, a: &MlxArray, upper: bool) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX linalg_cholesky", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -17,7 +17,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_cholesky_inv` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_cholesky_inv` on this context's stream.
     pub fn linalg_cholesky_inv(&self, a: &MlxArray, upper: bool) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX linalg_cholesky_inv", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -25,7 +25,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_cross` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_cross` on this context's stream.
     pub fn linalg_cross(
         &self,
         a: &MlxArray,
@@ -38,7 +38,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_det` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_det` on this context's stream.
     pub fn linalg_det(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX linalg_det", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -46,7 +46,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_eig`, producing both outputs on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_eig`, producing both outputs on this context's stream.
     pub fn linalg_eig(&self, a: &MlxArray) -> Result<(MlxArray, MlxArray), MlxCError> {
         self.output_array_pair("apply MLX linalg_eig", |output, second_output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -54,7 +54,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_eigh`, producing both outputs on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_eigh`, producing both outputs on this context's stream.
     pub fn linalg_eigh(
         &self,
         a: &MlxArray,
@@ -75,7 +75,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_eigvals` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_eigvals` on this context's stream.
     pub fn linalg_eigvals(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX linalg_eigvals", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -83,7 +83,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_eigvalsh` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_eigvalsh` on this context's stream.
     pub fn linalg_eigvalsh(&self, a: &MlxArray, upper_lower: &str) -> Result<MlxArray, MlxCError> {
         let upper_lower_argument = c_string_argument(upper_lower, "linalg_eigvalsh")?;
         self.output_array("apply MLX linalg_eigvalsh", |output, stream| {
@@ -94,7 +94,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_inv` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_inv` on this context's stream.
     pub fn linalg_inv(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX linalg_inv", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -102,7 +102,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Builds the MLX-C `mlx_linalg_lu` outputs on the runtime GPU stream.
+    /// Builds the MLX-C `mlx_linalg_lu` outputs on this context's stream.
     pub fn linalg_lu(&self, a: &MlxArray) -> Result<MlxArrayVector, MlxCError> {
         self.output_vector_array("apply MLX linalg_lu", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -110,7 +110,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_lu_factor`, producing both outputs on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_lu_factor`, producing both outputs on this context's stream.
     pub fn linalg_lu_factor(&self, a: &MlxArray) -> Result<(MlxArray, MlxArray), MlxCError> {
         self.output_array_pair(
             "apply MLX linalg_lu_factor",
@@ -121,7 +121,7 @@ impl MlxBindingsContext {
         )
     }
 
-    /// Applies MLX-C `mlx_linalg_norm` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_norm` on this context's stream.
     pub fn linalg_norm(
         &self,
         a: &MlxArray,
@@ -145,7 +145,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_norm_l2` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_norm_l2` on this context's stream.
     pub fn linalg_norm_l2(
         &self,
         a: &MlxArray,
@@ -167,7 +167,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_norm_matrix` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_norm_matrix` on this context's stream.
     pub fn linalg_norm_matrix(
         &self,
         a: &MlxArray,
@@ -192,7 +192,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_pinv` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_pinv` on this context's stream.
     pub fn linalg_pinv(&self, a: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX linalg_pinv", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -200,7 +200,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_qr`, producing both outputs on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_qr`, producing both outputs on this context's stream.
     pub fn linalg_qr(&self, a: &MlxArray) -> Result<(MlxArray, MlxArray), MlxCError> {
         self.output_array_pair("apply MLX linalg_qr", |output, second_output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -208,7 +208,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_slogdet`, producing both outputs on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_slogdet`, producing both outputs on this context's stream.
     pub fn linalg_slogdet(&self, a: &MlxArray) -> Result<(MlxArray, MlxArray), MlxCError> {
         self.output_array_pair(
             "apply MLX linalg_slogdet",
@@ -219,7 +219,7 @@ impl MlxBindingsContext {
         )
     }
 
-    /// Applies MLX-C `mlx_linalg_solve` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_solve` on this context's stream.
     pub fn linalg_solve(&self, a: &MlxArray, b: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX linalg_solve", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -227,7 +227,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_solve_triangular` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_solve_triangular` on this context's stream.
     pub fn linalg_solve_triangular(
         &self,
         a: &MlxArray,
@@ -240,7 +240,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Builds the MLX-C `mlx_linalg_svd` outputs on the runtime GPU stream.
+    /// Builds the MLX-C `mlx_linalg_svd` outputs on this context's stream.
     pub fn linalg_svd(&self, a: &MlxArray, compute_uv: bool) -> Result<MlxArrayVector, MlxCError> {
         self.output_vector_array("apply MLX linalg_svd", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -248,7 +248,7 @@ impl MlxBindingsContext {
         })
     }
 
-    /// Applies MLX-C `mlx_linalg_tri_inv` on the runtime GPU stream.
+    /// Applies MLX-C `mlx_linalg_tri_inv` on this context's stream.
     pub fn linalg_tri_inv(&self, a: &MlxArray, upper: bool) -> Result<MlxArray, MlxCError> {
         self.output_array("apply MLX linalg_tri_inv", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.

@@ -3,7 +3,7 @@ use crate::{MlxArray, MlxArrayVector};
 use crate::{MlxCError, MlxDtype, error::check_status, raw};
 
 impl MlxBindingsContext {
-    /// Builds lazy matrix multiplication on the runtime's GPU stream.
+    /// Builds lazy matrix multiplication on this context's stream.
     pub fn matmul(&self, left: &MlxArray, right: &MlxArray) -> Result<MlxArray, MlxCError> {
         self.output_array("multiply MLX arrays", |output, stream| {
             // SAFETY: Inputs and stream are live and output is uniquely writable.
@@ -403,7 +403,7 @@ impl MlxBindingsContext {
         check_status(status, "evaluate an MLX array group")
     }
 
-    /// Asynchronously submits a bounded group to the GPU without blocking the CPU.
+    /// Starts evaluating a group on this context's stream without waiting for it.
     ///
     /// A later host read waits if execution is still in flight. Dependent graphs
     /// can be built and submitted meanwhile, keeping CPU graph construction and

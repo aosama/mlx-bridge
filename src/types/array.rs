@@ -72,9 +72,11 @@ pub struct MlxArray {
 }
 
 impl MlxArray {
-    /// Creates a float32 array from host values, the way compiled-graph
-    /// builders embed scalar constants (the softplus graph's ln 2, the
-    /// verification window's attention-mask boundary values).
+    /// Creates a float32 array from host values laid out in row-major order. The
+    /// values are copied, so later changes to the slice do not affect the array.
+    ///
+    /// # Errors
+    /// Fails when the shape's element count differs from the value count.
     pub fn from_f32(values: &[f32], shape: &[i32]) -> Result<Self, MlxCError> {
         Self::from_host_values(
             values,
@@ -84,10 +86,18 @@ impl MlxArray {
         )
     }
 
+    /// Creates an int32 array from host values laid out in row-major order.
+    ///
+    /// # Errors
+    /// Fails when the shape's element count differs from the value count.
     pub fn from_i32(values: &[i32], shape: &[i32]) -> Result<Self, MlxCError> {
         Self::from_host_values(values, shape, MlxDtype::Int32, "create an MLX int32 array")
     }
 
+    /// Creates a uint32 array from host values laid out in row-major order.
+    ///
+    /// # Errors
+    /// Fails when the shape's element count differs from the value count.
     pub fn from_u32(values: &[u32], shape: &[i32]) -> Result<Self, MlxCError> {
         Self::from_host_values(
             values,
@@ -128,6 +138,8 @@ impl MlxArray {
         Ok(array)
     }
 
+    /// Creates an empty handle holding no array, for passing as an output
+    /// parameter. Evaluating it or reading its values returns an error.
     pub fn empty() -> Self {
         // SAFETY: The runtime error handler is installed before model loading,
         // and the official API's empty placeholder is immediately placed under
@@ -136,10 +148,14 @@ impl MlxArray {
         Self { raw_array }
     }
 
+    /// Whether this handle holds no array at all. A zero-sized array is a real
+    /// array, so this reports `false` for it.
     pub fn is_empty(&self) -> bool {
         self.raw_array.ctx.is_null()
     }
 
+    /// The underlying MLX-C handle, still owned by this value, for calling
+    /// `raw` functions directly.
     pub const fn raw(&self) -> raw::mlx_array {
         self.raw_array
     }
@@ -156,6 +172,8 @@ impl MlxArray {
         }
     }
 
+    /// A pointer to the underlying MLX-C handle, for `raw` functions that write
+    /// their result through an output parameter.
     pub fn raw_mut(&mut self) -> *mut raw::mlx_array {
         &mut self.raw_array
     }

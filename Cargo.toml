@@ -30,6 +30,7 @@ exclude = [
   ".github",
   ".cargo",
   ".config",
+  "context7.json",
   "rust-toolchain.toml",
   "vendor/mlx-c/README.md",
   "vendor/mlx-c/docs",

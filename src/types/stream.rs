@@ -6,6 +6,7 @@ use crate::raw;
 pub struct MlxStream(pub(crate) raw::mlx_stream);
 
 impl MlxStream {
+    /// This thread's default stream on the CPU device.
     pub fn default_cpu() -> Result<Self, MlxCError> {
         // SAFETY: The runtime error handler is installed and the returned
         // stream is placed immediately under RAII ownership.
@@ -13,6 +14,7 @@ impl MlxStream {
         Self::from_raw(raw_stream, "acquire the default MLX CPU stream")
     }
 
+    /// This thread's default stream on the GPU device.
     pub fn default_gpu() -> Result<Self, MlxCError> {
         // SAFETY: The runtime error handler is installed and the returned
         // stream is placed immediately under RAII ownership.
@@ -20,6 +22,8 @@ impl MlxStream {
         Self::from_raw(raw_stream, "acquire the default MLX GPU stream")
     }
 
+    /// The underlying MLX-C handle, still owned by this value, for calling
+    /// `raw` functions directly.
     pub const fn raw(&self) -> raw::mlx_stream {
         self.0
     }

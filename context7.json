@@ -1,0 +1,29 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "mlx-c-rust",
+  "description": "A complete, low-level Rust bridge to the MLX-C API of Apple's MLX array framework for Apple silicon, with owned handles, typed errors, and a safe path to every MLX capability, including gradients, vmap, FFT, Metal kernels, and safetensors.",
+  "folders": [
+    "docs"
+  ],
+  "excludeFolders": [
+    "vendor",
+    "tests",
+    "xtask",
+    "native_gap_shim",
+    "src",
+    "examples"
+  ],
+  "excludeFiles": [
+    "COVERAGE_INVENTORY.md",
+    "CONTRIBUTING.md",
+    "RELEASES.md",
+    "AGENTS.md"
+  ],
+  "rules": [
+    "Call install_non_terminating_error_handler once at the start of the program, before any other MLX call.",
+    "Use MlxBindingsContext::on_cpu for linear algebra and float64, because the GPU does not support them.",
+    "Operations are lazy: call evaluate or a to_vec reader before measuring time or relying on a value being computed.",
+    "Read arrays through the to_vec and item families, which check the element type and return views in logical order, and convert with astype rather than reading as another type.",
+    "Create a context on each thread that uses MLX, because streams are thread affine and MlxArray is not Send."
+  ]
+}

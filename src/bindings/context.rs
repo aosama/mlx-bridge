@@ -62,7 +62,8 @@ impl MlxBindingsContext {
     }
 
     /// The submission stream under its original name, which is the GPU stream
-    /// unless the context was built through `on_cpu`; prefer `stream`.
+    /// unless the context was built through `on_cpu` or `on_stream`; prefer
+    /// `stream`.
     pub const fn gpu_stream(&self) -> &MlxStream {
         self.stream()
     }

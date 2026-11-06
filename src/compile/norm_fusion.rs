@@ -4,9 +4,8 @@
 //! The query/key head RMS normalizations of the gated-delta prework ran as
 //! two launches per layer; one dual-output replay produces both. Every
 //! primitive and its order match the composed path — `mlx_fast_rms_norm` is
-//! the identical Metal kernel over its own input — and both the elementwise
-//! fusion parity contract and the upstream greedy trajectory replay prove
-//! the bits unchanged (issue #1366: decode is bound by launches per token).
+//! the identical Metal kernel over its own input — so the results do not change.
+//! This matters because decode speed is bound by launches per token.
 //!
 //! A second fusion was tried here and rejected by the trajectory replay:
 //! chaining the output RMS normalization into the precise SwiGLU epilogue

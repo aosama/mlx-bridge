@@ -11,6 +11,7 @@ pub struct MlxMetalKernelOutput {
 }
 
 impl MlxMetalKernelOutput {
+    /// Declares one output the kernel writes, with its shape and element type.
     #[must_use]
     pub const fn new(shape: Vec<i32>, dtype: MlxDtype) -> Self {
         Self { shape, dtype }
@@ -41,6 +42,11 @@ pub struct MlxMetalKernel {
 }
 
 impl MlxMetalKernel {
+    /// Declares a kernel from its name, argument names, and Metal source body,
+    /// which MLX wraps in a generated function signature.
+    ///
+    /// # Errors
+    /// Fails when no inputs or outputs are named, or a string holds a null byte.
     pub fn new(
         kernel_name: &str,
         input_names: &[&str],
@@ -50,6 +56,11 @@ impl MlxMetalKernel {
         Self::new_with_header(kernel_name, input_names, output_names, "", kernel_source)
     }
 
+    /// Like `new`, with source placed before the generated function, for helper
+    /// functions and includes.
+    ///
+    /// # Errors
+    /// Fails when no inputs or outputs are named, or a string holds a null byte.
     pub fn new_with_header(
         kernel_name: &str,
         input_names: &[&str],
@@ -67,6 +78,11 @@ impl MlxMetalKernel {
         )
     }
 
+    /// Like `new_with_header`, also choosing whether outputs are declared as
+    /// `atomic`, which a kernel needs to write them from many threads safely.
+    ///
+    /// # Errors
+    /// Fails when no inputs or outputs are named, or a string holds a null byte.
     pub fn new_with_options(
         kernel_name: &str,
         input_names: &[&str],
@@ -125,7 +141,7 @@ impl Drop for MlxMetalKernel {
 }
 
 impl MlxBindingsContext {
-    /// Applies one owned custom Metal kernel on the runtime's GPU stream.
+    /// Applies one owned custom Metal kernel on this context's stream.
     pub fn apply_metal_kernel(
         &self,
         kernel: &MlxMetalKernel,
@@ -146,6 +162,12 @@ impl MlxBindingsContext {
         )
     }
 
+    /// Like `apply_metal_kernel`, also filling outputs with
+    /// `output_initial_value` so a kernel can leave elements unwritten.
+    ///
+    /// # Errors
+    /// Fails when the launch dimensions or argument counts are invalid. A shader
+    /// that does not compile fails later, when the output is evaluated.
     #[allow(clippy::too_many_arguments)]
     pub fn apply_metal_kernel_with_output_initialization(
         &self,
@@ -246,12 +268,19 @@ pub fn apply_metal_kernel_in_graph(
     Ok(outputs)
 }
 
+/// One launch's configuration for a custom Metal kernel: its outputs, grid, thread
+/// group, and template arguments.
 #[derive(Debug)]
 pub struct MlxMetalKernelConfig {
     raw_config: raw::mlx_fast_metal_kernel_config,
 }
 
 impl MlxMetalKernelConfig {
+    /// Builds a launch configuration from output declarations, grid, thread
+    /// group, and an optional output fill value.
+    ///
+    /// # Errors
+    /// Fails when MLX rejects a configuration value.
     pub fn new(
         output_specs: &[MlxMetalKernelOutput],
         grid: [i32; 3],
