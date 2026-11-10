@@ -10,10 +10,10 @@ REPOSITORY_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
 # Every push triggers a paid GitHub Actions round trip; a failure that one
 # local verification would have caught wastes that money and several
 # minutes of wall clock. Gate the push on the same lint lane the runner
-# runs. MLX_C_RUST_SKIP_PRE_PUSH=1 escapes deliberately, for example when
+# runs. MLX_BRIDGE_SKIP_PRE_PUSH=1 escapes deliberately, for example when
 # pushing a branch whose failures are the subject under test.
-if [ "${MLX_C_RUST_SKIP_PRE_PUSH:-0}" = "1" ]; then
-    printf '%s\n' '[pre-push] status=skipped reason=MLX_C_RUST_SKIP_PRE_PUSH=1'
+if [ "${MLX_BRIDGE_SKIP_PRE_PUSH:-0}" = "1" ]; then
+    printf '%s\n' '[pre-push] status=skipped reason=MLX_BRIDGE_SKIP_PRE_PUSH=1'
     exit 0
 fi
 

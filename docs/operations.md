@@ -21,7 +21,7 @@ MLX's overloads become separate methods, usually with a suffix. A few differ, so
 | `_axes` | Several axes | `sum_axes`, `max_axes` |
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -44,7 +44,7 @@ fn main() -> Result<(), MlxCError> {
 Binary operations broadcast their inputs and promote element types as MLX does. To ask MLX the answer without running anything, use `broadcast_shapes` and `result_type`.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxCError, MlxDtype, broadcast_shapes, install_non_terminating_error_handler, result_type};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxCError, MlxDtype, broadcast_shapes, install_non_terminating_error_handler, result_type};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -62,7 +62,7 @@ fn main() -> Result<(), MlxCError> {
 ## Shape and indexing
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -96,7 +96,7 @@ fn main() -> Result<(), MlxCError> {
 `where_select` picks from two arrays by a boolean condition, and comparisons such as `greater` produce that condition.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -117,7 +117,7 @@ fn main() -> Result<(), MlxCError> {
 `keepdims` is explicit on most reductions, though `argmax_axis` has none, and `argmin_axis` does. `std` and `var` also take `ddof`. Cumulative operations take `reverse` and `inclusive`.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();

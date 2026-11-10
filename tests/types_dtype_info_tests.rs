@@ -5,7 +5,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{float_array, gpu_context, int_array, vector_of};
-use mlx_c_rust::{MlxArray, MlxDtype, result_type};
+use mlx_bridge::{MlxArray, MlxDtype, result_type};
 
 #[test]
 fn should_place_each_float_limit_in_its_own_field() {

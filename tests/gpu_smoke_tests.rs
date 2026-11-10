@@ -4,7 +4,7 @@
 //! virtual machine exposes the Metal device (verified by the metal_probe
 //! example); locally they require an MLX-C library (see the README).
 
-use mlx_c_rust::{MlxBindingsContext, install_non_terminating_error_handler};
+use mlx_bridge::{MlxBindingsContext, install_non_terminating_error_handler};
 
 #[test]
 fn should_execute_an_elementwise_addition_on_the_gpu_stream() {

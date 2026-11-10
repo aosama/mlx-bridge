@@ -5,7 +5,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{float_array, gpu_context, vector_of};
-use mlx_c_rust::{MlxStream, MlxVectorInt, MlxVectorStream, MlxVectorString, MlxVectorVectorArray};
+use mlx_bridge::{MlxStream, MlxVectorInt, MlxVectorStream, MlxVectorString, MlxVectorVectorArray};
 
 #[test]
 fn should_round_trip_integers_in_order() {

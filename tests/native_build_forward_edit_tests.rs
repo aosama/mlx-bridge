@@ -23,7 +23,7 @@ use std::path::{Path, PathBuf};
 /// varies.
 fn extracted_tree_with_target_body(target_body: &str) -> PathBuf {
     let mlx_c_directory = std::env::temp_dir().join(format!(
-        "mlx-c-rust-forward-edit-test-{}-{}",
+        "mlx-bridge-forward-edit-test-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -155,7 +155,7 @@ fn should_handle_edits_whose_replacement_does_not_contain_the_find_text() {
     };
     let synthetic_set = [synthetic_edit];
     let mlx_c_directory = std::env::temp_dir().join(format!(
-        "mlx-c-rust-forward-edit-shape-test-{}-{}",
+        "mlx-bridge-forward-edit-shape-test-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

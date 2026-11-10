@@ -16,7 +16,7 @@ There is one constructor per stored element type. Values are given in row-major 
 | `Complex64` | `from_complex` (`(real, imaginary)` pairs) | `to_vec_complex` |
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxCError, MlxDtype};
+use mlx_bridge::{MlxArray, MlxCError, MlxDtype};
 
 fn main() -> Result<(), MlxCError> {
     let matrix = MlxArray::from_i64(&[1, 2, 3, 4, 5, 6], &[2, 3])?;
@@ -33,7 +33,7 @@ fn main() -> Result<(), MlxCError> {
 A shape whose element count differs from the number of values returns an error rather than reading out of bounds, and so does a negative dimension.
 
 ```rust
-use mlx_c_rust::MlxArray;
+use mlx_bridge::MlxArray;
 
 assert!(MlxArray::from_f32(&[1.0, 2.0, 3.0], &[2, 2]).is_err());
 assert!(MlxArray::from_i32(&[1, 2], &[-2]).is_err());
@@ -44,7 +44,7 @@ assert!(MlxArray::from_i32(&[1, 2], &[-2]).is_err());
 An empty shape means a zero-dimensional scalar holding one value. A shape containing zero is a real array with no elements.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxCError};
+use mlx_bridge::{MlxArray, MlxCError};
 
 fn main() -> Result<(), MlxCError> {
     let scalar = MlxArray::from_f32(&[2.5], &[])?;
@@ -66,7 +66,7 @@ Shortcuts exist for common scalars: `from_bool`, `from_scalar_i32`, `from_scalar
 Filled and generated arrays come from a context, because they run on a stream.
 
 ```rust
-use mlx_c_rust::{MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
+use mlx_bridge::{MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -91,7 +91,7 @@ Each `to_vec_*` reader evaluates the array and copies its elements into a new `V
 MLX's raw accessors reinterpret memory, so this crate checks the element type first. A mismatch is an error, not a conversion. Use `astype` when you want a conversion.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -112,7 +112,7 @@ fn main() -> Result<(), MlxCError> {
 Transposes, reversals, and strided slices are views over their parent's storage. Readers materialize them first when needed, so you always get logical row-major order.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -142,7 +142,7 @@ fn main() -> Result<(), MlxCError> {
 Handles are move-only. `retain` gives you a second handle to the same array without copying its data, and each handle keeps the array alive independently.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxCError};
+use mlx_bridge::{MlxArray, MlxCError};
 
 fn main() -> Result<(), MlxCError> {
     let source = MlxArray::from_f32(&[1.0, 2.0], &[2])?;
@@ -172,7 +172,7 @@ Arrays also outlive the context and the inputs that built them, because the grap
 - `MlxMapStringToArray` maps names to arrays, used by keyword arguments and safetensors.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxCError, MlxMapStringToArray};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxCError, MlxMapStringToArray};
 
 fn main() -> Result<(), MlxCError> {
     let weights = MlxArray::from_f32(&[1.0], &[1])?;

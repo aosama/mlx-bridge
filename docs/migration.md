@@ -2,6 +2,22 @@
 
 This release fixes safety defects, moves to MLX-C v0.8.0, and widens the safe API. Upgrade if you use keyword closures, read views, or iterate maps, because those paths could abort the process or read out of bounds in `alpha.3`. The automatic native pair rebuilds once on upgrade.
 
+## The crate is now named `mlx-bridge`
+
+Releases after `0.32.4-alpha.4` are published as `mlx-bridge`. Releases up to and including `0.32.4-alpha.4` stay on crates.io under the former name, `mlx-c-rust`, and receive no further updates. The API is unchanged by the rename, so moving over is a matter of new names:
+
+| Before | After |
+|---|---|
+| `mlx-c-rust = "…"` in `Cargo.toml` | `mlx-bridge = "…"` |
+| `use mlx_c_rust::…` | `use mlx_bridge::…` |
+| `MLX_C_RUST_MLX_C_PREFIX` | `MLX_BRIDGE_MLX_C_PREFIX` |
+| `MLX_C_RUST_NATIVE_PROGRESS_FILE` | `MLX_BRIDGE_NATIVE_PROGRESS_FILE` |
+| `~/.cache/mlx-c-rust/native/` | `~/.cache/mlx-bridge/native/` |
+
+The former prefix variable is no longer read. A build that still sets only `MLX_C_RUST_MLX_C_PREFIX` prints a warning naming the new variable and continues down the discovery ladder without your prefix, so rename it before relying on a custom MLX-C.
+
+The automatic native pair compiles once more into the new folder, after which you can remove `~/.cache/mlx-c-rust`. To keep both names building during a gradual move, Cargo can alias the dependency: `mlx_c_rust = { package = "mlx-bridge", version = "…" }`.
+
 ## Changes that need code edits
 
 | Before | After | Why |

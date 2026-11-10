@@ -7,7 +7,7 @@ mod bridge_fixtures;
 use bridge_fixtures::{
     array_at, assert_translated_failure, float_array, floats_of, gpu_context, vector_of,
 };
-use mlx_c_rust::{MlxArray, MlxArrayVector};
+use mlx_bridge::{MlxArray, MlxArrayVector};
 
 fn fixture_arrays() -> (MlxArray, MlxArray) {
     (float_array(&[1.0], &[1]), float_array(&[2.0], &[1]))

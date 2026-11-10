@@ -7,7 +7,7 @@
 //! the coverage contract compares against those same headers.
 //!
 //! Linking a binary that uses this crate needs an MLX-C library. Discovery
-//! order, first match wins: the `MLX_C_RUST_MLX_C_PREFIX` environment
+//! order, first match wins: the `MLX_BRIDGE_MLX_C_PREFIX` environment
 //! variable, the standard Homebrew prefixes, `pkg-config mlx-c`, and — the
 //! zero-configuration default — the typed native-build engine in
 //! `native_build.rs` (this crate's own code, no shell), which reuses the
@@ -20,6 +20,8 @@
 
 #[path = "native_build.rs"]
 mod native_build;
+#[path = "native_prefix_variable.rs"]
+mod native_prefix_variable;
 
 use std::{
     env,
@@ -27,10 +29,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use native_prefix_variable::{
+    FORMER_MLX_C_PREFIX_VARIABLE, MLX_C_PREFIX_VARIABLE, former_prefix_variable_notice,
+};
 use pkg_config::Config as PkgConfig;
 
 const VENDORED_HEADERS_DIRECTORY: &str = "vendor/mlx-c";
-const MLX_C_PREFIX_VARIABLE: &str = "MLX_C_RUST_MLX_C_PREFIX";
 
 const BINDGEN_FUNCTION_ALLOWLIST: &str = "mlx_.*";
 const BINDGEN_TYPE_ALLOWLIST: &str = "mlx_.*";
@@ -123,6 +127,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     // rebuild when it moves.
     if link_feature_is_enabled() {
         println!("cargo:rerun-if-env-changed={MLX_C_PREFIX_VARIABLE}");
+        // The former name is watched too, so removing it clears the warning
+        // below on the next build instead of leaving it cached.
+        println!("cargo:rerun-if-env-changed={FORMER_MLX_C_PREFIX_VARIABLE}");
     }
 
     let bindings = bindgen::Builder::default()
@@ -189,6 +196,7 @@ fn emit_link_instructions() {
         );
         return;
     }
+    warn_about_former_prefix_variable();
     if let Some(prefix) = prefix_from_environment() {
         emit_prefix_link_flags(&prefix);
         return;
@@ -243,6 +251,18 @@ fn emit_link_instructions() {
     }
 }
 
+/// Tells a build that still sets only the former prefix variable why its
+/// prefix is not being used, before the ladder moves on without it.
+fn warn_about_former_prefix_variable() {
+    let prefix_variable_notice = former_prefix_variable_notice(
+        env::var_os(MLX_C_PREFIX_VARIABLE).is_some(),
+        env::var_os(FORMER_MLX_C_PREFIX_VARIABLE).is_some(),
+    );
+    if let Some(prefix_variable_notice) = prefix_variable_notice {
+        println!("cargo:warning={prefix_variable_notice}");
+    }
+}
+
 /// The explicit prefix override, validated before use.
 fn prefix_from_environment() -> Option<PathBuf> {
     let prefix = PathBuf::from(env::var_os(MLX_C_PREFIX_VARIABLE)?);
@@ -250,7 +270,7 @@ fn prefix_from_environment() -> Option<PathBuf> {
         return Some(prefix);
     }
     println!(
-        "cargo:warning=MLX_C_RUST_MLX_C_PREFIX is set but {} holds no MLX-C library; \
+        "cargo:warning={MLX_C_PREFIX_VARIABLE} is set but {} holds no MLX-C library; \
          continuing down the discovery ladder",
         prefix.join("lib").display()
     );

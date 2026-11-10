@@ -7,7 +7,7 @@ MLX's random numbers are functional: output depends only on a key, so the same k
 `random_key` builds a key from a seed. Reusing a key repeats the sample, so split a key whenever you need independent randomness.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -36,7 +36,7 @@ fn main() -> Result<(), MlxCError> {
 Passing `None` as the key uses a process-wide generator, whose state advances with each call. `seed_random_generation` resets it. Prefer explicit keys in libraries, because global state couples unrelated code.
 
 ```rust,standalone_crate
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
 
 fn sample(context: &MlxBindingsContext) -> Result<Vec<f32>, MlxCError> {
     let low = MlxArray::from_scalar_f32(0.0);
@@ -62,7 +62,7 @@ fn main() -> Result<(), MlxCError> {
 ## Distributions
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();

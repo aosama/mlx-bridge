@@ -1,4 +1,4 @@
-# Contributing to mlx-c-rust
+# Contributing to mlx-bridge
 
 Every change to this repository flows through a pull request that links a
 real issue and passes the required checks — for maintainers too. This
@@ -20,7 +20,7 @@ guide is the shortest path from idea to merged change.
    per-file size ceiling on what you stage, and the pre-push hook runs
    `cargo xtask verify` — the same lanes continuous integration runs —
    so failures surface before the push spends a GitHub Actions run.
-   `MLX_C_RUST_SKIP_PRE_PUSH=1` escapes deliberately when the failures
+   `MLX_BRIDGE_SKIP_PRE_PUSH=1` escapes deliberately when the failures
    are the subject under test.
 
 3. **Verify locally** what the runners will verify:

@@ -6,7 +6,7 @@
 //! the evidence step for whether the runner's virtual machine exposes the
 //! Metal device to guest workloads.
 
-use mlx_c_rust::{MlxBindingsContext, install_non_terminating_error_handler, metal_is_available};
+use mlx_bridge::{MlxBindingsContext, install_non_terminating_error_handler, metal_is_available};
 
 fn main() {
     install_non_terminating_error_handler();

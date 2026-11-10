@@ -9,7 +9,7 @@ use bridge_fixtures::{
     FLOAT_TOLERANCE, assert_floats_close, bools_of, float_array, floats_of, gpu_context, int_array,
     ints_of,
 };
-use mlx_c_rust::MlxArray;
+use mlx_bridge::MlxArray;
 
 #[test]
 fn should_keep_argument_order_for_non_commutative_operations() {

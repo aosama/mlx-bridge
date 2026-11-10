@@ -3,7 +3,7 @@ name = "xtask"
 version = "0.32.4-alpha.4"
 edition = "2024"
 rust-version = "1.101"
-description = "Typed repository tooling for mlx-c-rust, invoked as cargo xtask <command>."
+description = "Typed repository tooling for mlx-bridge, invoked as cargo xtask <command>."
 license = "MIT OR Apache-2.0"
 publish = false
 

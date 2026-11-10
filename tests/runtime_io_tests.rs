@@ -8,7 +8,7 @@ mod bridge_fixtures;
 use std::ffi::{c_char, c_int, c_void};
 
 use bridge_fixtures::{float_array, floats_of, gpu_context, scratch_file_path};
-use mlx_c_rust::{
+use mlx_bridge::{
     MlxArray, MlxIoGguf, MlxIoReader, MlxIoWriter, MlxMapStringToArray, MlxMapStringToString,
     MlxStream, MlxVectorString, load_array_from_reader, load_safetensors,
     load_safetensors_from_reader, raw, save_array_to_writer, save_safetensors,

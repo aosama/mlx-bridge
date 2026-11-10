@@ -6,7 +6,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{float_array, floats_of, gpu_context};
-use mlx_c_rust::{
+use mlx_bridge::{
     MlxBindingsContext, MlxDeviceHandle, MlxStream, MlxStreamThreadLocal, raw, set_default_stream,
     synchronize, synchronize_all_defaults,
 };
@@ -286,7 +286,7 @@ fn should_find_an_existing_default_stream_without_creating_one() {
 
 fn peek_on_a_fresh_thread_finds_nothing() -> bool {
     // Only the handler: building a context would create the default stream.
-    mlx_c_rust::install_non_terminating_error_handler();
+    mlx_bridge::install_non_terminating_error_handler();
     MlxStream::peek_default_for_device(&gpu_device())
         .expect("the peek should work")
         .is_none()

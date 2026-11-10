@@ -7,7 +7,7 @@ This crate has no layers or optimizers, but it exposes MLX's fast primitives tha
 Inputs are shaped `(batch, heads, sequence, dimensions)`. The three entry points differ in masking.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -36,7 +36,7 @@ fn main() -> Result<(), MlxCError> {
 `rope` takes the input, rotated dimensions, base, and the token offset to start from. An offset lets you continue a sequence during incremental decoding. The other `rope_with_*` entry points take per-token positions or custom frequencies.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -58,7 +58,7 @@ fn main() -> Result<(), MlxCError> {
 Inputs are channels-last: `(batch, width, channels)`. MLX orders weights `(output_channels, width, input_channels)`, which is an easy thing to get backwards. `conv2d`, `conv3d`, `conv_general`, and the `conv_transpose*` family follow the same pattern.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -80,7 +80,7 @@ fn main() -> Result<(), MlxCError> {
 `quantize_affine` returns the packed weights, scales, and biases, and `dequantize_affine` restores them approximately. MLX accepts group sizes of 32, 64, and 128. Quantized arrays pack `32 / bits` elements into each 32-bit word.
 
 ```rust
-use mlx_c_rust::{MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -105,7 +105,7 @@ Related entry points are `quantized_matmul_affine`, `gather_quantized_matmul_aff
 `rms_norm` and `layer_norm` are fused normalizations. `fast_cross_entropy` computes cross entropy from logits and class targets. `gated_delta_update` is the Qwen-style gated-delta recurrence, returning outputs first and final state second.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -142,7 +142,7 @@ Compiling a repeated composite fuses its dispatches into fewer kernel launches. 
 | `MlxCompiledMultiOutputGraph` | Your own graph-builder function |
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxCompiledSwiGlu, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxCompiledSwiGlu, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();

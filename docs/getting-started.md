@@ -11,17 +11,17 @@ You need an Apple silicon Mac, a Rust toolchain that supports edition 2024 and `
 Pre-releases are never selected automatically, so name the version:
 
 ```bash
-cargo add mlx-c-rust@0.32.4-alpha.4
+cargo add mlx-bridge@0.32.4-alpha.4
 ```
 
-The first build downloads the pinned MLX and MLX-C sources, verifies their SHA-256 checksums, and compiles them once into a shared folder under `~/.cache/mlx-c-rust/native/`. Every project on the machine then reuses that build. Your binaries link it statically, so they load no MLX libraries at run time, though they do read Metal kernels from that folder. See [Native build](native-build.md) for the details and alternatives.
+The first build downloads the pinned MLX and MLX-C sources, verifies their SHA-256 checksums, and compiles them once into a shared folder under `~/.cache/mlx-bridge/native/`. Every project on the machine then reuses that build. Your binaries link it statically, so they load no MLX libraries at run time, though they do read Metal kernels from that folder. See [Native build](native-build.md) for the details and alternatives.
 
 ## Your first computation
 
 Three things happen in every program: install the error handler, create a context, and build arrays.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     // Without this, an MLX failure ends the process instead of returning an error.

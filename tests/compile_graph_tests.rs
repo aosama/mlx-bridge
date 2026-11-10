@@ -8,7 +8,7 @@ mod bridge_fixtures;
 use std::os::raw::c_int;
 
 use bridge_fixtures::{FLOAT_TOLERANCE, assert_floats_close, float_array, floats_of, gpu_context};
-use mlx_c_rust::{
+use mlx_bridge::{
     MlxArray, MlxCompiledDualHeadNorm, MlxCompiledElementwiseGraphs,
     MlxCompiledGatedDeltaRateActivation, MlxCompiledMultiOutputGraph, MlxCompiledSwiGlu, MlxDtype,
     MlxStream, array_from_vector, raw, set_graph_output_vector,

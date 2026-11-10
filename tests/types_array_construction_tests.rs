@@ -1,7 +1,7 @@
 //! Tier 1 contracts for the typed array constructors: each stores its element
 //! type's exact bytes, so every value round-trips through the matching reader.
 
-use mlx_c_rust::{MlxArray, MlxDtype};
+use mlx_bridge::{MlxArray, MlxDtype};
 
 #[test]
 fn should_round_trip_unsigned_values_including_their_extremes() {

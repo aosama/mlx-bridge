@@ -7,7 +7,7 @@ MLX's transforms take functions and return new ones. In this crate those functio
 `MlxClosure::from_fn` accepts any callable taking `&[MlxArray]` and returning `Result<Vec<MlxArray>, MlxCError>`. A named function is the simplest choice. Build a context inside the callback when it needs to run operations.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, install_non_terminating_error_handler};
 
 fn doubled(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
     let context = MlxBindingsContext::new()?;
@@ -33,7 +33,7 @@ The closure owns the callable and releases it when the last handle to it drops. 
 `value_and_grad_of_closure` differentiates with respect to the argument positions you name, and the function must return a scalar first output.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, install_non_terminating_error_handler, value_and_grad_of_closure};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, install_non_terminating_error_handler, value_and_grad_of_closure};
 
 fn sum_of_squares(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
     let context = MlxBindingsContext::new()?;
@@ -59,7 +59,7 @@ fn main() -> Result<(), MlxCError> {
 `vjp_of_closure` and `jvp_of_closure` take the primals and the cotangents or tangents, and return the outputs with the products.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, install_non_terminating_error_handler, jvp_of_closure, vjp_of_closure};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, install_non_terminating_error_handler, jvp_of_closure, vjp_of_closure};
 
 fn sum_of_squares(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
     let context = MlxBindingsContext::new()?;
@@ -87,7 +87,7 @@ fn main() -> Result<(), MlxCError> {
 `MlxClosure::vmapped` vectorizes a closure: inputs map over `input_axes`, and outputs stack along `output_axes`. An empty list means axis 0 for everything.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, install_non_terminating_error_handler};
 
 fn doubled(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
     let context = MlxBindingsContext::new()?;
@@ -117,7 +117,7 @@ fn main() -> Result<(), MlxCError> {
 `compiled` wraps a closure so MLX traces it once and replays an optimized graph. Results match the eager path. With `shapeless` set to `true`, one compilation serves any input shape, which only works for graphs whose operations do not depend on the shape.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, install_non_terminating_error_handler};
 
 fn doubled(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
     let context = MlxBindingsContext::new()?;
@@ -147,7 +147,7 @@ fn main() -> Result<(), MlxCError> {
 `with_custom_vjp` replaces a closure's gradient, and `with_custom_rules` replaces its VJP, JVP, and VMAP behavior together. Backward rules receive the primals, outputs, and cotangents.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, MlxClosureCustom, install_non_terminating_error_handler, value_and_grad_of_closure};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, MlxClosureCustom, install_non_terminating_error_handler, value_and_grad_of_closure};
 
 fn sum_of_squares(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
     let context = MlxBindingsContext::new()?;
@@ -182,7 +182,7 @@ fn main() -> Result<(), MlxCError> {
 `MlxClosureKwargs` receives a name-to-array map alongside its inputs.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosureKwargs, MlxMapStringToArray, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosureKwargs, MlxMapStringToArray, install_non_terminating_error_handler};
 
 fn scaled(inputs: &[MlxArray], keywords: &MlxMapStringToArray) -> Result<Vec<MlxArray>, MlxCError> {
     let context = MlxBindingsContext::new()?;
@@ -212,7 +212,7 @@ fn main() -> Result<(), MlxCError> {
 A callback's `Err` returns to the caller unchanged, not as MLX's generic callback failure. A panic is caught at the C boundary and becomes an `MlxCError` carrying the message, and the closure stays usable afterward.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxCError, MlxClosure, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxCError, MlxClosure, install_non_terminating_error_handler};
 
 fn refusing(_inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
     Err(MlxCError {

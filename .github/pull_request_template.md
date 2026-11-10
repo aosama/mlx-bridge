@@ -6,7 +6,7 @@
 
 <!-- Keeps the issue open: `Refs #987654`, or a context phrase: `part of #987654`, `tracked by #987654`, `part of the #987654 umbrella`, `epic #987654`, `see also #987654`. An issue labeled `umbrella` or `epic` may also be mentioned bare, without any keyword. -->
 
-<!-- One keyword covers a group joined by `,`, `and`, or `&`: `Fixes #987654 and #987655`, `Fixes #987654, #987655, and #987656`, `Fixes #987654 & #987655`. The same-repository issue URL (`https://github.com/aosama/mlx-c-rust/issues/987654`) is accepted wherever a `#N` shorthand is. -->
+<!-- One keyword covers a group joined by `,`, `and`, or `&`: `Fixes #987654 and #987655`, `Fixes #987654, #987655, and #987656`, `Fixes #987654 & #987655`. The same-repository issue URL (`https://github.com/aosama/mlx-bridge/issues/987654`) is accepted wherever a `#N` shorthand is. -->
 
 <!-- Worked example — adapt, and replace the numbers with your real issues:
 Fixes #987654 and #987655
@@ -24,7 +24,7 @@ List the applicable github issues whether pre-existing in the backlog or you cre
 
 ## Problem
 
-Describe the concrete problem and why it belongs in mlx-c-rust.
+Describe the concrete problem and why it belongs in mlx-bridge.
 
 ## Change
 

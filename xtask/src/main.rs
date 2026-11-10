@@ -1,4 +1,4 @@
-//! Typed repository tooling for mlx-c-rust, following the xtask pattern:
+//! Typed repository tooling for mlx-bridge, following the xtask pattern:
 //! repository tooling is typed, unit-testable Rust invoked as
 //! `cargo xtask <command>` instead of shell. The alias that wires the
 //! invocation is documented in `.cargo/config.toml`.

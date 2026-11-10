@@ -7,7 +7,7 @@ Exporting traces a function into a file. Importing replays it without the origin
 `export_function` traces the closure with example arguments. A shape-specific export accepts only those shapes.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, MlxImportedFunction, export_function, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, MlxImportedFunction, export_function, install_non_terminating_error_handler};
 
 fn doubled(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
     let context = MlxBindingsContext::new()?;
@@ -38,7 +38,7 @@ Pass `true` for `shapeless` so the imported function accepts other shapes. This 
 To record several specific shapes instead, use `MlxFunctionExporter`: call `apply` once per signature, then drop the exporter to finish the file.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, MlxFunctionExporter, MlxImportedFunction, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure, MlxFunctionExporter, MlxImportedFunction, install_non_terminating_error_handler};
 
 fn doubled(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
     let context = MlxBindingsContext::new()?;

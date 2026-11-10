@@ -7,7 +7,7 @@ Three questions decide how your program behaves: when does work run, where does 
 Operations only record a graph. MLX computes values when you evaluate an array, read its values, or use it in something that forces evaluation.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -34,7 +34,7 @@ Two consequences matter in practice:
 `evaluate_arrays` evaluates several arrays together, which lets them share work. `async_eval_arrays` starts evaluation and returns, and `wait` blocks until a value is ready.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler, synchronize};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler, synchronize};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -69,7 +69,7 @@ Every context submits to one stream, and a stream belongs to one device.
 | `MlxBindingsContext::on_stream(stream)` | A stream you created | Separating workloads |
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDeviceHandle, MlxStream, install_non_terminating_error_handler, raw};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDeviceHandle, MlxStream, install_non_terminating_error_handler, raw};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -94,7 +94,7 @@ These fail with a clear error on a GPU context, so use `on_cpu`:
 - Matrix factorization and solving: `linalg_inv`, `linalg_solve`, `linalg_cholesky`, `linalg_qr`, `linalg_svd`, and similar. See [Linear algebra](linear-algebra.md).
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -122,7 +122,7 @@ fn main() -> Result<(), MlxCError> {
 `MlxDeviceHandle` identifies a device and answers questions about it.
 
 ```rust
-use mlx_c_rust::{MlxCError, MlxDeviceHandle, install_non_terminating_error_handler, raw};
+use mlx_bridge::{MlxCError, MlxDeviceHandle, install_non_terminating_error_handler, raw};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -144,7 +144,7 @@ Streams are thread affine: evaluating on a stream from a thread other than the o
 Each thread should create its own context:
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn double_on_this_thread(values: &[f32]) -> Result<Vec<f32>, MlxCError> {
     let context = MlxBindingsContext::new()?;

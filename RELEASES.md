@@ -77,7 +77,7 @@ maintain, no merge conflicts in release pull requests.
 - The crates.io page shows the version.
 - docs.rs built the documentation (the document lane mirrors its
   target; confirm the real build).
-- A scratch consumer project: `cargo add mlx-c-rust@<version>`, build,
+- A scratch consumer project: `cargo add mlx-bridge@<version>`, build,
   run one operation — the adopter's first five minutes, proven.
 
 ## Defect response after a release

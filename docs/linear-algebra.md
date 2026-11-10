@@ -7,7 +7,7 @@ The `linalg_*` methods wrap MLX's linear algebra family.
 MLX implements matrix factorization, inversion, and solving only on the CPU, so these calls fail on a default GPU context. Create a context with `MlxBindingsContext::on_cpu`. Arrays don't need moving, because Apple silicon memory is unified.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -28,7 +28,7 @@ Norms are the exception: `linalg_norm`, `linalg_norm_l2`, and `linalg_norm_matri
 ## Solving and factorizing
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -55,7 +55,7 @@ fn main() -> Result<(), MlxCError> {
 A singular matrix builds a graph without complaint, and the failure arrives as an error when the graph runs:
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -74,7 +74,7 @@ fn main() -> Result<(), MlxCError> {
 `linalg_svd` returns one array, the singular values, when `compute_uv` is `false`, and three when it is `true`. `linalg_eigvalsh` takes `"L"` or `"U"` to say which triangle to read.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -97,7 +97,7 @@ fn main() -> Result<(), MlxCError> {
 An empty axis list means the whole array. `linalg_norm` takes a numeric order, and `linalg_norm_matrix` takes a named one such as `"fro"`.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -117,7 +117,7 @@ fn main() -> Result<(), MlxCError> {
 The GPU rejects `float64`, so double-precision work also belongs on a CPU context:
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();

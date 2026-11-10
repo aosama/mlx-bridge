@@ -20,7 +20,7 @@ Some public MLX functions have no MLX-C wrapper. `native_gap_shim/` is a small C
 
 ## The raw layer
 
-`mlx_c_rust::raw` holds every generated declaration, for anything the wrappers do differently from what you need. `MlxArray::raw` and `raw_mut` give you the underlying handle, and `check_status` translates the result.
+`mlx_bridge::raw` holds every generated declaration, for anything the wrappers do differently from what you need. `MlxArray::raw` and `raw_mut` give you the underlying handle, and `check_status` translates the result.
 
 Reaching for `raw` should be rare, and it means giving up the crate's guarantees, because `raw` calls are `unsafe` and do no element-type or layout checks. If you need it for something ordinary, that is a gap worth reporting.
 

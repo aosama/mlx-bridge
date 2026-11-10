@@ -156,7 +156,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
-name = "mlx-c-rust"
+name = "mlx-bridge"
 version = "0.32.4-alpha.4"
 dependencies = [
  "bindgen",

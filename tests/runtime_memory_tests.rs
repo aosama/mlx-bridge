@@ -6,7 +6,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{array_at, gpu_context, vector_of};
-use mlx_c_rust::{
+use mlx_bridge::{
     MlxArray, MlxBindingsContext, MlxCError, MlxClosure, MlxDtype, MlxMapStringToArray,
     active_memory_bytes, array_buffer_size_bytes, cache_memory_bytes, clear_allocator_cache,
     memory_limit_bytes, peak_memory_bytes, reset_peak_memory, set_cache_limit, set_memory_limit,

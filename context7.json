@@ -1,8 +1,8 @@
 {
   "$schema": "https://context7.com/schema/context7.json",
-  "url": "https://context7.com/aosama/mlx-c-rust",
+  "url": "https://context7.com/aosama/mlx-bridge",
   "public_key": "pk_ktyvNf7sbZ4eVInatf7Qq",
-  "projectTitle": "mlx-c-rust",
+  "projectTitle": "mlx-bridge",
   "description": "A complete, low-level Rust bridge to the MLX-C API of Apple's MLX array framework for Apple silicon, with owned handles, typed errors, and a safe path to every MLX capability, including gradients, vmap, FFT, Metal kernels, and safetensors.",
   "folders": [
     "docs"
