@@ -1,10 +1,12 @@
-# Migrating to 0.32.4-alpha.4
+# Migrating to 0.32.4-alpha.5
 
-This release fixes safety defects, moves to MLX-C v0.8.0, and widens the safe API. Upgrade if you use keyword closures, read views, or iterate maps, because those paths could abort the process or read out of bounds in `alpha.3`. The automatic native pair rebuilds once on upgrade.
+This release renames the crate from `mlx-c-rust` to `mlx-bridge`. The API is unchanged apart from two additions for Metal kernels, so moving from `alpha.4` only needs the new names below. The automatic native pair compiles once more, into the new cache folder.
+
+Coming from `alpha.3` or earlier, the `alpha.4` changes further down apply as well.
 
 ## The crate is now named `mlx-bridge`
 
-Releases after `0.32.4-alpha.4` are published as `mlx-bridge`. Releases up to and including `0.32.4-alpha.4` stay on crates.io under the former name, `mlx-c-rust`, and receive no further updates. The API is unchanged by the rename, so moving over is a matter of new names:
+From `0.32.4-alpha.5` on, releases are published as `mlx-bridge`. Releases up to and including `0.32.4-alpha.4` stay on crates.io under the former name, `mlx-c-rust`. Moving over is a matter of new names:
 
 | Before | After |
 |---|---|
@@ -17,6 +19,10 @@ Releases after `0.32.4-alpha.4` are published as `mlx-bridge`. Releases up to an
 The former prefix variable is no longer read. A build that still sets only `MLX_C_RUST_MLX_C_PREFIX` prints a warning naming the new variable and continues down the discovery ladder without your prefix, so rename it before relying on a custom MLX-C.
 
 The automatic native pair compiles once more into the new folder, after which you can remove `~/.cache/mlx-c-rust`. To keep both names building during a gradual move, Cargo can alias the dependency: `mlx_c_rust = { package = "mlx-bridge", version = "…" }`.
+
+## Changes carried over from 0.32.4-alpha.4
+
+The `alpha.4` release fixed safety defects, moved to MLX-C v0.8.0, and widened the safe API. Upgrade from `alpha.3` if you use keyword closures, read views, or iterate maps, because those paths could abort the process or read out of bounds.
 
 ## Changes that need code edits
 

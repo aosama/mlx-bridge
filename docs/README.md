@@ -28,7 +28,7 @@ Every Rust example in these guides is compiled and run by continuous integration
 ## Building and upgrading
 
 - [Native build](native-build.md): how the crate finds or compiles MLX, and the bindings-only mode.
-- [Migrating to 0.32.4-alpha.4](migration.md): every breaking change with its replacement.
+- [Migrating to 0.32.4-alpha.5](migration.md): every breaking change with its replacement.
 - [Troubleshooting](troubleshooting.md): symptoms, causes, and fixes.
 - [Completeness and the raw layer](completeness.md): what is covered, and the few things deliberately left out.
 
