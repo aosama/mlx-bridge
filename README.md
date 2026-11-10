@@ -5,13 +5,13 @@
 
 A complete, low-level, policy-free Rust bridge to the public [MLX-C](https://github.com/ml-explore/mlx-c) C API of Apple's [MLX](https://github.com/ml-explore/mlx) array framework for Apple silicon.
 
-**Current release: [`0.32.4-alpha.4`](https://crates.io/crates/mlx-c-rust/0.32.4-alpha.4) — verified against MLX `v0.32.4`, binding the complete MLX-C `v0.8.0` surface, the MLX-C release pairing with that MLX, plus this repository's gap shim for the MLX functions that release leaves unwrapped.** That release is published under the crate's former name, `mlx-c-rust`; releases named `mlx-bridge` begin with the next alpha. The crate version always names the MLX release it is verified against — the number you search for and install — while the bound MLX-C release and the forward adaptations are recorded here and in `COVERAGE_INVENTORY.md`. Published on [crates.io](https://crates.io/crates/mlx-bridge); documentation builds on [docs.rs](https://docs.rs/mlx-bridge).
+**Current release: [`0.32.4-alpha.5`](https://crates.io/crates/mlx-bridge/0.32.4-alpha.5) — verified against MLX `v0.32.4`, binding the complete MLX-C `v0.8.0` surface, the MLX-C release pairing with that MLX, plus this repository's gap shim for the MLX functions that release leaves unwrapped.** Releases up to `0.32.4-alpha.4` were published under the crate's former name, [`mlx-c-rust`](https://crates.io/crates/mlx-c-rust). The crate version always names the MLX release it is verified against — the number you search for and install — while the bound MLX-C release and the forward adaptations are recorded here and in `COVERAGE_INVENTORY.md`. Published on [crates.io](https://crates.io/crates/mlx-bridge); documentation builds on [docs.rs](https://docs.rs/mlx-bridge).
 
 ## Documentation
 
 - [Guides and API reference](docs/README.md): task guides whose examples all run in continuous integration, and a reference covering every public item.
 - [Getting started](docs/getting-started.md): from an empty project to your first computation.
-- [Migrating to 0.32.4-alpha.4](docs/migration.md): every breaking change with its replacement.
+- [Migrating to 0.32.4-alpha.5](docs/migration.md): every breaking change with its replacement.
 - [API documentation on docs.rs](https://docs.rs/mlx-bridge).
 
 ## The goal

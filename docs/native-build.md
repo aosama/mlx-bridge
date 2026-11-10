@@ -33,7 +33,7 @@ If your project manages its own native image, such as a patched MLX fork, turn o
 
 ```toml
 [dependencies]
-mlx-bridge = { version = "0.32.4-alpha.4", default-features = false }
+mlx-bridge = { version = "0.32.4-alpha.5", default-features = false }
 ```
 
 Declarations, wrappers, and error handling are identical.
