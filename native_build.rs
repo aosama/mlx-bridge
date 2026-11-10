@@ -8,9 +8,8 @@
 //! per machine per pin and every later consumer reuses it.
 //!
 //! The prefix identity hashes the pinned tags and their tarball checksums,
-//! in the spirit of a production serving stack's native-build store: a pin
-//! or patch edit changes the identity, which orphans the old prefix and
-//! triggers exactly one fresh compilation. Phase completion markers make
+//! so a pin or patch edit changes the identity, which orphans the old
+//! prefix and triggers exactly one fresh compilation. Phase completion markers make
 //! re-runs safe: every step checks for its output before doing work.
 
 use std::{

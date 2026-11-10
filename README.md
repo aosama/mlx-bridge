@@ -30,7 +30,7 @@ What this crate is *not*: a high-level framework. For neural-network layers, opt
 
 ## Status
 
-Early public extraction, versioned to name the verified MLX release (crate `0.32.4` is verified against MLX `v0.32.4`, binding MLX-C `v0.8.0`). The bridge was hardened inside a production local-model serving stack before extraction. The completeness guarantee covers symbol *presence*; per-wrapper behavioral test coverage is growing and tracked in `COVERAGE_INVENTORY.md`.
+Early public release, versioned to name the verified MLX release (crate `0.32.4` is verified against MLX `v0.32.4`, binding MLX-C `v0.8.0`). The completeness guarantee covers symbol *presence*; per-wrapper behavioral test coverage is growing and tracked in `COVERAGE_INVENTORY.md`.
 
 ## Building
 
