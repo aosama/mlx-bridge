@@ -1,4 +1,4 @@
-/* The mlx-c-rust gap shim implementation. See gap_shim.h for the contract
+/* The mlx-bridge gap shim implementation. See gap_shim.h for the contract
  * and the retirement policy. The handle casts below inline what MLX-C's
  * private headers do: the public C struct carries the C++ object as a
  * void* ctx (that layout is the published C ABI), so casting ctx is both

@@ -5,7 +5,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::gpu_context;
-use mlx_c_rust::{MlxCError, initialize_distributed_with_all_gather};
+use mlx_bridge::{MlxCError, initialize_distributed_with_all_gather};
 
 fn unused_all_gather(
     _rank: i32,

@@ -4,7 +4,7 @@
 //! through the combined parse, and behaves like any MLX-C family: real
 //! values, captured errors, owned handles.
 
-use mlx_c_rust::{
+use mlx_bridge::{
     MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxDtype, broadcast_shapes,
     einsum_path, install_non_terminating_error_handler, normalize_axis_index, raw,
 };

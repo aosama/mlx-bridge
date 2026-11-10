@@ -11,7 +11,7 @@ use std::os::unix::io::FromRawFd;
 mod bridge_fixtures;
 
 use bridge_fixtures::{assert_translated_failure, float_array, floats_of, gpu_context};
-use mlx_c_rust::{
+use mlx_bridge::{
     MlxDtype, MlxMetalKernel, MlxMetalKernelConfig, MlxMetalKernelOutput,
     MlxMetalKernelTemplateArgument, apply_metal_kernel_in_graph_with_config, metallib_path,
     set_metallib_path,

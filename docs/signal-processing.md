@@ -17,7 +17,7 @@ Each transform takes a length `n`, an axis, and a normalization from `raw`:
 `fft_rfft` keeps only the non-negative frequencies, so `n` real samples give `n / 2 + 1` bins. `fft_irfft` inverts it, and needs the original length.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler, raw};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler, raw};
 
 const BACKWARD: raw::mlx_fft_norm = raw::mlx_fft_norm__MLX_FFT_NORM_BACKWARD;
 
@@ -63,7 +63,7 @@ fn main() -> Result<(), MlxCError> {
 | `onesided` | Keep only non-negative frequencies | Chosen from the input type |
 
 ```rust
-use mlx_c_rust::{MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler, raw};
+use mlx_bridge::{MlxBindingsContext, MlxCError, MlxDtype, install_non_terminating_error_handler, raw};
 
 const ORTHO: raw::mlx_fft_norm = raw::mlx_fft_norm__MLX_FFT_NORM_ORTHO;
 

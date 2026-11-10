@@ -7,7 +7,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{float_array, floats_of, gpu_context};
-use mlx_c_rust::{
+use mlx_bridge::{
     clear_distributed_backends, cuda_is_available, distributed_is_available,
     initialize_distributed, metal_is_available, set_wired_limit,
 };

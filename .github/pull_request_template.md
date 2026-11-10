@@ -24,7 +24,7 @@ List the applicable github issues whether pre-existing in the backlog or you cre
 
 ## Problem
 
-Describe the concrete problem and why it belongs in mlx-c-rust.
+Describe the concrete problem and why it belongs in mlx-bridge.
 
 ## Change
 

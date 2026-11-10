@@ -48,7 +48,7 @@ warnings = "deny"
 # Compilation and documentation builds succeed on any host (the build
 # script's link ladder stops with a warning on non-mac hosts). Test
 # binaries are the one thing that must LINK an MLX-C library, resolved
-# first-match through MLX_C_RUST_MLX_C_PREFIX=<prefix>, Homebrew,
+# first-match through MLX_BRIDGE_MLX_C_PREFIX=<prefix>, Homebrew,
 # `pkg-config mlx-c`, and finally the pinned pair compiled into the
 # machine-shared prefix; `cargo xtask build-native` builds that pair up
 # front with live progress. The automatic path
@@ -69,7 +69,7 @@ warnings = "deny"
 # Repository tooling runs as typed Rust through the xtask pattern. The
 # subcommands: `cargo xtask build-native [--force]` compiles the pinned
 # MLX and MLX-C pair into the machine-shared identity-keyed prefix under
-# ~/.cache/mlx-c-rust/native/<identity>/prefix — the same prefix the
+# ~/.cache/mlx-bridge/native/<identity>/prefix — the same prefix the
 # crate's build script reads — so the pair compiles once per machine per
 # pin and every consumer reuses it; `cargo xtask
 # audit-upstream-surface [--mlx-source <mlx checkout>]` proves no MLX

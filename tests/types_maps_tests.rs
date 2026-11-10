@@ -5,7 +5,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{float_array, floats_of, gpu_context};
-use mlx_c_rust::{MlxMapStringToArray, MlxMapStringToString};
+use mlx_bridge::{MlxMapStringToArray, MlxMapStringToString};
 
 #[test]
 fn should_return_a_stored_array_by_key() {

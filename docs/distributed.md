@@ -7,7 +7,7 @@ MLX can run across cooperating processes. This crate wraps its group model and c
 `initialize_distributed` takes `strict` and a backend name: `"any"`, `"mpi"`, `"nccl"`, `"jaccl"`, or `"ring"`. With `strict` set to `false`, a process with no configured backend gets a singleton group, so the same code runs alone or distributed.
 
 ```rust,standalone_crate
-use mlx_c_rust::{MlxCError, clear_distributed_backends, initialize_distributed, install_non_terminating_error_handler};
+use mlx_bridge::{MlxCError, clear_distributed_backends, initialize_distributed, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -34,7 +34,7 @@ These are methods on `MlxArray`, taking the group and a stream: `all_sum`, `all_
 `initialize_distributed_with_all_gather` initializes JACCL with a Rust callback for exchanging metadata. It receives this process's rank, the world size, this rank's bytes, and a destination holding `world_size * source.len()` bytes ordered by rank. MLX then owns the callback.
 
 ```rust,no_run
-use mlx_c_rust::{MlxCError, initialize_distributed_with_all_gather, install_non_terminating_error_handler};
+use mlx_bridge::{MlxCError, initialize_distributed_with_all_gather, install_non_terminating_error_handler};
 
 fn exchange_with_peers(
     rank: i32,

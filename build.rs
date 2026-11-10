@@ -7,7 +7,7 @@
 //! the coverage contract compares against those same headers.
 //!
 //! Linking a binary that uses this crate needs an MLX-C library. Discovery
-//! order, first match wins: the `MLX_C_RUST_MLX_C_PREFIX` environment
+//! order, first match wins: the `MLX_BRIDGE_MLX_C_PREFIX` environment
 //! variable, the standard Homebrew prefixes, `pkg-config mlx-c`, and — the
 //! zero-configuration default — the typed native-build engine in
 //! `native_build.rs` (this crate's own code, no shell), which reuses the
@@ -30,7 +30,7 @@ use std::{
 use pkg_config::Config as PkgConfig;
 
 const VENDORED_HEADERS_DIRECTORY: &str = "vendor/mlx-c";
-const MLX_C_PREFIX_VARIABLE: &str = "MLX_C_RUST_MLX_C_PREFIX";
+const MLX_C_PREFIX_VARIABLE: &str = "MLX_BRIDGE_MLX_C_PREFIX";
 
 const BINDGEN_FUNCTION_ALLOWLIST: &str = "mlx_.*";
 const BINDGEN_TYPE_ALLOWLIST: &str = "mlx_.*";
@@ -250,7 +250,7 @@ fn prefix_from_environment() -> Option<PathBuf> {
         return Some(prefix);
     }
     println!(
-        "cargo:warning=MLX_C_RUST_MLX_C_PREFIX is set but {} holds no MLX-C library; \
+        "cargo:warning={MLX_C_PREFIX_VARIABLE} is set but {} holds no MLX-C library; \
          continuing down the discovery ladder",
         prefix.join("lib").display()
     );

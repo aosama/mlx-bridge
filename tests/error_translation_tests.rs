@@ -6,8 +6,8 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{assert_translated_failure, float_array, floats_of, gpu_context, int_array};
-use mlx_c_rust::error::set_closure_error;
-use mlx_c_rust::{
+use mlx_bridge::error::set_closure_error;
+use mlx_bridge::{
     MlxArray, MlxCError, MlxDtype, check_status, clear_captured_mlx_error,
     install_non_terminating_error_handler, take_captured_mlx_error,
 };

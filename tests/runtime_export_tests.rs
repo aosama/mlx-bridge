@@ -9,7 +9,7 @@ use std::ffi::{c_char, c_int, c_void};
 use bridge_fixtures::{
     array_at, float_array, floats_of, gpu_context, scratch_file_path, vector_of,
 };
-use mlx_c_rust::{
+use mlx_bridge::{
     GraphOutputFile, MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure,
     MlxClosureKwargs, MlxFunctionExporter, MlxImportedFunction, MlxMapStringToArray, MlxNodeNamer,
     export_function, export_function_with_keywords, export_graph_to_dot, print_graph,

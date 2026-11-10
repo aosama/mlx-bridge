@@ -7,7 +7,7 @@ This guide covers safetensors, single arrays, GGUF, and custom byte transports. 
 `save_safetensors` writes a name-to-array map plus string metadata, and `load_safetensors` reads both back on the stream you give it.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxCError, MlxMapStringToArray, MlxMapStringToString, MlxStream, install_non_terminating_error_handler, load_safetensors, save_safetensors};
+use mlx_bridge::{MlxArray, MlxCError, MlxMapStringToArray, MlxMapStringToString, MlxStream, install_non_terminating_error_handler, load_safetensors, save_safetensors};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -45,7 +45,7 @@ impl MlxArrayMapFixture {
 `save_to_file` and `load_from_file` handle one array in NumPy's `.npy` format.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxCError, MlxStream, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxCError, MlxStream, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -67,7 +67,7 @@ fn main() -> Result<(), MlxCError> {
 `MlxIoGguf` holds arrays and typed metadata: arrays, strings, and string lists. Reading an absent entry is an error, so use the `has_metadata_*` probes when a key is optional. They return `Ok(false)` for an absent key.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxCError, MlxIoGguf, MlxStream, MlxVectorString, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxCError, MlxIoGguf, MlxStream, MlxVectorString, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -100,7 +100,7 @@ Every vtable slot must hold a function, because MLX-C calls them without checkin
 ```rust
 use std::ffi::{c_char, c_int, c_void};
 
-use mlx_c_rust::{MlxArray, MlxCError, MlxIoReader, MlxIoWriter, MlxStream, install_non_terminating_error_handler, load_array_from_reader, raw, save_array_to_writer};
+use mlx_bridge::{MlxArray, MlxCError, MlxIoReader, MlxIoWriter, MlxStream, install_non_terminating_error_handler, load_array_from_reader, raw, save_array_to_writer};
 
 struct MemoryTransport {
     stored_bytes: Vec<u8>,

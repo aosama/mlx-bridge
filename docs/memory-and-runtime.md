@@ -7,7 +7,7 @@ These functions apply to the whole process. The crate sets no limits of its own,
 `active_memory_bytes` reports what arrays hold, `peak_memory_bytes` the high-water mark, and `cache_memory_bytes` what the allocator keeps for reuse. Because evaluation is lazy, active memory rises when a graph runs, not when it is built.
 
 ```rust
-use mlx_c_rust::{MlxBindingsContext, MlxCError, MlxDtype, active_memory_bytes, install_non_terminating_error_handler, reset_peak_memory, peak_memory_bytes};
+use mlx_bridge::{MlxBindingsContext, MlxCError, MlxDtype, active_memory_bytes, install_non_terminating_error_handler, reset_peak_memory, peak_memory_bytes};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -30,7 +30,7 @@ fn main() -> Result<(), MlxCError> {
 `set_memory_limit` and `set_cache_limit` return the previous value, so you can restore it. `set_wired_limit` controls how much memory the GPU keeps wired.
 
 ```rust,standalone_crate
-use mlx_c_rust::{MlxCError, install_non_terminating_error_handler, memory_limit_bytes, set_memory_limit};
+use mlx_bridge::{MlxCError, install_non_terminating_error_handler, memory_limit_bytes, set_memory_limit};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -54,7 +54,7 @@ Dropping every handle to an array releases it to the allocator's cache. `clear_a
 `MlxArray::to_string_lossy` renders an array as MLX prints it, and `set_print_format` controls precision and boolean spelling for the whole process. A negative precision selects MLX's default.
 
 ```rust,standalone_crate
-use mlx_c_rust::{MlxArray, MlxCError, MlxPrintFormat, install_non_terminating_error_handler, print_format, set_print_format};
+use mlx_bridge::{MlxArray, MlxCError, MlxPrintFormat, install_non_terminating_error_handler, print_format, set_print_format};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -75,7 +75,7 @@ fn main() -> Result<(), MlxCError> {
 `MlxDtype::float_info` reports a floating-point type's limits, and fails for non-floating types.
 
 ```rust
-use mlx_c_rust::{MlxCError, MlxDtype, install_non_terminating_error_handler};
+use mlx_bridge::{MlxCError, MlxDtype, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();

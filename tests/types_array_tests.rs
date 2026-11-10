@@ -8,7 +8,7 @@ mod bridge_fixtures;
 use bridge_fixtures::{
     assert_floats_close, bools_of, float_array, floats_of, gpu_context, int_array, ints_of,
 };
-use mlx_c_rust::{MlxArray, MlxDtype};
+use mlx_bridge::{MlxArray, MlxDtype};
 
 #[test]
 fn should_keep_a_retained_handle_readable_after_its_source_drops() {

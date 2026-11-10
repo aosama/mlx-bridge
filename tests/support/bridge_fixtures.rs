@@ -14,7 +14,7 @@
 // Every suite compiles its own copy and uses a different subset.
 #![allow(dead_code)]
 
-use mlx_c_rust::{
+use mlx_bridge::{
     MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, install_non_terminating_error_handler,
 };
 
@@ -99,7 +99,7 @@ pub fn assert_translated_failure(failure: &MlxCError, operation_fragment: &str) 
 
 /// A unique path under the system temporary directory for one round trip.
 pub fn scratch_file_path(file_name: &str) -> String {
-    let process_scoped_name = format!("mlx_c_rust_{}_{file_name}", std::process::id());
+    let process_scoped_name = format!("mlx_bridge_{}_{file_name}", std::process::id());
     std::env::temp_dir()
         .join(process_scoped_name)
         .to_str()

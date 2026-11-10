@@ -1,4 +1,4 @@
-# The mlx-c-rust gap shim: compiled by the native build engine as the
+# The mlx-bridge gap shim: compiled by the native build engine as the
 # third component after MLX and MLX-C, into the same machine-shared
 # prefix. Static like the pair (consumer binaries embed it), C++20 like
 # both upstreams, and found through the prefix's installed MLX package

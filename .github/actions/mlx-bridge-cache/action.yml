@@ -1,4 +1,4 @@
-name: 'mlx-c-rust cache with restoration report'
+name: 'mlx-bridge cache with restoration report'
 description: 'Restores or saves one named CI cache and reports its outcome and duration, so a slow run shows which cache missed without reading the raw logs.'
 
 inputs:

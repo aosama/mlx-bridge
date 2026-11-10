@@ -9,7 +9,7 @@ use bridge_fixtures::{
     FLOAT_TOLERANCE, array_at, assert_floats_close, float_array, floats_of, gpu_context, int_array,
     ints_of, vector_of,
 };
-use mlx_c_rust::{MlxArray, MlxDtype};
+use mlx_bridge::{MlxArray, MlxDtype};
 
 #[test]
 fn should_create_ranges_with_the_requested_bounds_and_stride() {

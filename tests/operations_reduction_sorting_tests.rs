@@ -8,7 +8,7 @@ mod bridge_fixtures;
 use bridge_fixtures::{
     FLOAT_TOLERANCE, assert_floats_close, bools_of, float_array, floats_of, gpu_context,
 };
-use mlx_c_rust::MlxArray;
+use mlx_bridge::MlxArray;
 
 fn two_by_three() -> MlxArray {
     float_array(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3])

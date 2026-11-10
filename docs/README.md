@@ -1,6 +1,6 @@
-# mlx-c-rust documentation
+# mlx-bridge documentation
 
-`mlx-c-rust` is a complete, low-level Rust bridge to the MLX-C API of Apple's [MLX](https://github.com/ml-explore/mlx) array framework for Apple silicon. It gives you owned handles, typed errors, and a safe path to every MLX capability, without neural-network layers, optimizers, or model loading.
+`mlx-bridge` is a complete, low-level Rust bridge to the MLX-C API of Apple's [MLX](https://github.com/ml-explore/mlx) array framework for Apple silicon. It gives you owned handles, typed errors, and a safe path to every MLX capability, without neural-network layers, optimizers, or model loading.
 
 Every Rust example in these guides is compiled and run by continuous integration, so an example that stops working fails the build.
 
@@ -43,4 +43,4 @@ The reference covers every public item of the safe API, generated from the doc c
 - [Metal](reference/metal.md)
 - [Context and errors](reference/context-and-errors.md)
 
-The same reference is on [docs.rs](https://docs.rs/mlx-c-rust).
+The same reference is on [docs.rs](https://docs.rs/mlx-bridge).

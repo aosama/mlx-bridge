@@ -55,7 +55,7 @@
 //! in this crate's test tree, except private trampolines, whose contracts sit
 //! beside them because nothing outside the module can reach them. Anything exercising the bindings themselves
 //! needs an MLX-C library at link time, resolved by the build script's
-//! ladder: the `MLX_C_RUST_MLX_C_PREFIX` environment variable, Homebrew,
+//! ladder: the `MLX_BRIDGE_MLX_C_PREFIX` environment variable, Homebrew,
 //! `pkg-config mlx-c`, and finally the pinned pair compiled into the
 //! machine-shared prefix (see the build script and README). When no rung
 //! resolves, library compilation and documentation builds still succeed and

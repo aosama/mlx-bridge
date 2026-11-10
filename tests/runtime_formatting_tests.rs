@@ -5,7 +5,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{float_array, gpu_context};
-use mlx_c_rust::{MlxArray, MlxPrintFormat, print_format, set_print_format};
+use mlx_bridge::{MlxArray, MlxPrintFormat, print_format, set_print_format};
 
 #[test]
 fn should_apply_and_restore_the_print_format() {

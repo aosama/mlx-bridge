@@ -6,7 +6,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{float_array, floats_of, gpu_context, ints_of};
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxDtype};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxDtype};
 
 fn uniform_sample(context: &MlxBindingsContext, key: Option<&MlxArray>) -> Vec<f32> {
     let low = MlxArray::from_scalar_f32(0.0);

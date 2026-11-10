@@ -16,7 +16,7 @@ use std::process::{Command, ExitCode};
 
 /// The prefix every cache family this repository saves starts with. Keys
 /// outside it (none today) are left alone.
-const CACHE_KEY_PREFIX: &str = "mlx-c-rust-v1-";
+const CACHE_KEY_PREFIX: &str = "mlx-bridge-v1-";
 /// native-pair keeps two generations because a pin bump creates the new
 /// generation while pull requests based on the old pin still restore it;
 /// deleting the old one mid-flight forces their runners into cold native
@@ -37,6 +37,8 @@ const DEFAULT_MAX_ENTRY_BYTES: u64 = 0;
 /// stays warm.
 const SCCACHE_OTHER_REF_KEEP_COUNT: usize = 0;
 const DEFAULT_OTHER_REF_KEEP_COUNT: usize = 1;
+const LEGACY_SCCACHE_KEY_PREFIX: &str = "sccache/";
+const LEGACY_SCCACHE_FAMILY_NAME: &str = "sccache-legacy-backend";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CacheEntry {
@@ -60,7 +62,7 @@ pub struct Deletion {
     pub size_bytes: u64,
 }
 
-/// The family is the key with the optional `mlx-c-rust-v1-` prefix and
+/// The family is the key with the optional `mlx-bridge-v1-` prefix and
 /// the trailing hash segment removed, so it carries the platform
 /// (`sccache-macOS-arm64`): keep-counts then apply per platform, and the
 /// day a second runner platform joins, its prune cannot delete this
@@ -70,9 +72,6 @@ pub struct Deletion {
 /// `native-pair-<hash>` form) keep their bare family name. Unknown
 /// families are never deleted: the prune must not destroy artifacts it
 /// cannot name.
-const LEGACY_SCCACHE_KEY_PREFIX: &str = "sccache/";
-const LEGACY_SCCACHE_FAMILY_NAME: &str = "sccache-legacy-backend";
-
 pub fn family_of_key(cache_key: &str) -> &str {
     if cache_key.starts_with(LEGACY_SCCACHE_KEY_PREFIX) {
         return LEGACY_SCCACHE_FAMILY_NAME;
@@ -371,16 +370,16 @@ mod tests {
     #[test]
     fn should_classify_families_with_their_platform_segment() {
         assert_eq!(
-            family_of_key("mlx-c-rust-v1-sccache-macOS-arm64-abc123"),
+            family_of_key("mlx-bridge-v1-sccache-macOS-arm64-abc123"),
             "sccache-macOS-arm64"
         );
         assert_eq!(
-            family_of_key("mlx-c-rust-v1-cargo-downloads-macOS-arm64-abc123"),
+            family_of_key("mlx-bridge-v1-cargo-downloads-macOS-arm64-abc123"),
             "cargo-downloads-macOS-arm64"
         );
         assert_eq!(family_of_key("native-pair-def456"), "native-pair");
         assert_eq!(
-            family_of_key("mlx-c-rust-v1-native-pair-macOS-arm64-def456"),
+            family_of_key("mlx-bridge-v1-native-pair-macOS-arm64-def456"),
             "native-pair-macOS-arm64"
         );
         assert_eq!(
@@ -394,14 +393,14 @@ mod tests {
         let cross_platform_entries = vec![
             cache_entry(
                 70,
-                "mlx-c-rust-v1-sccache-macOS-arm64-hash",
+                "mlx-bridge-v1-sccache-macOS-arm64-hash",
                 DEFAULT_BRANCH_REF,
                 "2026-10-03T00:00:00Z",
                 1,
             ),
             cache_entry(
                 71,
-                "mlx-c-rust-v1-sccache-Linux-x64-hash",
+                "mlx-bridge-v1-sccache-Linux-x64-hash",
                 DEFAULT_BRANCH_REF,
                 "2026-10-03T00:00:00Z",
                 1,
@@ -415,14 +414,14 @@ mod tests {
         let parallel_pull_entries = vec![
             cache_entry(
                 80,
-                "mlx-c-rust-v1-cargo-downloads-macOS-arm64-a",
+                "mlx-bridge-v1-cargo-downloads-macOS-arm64-a",
                 "refs/heads/first-feature",
                 "2026-10-03T00:00:00Z",
                 1,
             ),
             cache_entry(
                 81,
-                "mlx-c-rust-v1-cargo-downloads-macOS-arm64-b",
+                "mlx-bridge-v1-cargo-downloads-macOS-arm64-b",
                 "refs/heads/second-feature",
                 "2026-10-02T00:00:00Z",
                 1,
@@ -435,7 +434,7 @@ mod tests {
     fn should_delete_oversize_sccache_entries_on_other_refs_too() {
         let oversize_entries = vec![cache_entry(
             90,
-            "mlx-c-rust-v1-sccache-macOS-arm64-pr",
+            "mlx-bridge-v1-sccache-macOS-arm64-pr",
             "refs/heads/feature",
             "2026-10-03T00:00:00Z",
             SCCACHE_MAX_ENTRY_BYTES + 1,
@@ -519,14 +518,14 @@ mod tests {
         let sccache_entries = vec![
             cache_entry(
                 10,
-                "mlx-c-rust-v1-sccache-macOS-arm64-new",
+                "mlx-bridge-v1-sccache-macOS-arm64-new",
                 DEFAULT_BRANCH_REF,
                 "2026-10-03T00:00:00Z",
                 SCCACHE_MAX_ENTRY_BYTES + 1,
             ),
             cache_entry(
                 11,
-                "mlx-c-rust-v1-sccache-macOS-arm64-old",
+                "mlx-bridge-v1-sccache-macOS-arm64-old",
                 DEFAULT_BRANCH_REF,
                 "2026-10-01T00:00:00Z",
                 1,
@@ -547,7 +546,7 @@ mod tests {
     fn should_delete_all_sccache_entries_on_other_refs() {
         let sccache_entries = vec![cache_entry(
             20,
-            "mlx-c-rust-v1-sccache-macOS-arm64-pr",
+            "mlx-bridge-v1-sccache-macOS-arm64-pr",
             "refs/heads/feature",
             "2026-10-02T00:00:00Z",
             1,
@@ -568,14 +567,14 @@ mod tests {
         let cargo_download_entries = vec![
             cache_entry(
                 30,
-                "mlx-c-rust-v1-cargo-downloads-macOS-arm64-a",
+                "mlx-bridge-v1-cargo-downloads-macOS-arm64-a",
                 "refs/heads/feature",
                 "2026-10-02T00:00:00Z",
                 1,
             ),
             cache_entry(
                 31,
-                "mlx-c-rust-v1-cargo-downloads-macOS-arm64-b",
+                "mlx-bridge-v1-cargo-downloads-macOS-arm64-b",
                 "refs/heads/feature",
                 "2026-10-01T00:00:00Z",
                 1,
@@ -597,14 +596,14 @@ mod tests {
         let cargo_download_entries = vec![
             cache_entry(
                 40,
-                "mlx-c-rust-v1-cargo-downloads-macOS-arm64-a",
+                "mlx-bridge-v1-cargo-downloads-macOS-arm64-a",
                 DEFAULT_BRANCH_REF,
                 "2026-10-02T00:00:00Z",
                 1,
             ),
             cache_entry(
                 41,
-                "mlx-c-rust-v1-cargo-downloads-macOS-arm64-b",
+                "mlx-bridge-v1-cargo-downloads-macOS-arm64-b",
                 DEFAULT_BRANCH_REF,
                 "2026-10-01T00:00:00Z",
                 1,
@@ -638,7 +637,7 @@ mod tests {
             ),
             cache_entry(
                 51,
-                "mlx-c-rust-v1-unknown-family-macOS-arm64-x",
+                "mlx-bridge-v1-unknown-family-macOS-arm64-x",
                 DEFAULT_BRANCH_REF,
                 "2026-10-03T00:00:00Z",
                 1,

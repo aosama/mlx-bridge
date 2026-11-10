@@ -5,7 +5,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{array_at, float_array, floats_of, gpu_context, vector_of};
-use mlx_c_rust::{
+use mlx_bridge::{
     MlxArray, MlxCError, MlxClosureCustom, MlxClosureCustomJvp, MlxClosureCustomVmap,
 };
 

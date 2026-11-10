@@ -8,7 +8,7 @@ mod bridge_fixtures;
 use bridge_fixtures::{
     FLOAT_TOLERANCE, array_at, assert_floats_close, float_array, floats_of, gpu_context, int_array,
 };
-use mlx_c_rust::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxDtype};
+use mlx_bridge::{MlxArray, MlxArrayVector, MlxBindingsContext, MlxDtype};
 
 fn ramp_weights(context: &MlxBindingsContext) -> MlxArray {
     let ramp = context.arange_f32(0.0, 256.0, 1.0).unwrap();

@@ -16,7 +16,7 @@ Without it, the first MLX failure prints a message and exits the process. This a
 - `description`: what MLX reported, usually with the C source location that raised it.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -66,10 +66,10 @@ Most programs never need this, but code calling the `raw` layer can use the same
 
 - `check_status(status, operation)` turns an MLX-C status code into a `Result`, preferring a parked callback failure as the root cause.
 - `take_captured_mlx_error` and `clear_captured_mlx_error` read and discard this thread's last MLX message.
-- `mlx_c_rust::error::set_closure_error`, `take_closure_error`, and `clear_closure_error` manage the slot a callback parks its failure in.
+- `mlx_bridge::error::set_closure_error`, `take_closure_error`, and `clear_closure_error` manage the slot a callback parks its failure in.
 
 ```rust
-use mlx_c_rust::{check_status, clear_captured_mlx_error, install_non_terminating_error_handler};
+use mlx_bridge::{check_status, clear_captured_mlx_error, install_non_terminating_error_handler};
 
 install_non_terminating_error_handler();
 clear_captured_mlx_error();

@@ -2,8 +2,8 @@
 //! thread-local parking lot that carries closure failures from C
 //! trampolines back to the caller's status translation.
 
-use mlx_c_rust::MlxCError;
-use mlx_c_rust::error::{clear_closure_error, set_closure_error, take_closure_error};
+use mlx_bridge::MlxCError;
+use mlx_bridge::error::{clear_closure_error, set_closure_error, take_closure_error};
 
 fn parked_failure(operation: &'static str, description: &str) -> MlxCError {
     MlxCError {

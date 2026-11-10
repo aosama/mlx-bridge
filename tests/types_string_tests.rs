@@ -1,6 +1,6 @@
 //! Tier 1 contracts for `MlxString`: UTF-8 round trips and the empty edge.
 
-use mlx_c_rust::MlxString;
+use mlx_bridge::MlxString;
 
 #[test]
 fn should_round_trip_utf8_text() {

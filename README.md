@@ -1,18 +1,18 @@
-# mlx-c-rust
+# mlx-bridge
 
-[![Crates.io](https://img.shields.io/crates/v/mlx-c-rust.svg)](https://crates.io/crates/mlx-c-rust)
-[![Documentation](https://docs.rs/mlx-c-rust/badge.svg)](https://docs.rs/mlx-c-rust)
+[![Crates.io](https://img.shields.io/crates/v/mlx-bridge.svg)](https://crates.io/crates/mlx-bridge)
+[![Documentation](https://docs.rs/mlx-bridge/badge.svg)](https://docs.rs/mlx-bridge)
 
 A complete, low-level, policy-free Rust bridge to the public [MLX-C](https://github.com/ml-explore/mlx-c) C API of Apple's [MLX](https://github.com/ml-explore/mlx) array framework for Apple silicon.
 
-**Current release: [`0.32.4-alpha.4`](https://crates.io/crates/mlx-c-rust/0.32.4-alpha.4) — verified against MLX `v0.32.4`, binding the complete MLX-C `v0.8.0` surface, the MLX-C release pairing with that MLX, plus this repository's gap shim for the MLX functions that release leaves unwrapped.** The crate version always names the MLX release it is verified against — the number you search for and install — while the bound MLX-C release and the forward adaptations are recorded here and in `COVERAGE_INVENTORY.md`. Published on [crates.io](https://crates.io/crates/mlx-c-rust); documentation builds on [docs.rs](https://docs.rs/mlx-c-rust).
+**Current release: [`0.32.4-alpha.4`](https://crates.io/crates/mlx-c-rust/0.32.4-alpha.4) — verified against MLX `v0.32.4`, binding the complete MLX-C `v0.8.0` surface, the MLX-C release pairing with that MLX, plus this repository's gap shim for the MLX functions that release leaves unwrapped.** That release is published under the crate's former name, `mlx-c-rust`; releases named `mlx-bridge` begin with the next alpha. The crate version always names the MLX release it is verified against — the number you search for and install — while the bound MLX-C release and the forward adaptations are recorded here and in `COVERAGE_INVENTORY.md`. Published on [crates.io](https://crates.io/crates/mlx-bridge); documentation builds on [docs.rs](https://docs.rs/mlx-bridge).
 
 ## Documentation
 
 - [Guides and API reference](docs/README.md): task guides whose examples all run in continuous integration, and a reference covering every public item.
 - [Getting started](docs/getting-started.md): from an empty project to your first computation.
 - [Migrating to 0.32.4-alpha.4](docs/migration.md): every breaking change with its replacement.
-- [API documentation on docs.rs](https://docs.rs/mlx-c-rust).
+- [API documentation on docs.rs](https://docs.rs/mlx-bridge).
 
 ## The goal
 
@@ -34,17 +34,17 @@ Early public extraction, versioned to name the verified MLX release (crate `0.32
 
 ## Building
 
-Nothing to configure: `cargo add mlx-c-rust`, then `cargo build`. With no environment set, the build script's typed native engine downloads the pinned MLX and MLX-C source releases (SHA-256 verified), compiles them once with CMake into a **machine-shared, identity-keyed prefix** (`~/.cache/mlx-c-rust/native/<identity>/`) — statically, so consumer binaries embed the pair and load no MLX dylibs at runtime, though they do read `mlx.metallib` from the prefix; Metal kernels are read from the metallib inside the same prefix (the path is baked into the compiled code), so the prefix is self-sufficient and the build tree is disposable. The pair compiles once per machine per pin, and every project using the crate reuses it. Requirements: an Apple Silicon Mac, the Rust toolchain pinned in `rust-toolchain.toml`, Clang for bindgen, and `curl`, `tar`, and `cmake` on PATH (a standard developer machine; `brew install cmake` covers the one that is usually missing).
+Nothing to configure: `cargo add mlx-bridge`, then `cargo build`. With no environment set, the build script's typed native engine downloads the pinned MLX and MLX-C source releases (SHA-256 verified), compiles them once with CMake into a **machine-shared, identity-keyed prefix** (`~/.cache/mlx-bridge/native/<identity>/`) — statically, so consumer binaries embed the pair and load no MLX dylibs at runtime, though they do read `mlx.metallib` from the prefix; Metal kernels are read from the metallib inside the same prefix (the path is baked into the compiled code), so the prefix is self-sufficient and the build tree is disposable. The pair compiles once per machine per pin, and every project using the crate reuses it. Requirements: an Apple Silicon Mac, the Rust toolchain pinned in `rust-toolchain.toml`, Clang for bindgen, and `curl`, `tar`, and `cmake` on PATH (a standard developer machine; `brew install cmake` covers the one that is usually missing).
 
 Working in this repository, the same engine is available as typed tooling: `cargo xtask build-native` (add `--force` to recompile) builds the pair up front with live progress, so later builds reuse it in milliseconds.
 
 To link against an MLX-C you provide yourself instead, in first-match order (each of these takes precedence over the automatic build, which runs only when none resolves):
 
-1. `MLX_C_RUST_MLX_C_PREFIX` — a prefix whose `lib/` holds the libraries. If they are dylibs, your own build must add an rpath for them, because a library crate cannot add one to your binary.
+1. `MLX_BRIDGE_MLX_C_PREFIX` — a prefix whose `lib/` holds the libraries. If they are dylibs, your own build must add an rpath for them, because a library crate cannot add one to your binary.
 2. The standard Homebrew prefixes, after `brew install mlx-c`.
 3. `pkg-config mlx-c`.
 
-**Bindings-only mode** — consumers whose native image is deliberately not any library this crate can discover (for example a pinned, patched MLX fork from their own native orchestration) take the bridge alone: `mlx-c-rust = { version = "…", default-features = false }`. The build script then emits zero link directives — no ladder, no pair build, no side effects — and the consumer's own build supplies and links its native libraries. Everything else (declarations, captured-error translation, handle types, operation families) is identical.
+**Bindings-only mode** — consumers whose native image is deliberately not any library this crate can discover (for example a pinned, patched MLX fork from their own native orchestration) take the bridge alone: `mlx-bridge = { version = "…", default-features = false }`. The build script then emits zero link directives — no ladder, no pair build, no side effects — and the consumer's own build supplies and links its native libraries. Everything else (declarations, captured-error translation, handle types, operation families) is identical.
 
 ## Versioning
 

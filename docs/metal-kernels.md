@@ -7,7 +7,7 @@
 Inputs and outputs appear in the shader under the names you give, and `thread_position_in_grid` is available as usual. Declare each output's shape and element type, then choose a grid and thread group.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, MlxMetalKernel, MlxMetalKernelOutput, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, MlxMetalKernel, MlxMetalKernelOutput, install_non_terminating_error_handler};
 
 const DOUBLING_SHADER: &str = "
     uint element_position = thread_position_in_grid.x;
@@ -33,7 +33,7 @@ fn main() -> Result<(), MlxCError> {
 Template arguments reach the shader as compile-time values. Each is a dtype, an integer, or a boolean.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, MlxMetalKernel, MlxMetalKernelOutput, MlxMetalKernelTemplateArgument, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, MlxMetalKernel, MlxMetalKernelOutput, MlxMetalKernelTemplateArgument, install_non_terminating_error_handler};
 
 const SCALING_SHADER: &str = "
     uint element_position = thread_position_in_grid.x;
@@ -70,7 +70,7 @@ fn main() -> Result<(), MlxCError> {
 MLX's kernel call takes `verbose=True` to print the shader it generates. That flag lives on the launch config, so build the config, turn logging on, and pass the config to the launch. Inside a graph trace, pass the same config to `apply_metal_kernel_in_graph_with_config`. The convenience methods leave it off.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, MlxMetalKernel, MlxMetalKernelConfig, MlxMetalKernelOutput, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, MlxMetalKernel, MlxMetalKernelConfig, MlxMetalKernelOutput, install_non_terminating_error_handler};
 
 const DOUBLING_SHADER: &str = "
     uint element_position = thread_position_in_grid.x;
@@ -98,7 +98,7 @@ fn main() -> Result<(), MlxCError> {
 The crate rejects a kernel with no inputs or outputs, a null byte in any string, or a grid or thread group with a non-positive dimension straight away. A shader that doesn't compile only fails when the output is evaluated, because compilation happens then.
 
 ```rust
-use mlx_c_rust::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, MlxMetalKernel, MlxMetalKernelOutput, install_non_terminating_error_handler};
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, MlxDtype, MlxMetalKernel, MlxMetalKernelOutput, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();

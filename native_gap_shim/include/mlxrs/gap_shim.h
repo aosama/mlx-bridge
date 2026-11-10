@@ -1,7 +1,7 @@
 #ifndef MLXRS_GAP_SHIM_H
 #define MLXRS_GAP_SHIM_H
 
-/* The mlx-c-rust gap shim: this repository's own C ABI over the pinned
+/* The mlx-bridge gap shim: this repository's own C ABI over the pinned
  * MLX C++ surface, carrying exactly the functions the vendored MLX-C pin
  * has not wrapped yet. It exists so an MLX capability becomes reachable
  * from Rust the day the MLX pin moves, instead of the day MLX-C happens

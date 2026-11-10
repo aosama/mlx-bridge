@@ -8,7 +8,7 @@ mod bridge_fixtures;
 use bridge_fixtures::{
     FLOAT_TOLERANCE, array_at, assert_floats_close, float_array, floats_of, gpu_context, vector_of,
 };
-use mlx_c_rust::{
+use mlx_bridge::{
     MlxArray, MlxBindingsContext, MlxCError, MlxClosure, MlxClosureCustom, MlxClosureCustomJvp,
     MlxClosureCustomVmap, MlxCompileCache, disable_compile, enable_compile, jvp_of_closure, raw,
     set_compile_mode, value_and_grad_of_closure, vjp_of_closure, vmap_replace, vmap_trace,

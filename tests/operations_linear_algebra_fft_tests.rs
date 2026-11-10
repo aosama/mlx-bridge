@@ -9,7 +9,7 @@ use bridge_fixtures::{
     FLOAT_TOLERANCE, array_at, assert_floats_close, cpu_context, float_array, floats_of,
     gpu_context,
 };
-use mlx_c_rust::{MlxDtype, raw};
+use mlx_bridge::{MlxDtype, raw};
 
 const BACKWARD_NORM: raw::mlx_fft_norm = raw::mlx_fft_norm__MLX_FFT_NORM_BACKWARD;
 const ORTHO_NORM: raw::mlx_fft_norm = raw::mlx_fft_norm__MLX_FFT_NORM_ORTHO;

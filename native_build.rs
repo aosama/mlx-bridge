@@ -1,6 +1,6 @@
 //! The typed native-build engine for the pinned MLX and MLX-C pair: one
 //! implementation, two entry points. `build.rs` includes this module so a
-//! cold `cargo add mlx-c-rust && cargo build` compiles the pair with no
+//! cold `cargo add mlx-bridge && cargo build` compiles the pair with no
 //! configuration, and the repository's `xtask build-native` includes the
 //! same module so humans and continuous integration run the identical
 //! orchestration with live output. Both entries compile into the same
@@ -94,9 +94,9 @@ use native_forward_edits::apply_forward_source_edits;
 /// this file streams the multi-minute phases into any log as they happen;
 /// under `cargo xtask build-native` stdout is already live and the variable
 /// is simply unset.
-pub const NATIVE_BUILD_PROGRESS_FILE_VARIABLE: &str = "MLX_C_RUST_NATIVE_PROGRESS_FILE";
+pub const NATIVE_BUILD_PROGRESS_FILE_VARIABLE: &str = "MLX_BRIDGE_NATIVE_PROGRESS_FILE";
 
-const MLX_C_SHARED_CACHE_DIRECTORY: &str = ".cache/mlx-c-rust/native";
+const MLX_C_SHARED_CACHE_DIRECTORY: &str = ".cache/mlx-bridge/native";
 const COMPLETION_MARKER_DIRECTORY: &str = "complete";
 
 /// Lowercase hexadecimal for digest bytes, spelled out digit by digit.
@@ -591,7 +591,7 @@ impl OperationTimer {
 }
 
 fn emit(progress_file_path: Option<&Path>, line_body: &str) {
-    println!("[mlx-c-rust-native-build] {line_body}");
+    println!("[mlx-bridge-native-build] {line_body}");
     if let Some(progress_file_path) = progress_file_path {
         // A per-write append-mode open keeps reporting lock-free, and
         // ignoring write errors keeps telemetry best-effort: reporting can
@@ -601,7 +601,7 @@ fn emit(progress_file_path: Option<&Path>, line_body: &str) {
             .append(true)
             .open(progress_file_path)
         {
-            let _ = writeln!(progress_file, "[mlx-c-rust-native-build] {line_body}");
+            let _ = writeln!(progress_file, "[mlx-bridge-native-build] {line_body}");
         }
     }
 }

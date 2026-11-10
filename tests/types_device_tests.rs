@@ -5,7 +5,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::gpu_context;
-use mlx_c_rust::{MlxDeviceHandle, raw};
+use mlx_bridge::{MlxDeviceHandle, raw};
 
 #[test]
 fn should_make_the_gpu_the_default_device_on_apple_silicon() {

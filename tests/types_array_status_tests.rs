@@ -5,7 +5,7 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{float_array, gpu_context};
-use mlx_c_rust::{MlxArray, MlxDtype};
+use mlx_bridge::{MlxArray, MlxDtype};
 
 #[test]
 fn should_report_availability_only_once_a_graph_has_been_evaluated() {
