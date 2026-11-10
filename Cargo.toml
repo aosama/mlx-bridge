@@ -1,6 +1,6 @@
 [package]
 name = "mlx-bridge"
-# Pre-release while the extracted bridge is in its shakedown period; the
+# Pre-release while the bridge is in its shakedown period; the
 # stable release lands once early adopters have exercised it. Pre-releases
 # are never resolved by default dependency resolution, so nobody gets an
 # early build accidentally.
