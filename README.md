@@ -1,11 +1,13 @@
 # mlx-c-rust
 
+> **This crate has been renamed to [`mlx-bridge`](https://crates.io/crates/mlx-bridge).** `0.32.4-alpha.5` is the final release under the name `mlx-c-rust`, and it is identical to `0.32.4-alpha.4` apart from this notice. New releases, fixes, and documentation continue as `mlx-bridge`. The [migration guide](https://github.com/aosama/mlx-bridge/blob/main/docs/migration.md) lists the name changes.
+
 [![Crates.io](https://img.shields.io/crates/v/mlx-c-rust.svg)](https://crates.io/crates/mlx-c-rust)
 [![Documentation](https://docs.rs/mlx-c-rust/badge.svg)](https://docs.rs/mlx-c-rust)
 
 A complete, low-level, policy-free Rust bridge to the public [MLX-C](https://github.com/ml-explore/mlx-c) C API of Apple's [MLX](https://github.com/ml-explore/mlx) array framework for Apple silicon.
 
-**Current release: [`0.32.4-alpha.4`](https://crates.io/crates/mlx-c-rust/0.32.4-alpha.4) — verified against MLX `v0.32.4`, binding the complete MLX-C `v0.8.0` surface, the MLX-C release pairing with that MLX, plus this repository's gap shim for the MLX functions that release leaves unwrapped.** The crate version always names the MLX release it is verified against — the number you search for and install — while the bound MLX-C release and the forward adaptations are recorded here and in `COVERAGE_INVENTORY.md`. Published on [crates.io](https://crates.io/crates/mlx-c-rust); documentation builds on [docs.rs](https://docs.rs/mlx-c-rust).
+**Current release: [`0.32.4-alpha.5`](https://crates.io/crates/mlx-c-rust/0.32.4-alpha.5) — verified against MLX `v0.32.4`, binding the complete MLX-C `v0.8.0` surface, the MLX-C release pairing with that MLX, plus this repository's gap shim for the MLX functions that release leaves unwrapped.** The crate version always names the MLX release it is verified against — the number you search for and install — while the bound MLX-C release and the forward adaptations are recorded here and in `COVERAGE_INVENTORY.md`. Published on [crates.io](https://crates.io/crates/mlx-c-rust); documentation builds on [docs.rs](https://docs.rs/mlx-c-rust).
 
 ## The goal
 
