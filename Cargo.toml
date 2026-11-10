@@ -20,7 +20,7 @@ edition = "2024"
 rust-version = "1.101"
 description = "A complete, low-level, policy-free Rust bridge to the MLX-C API of Apple's MLX for Apple silicon, tracking MLX releases. Version = the verified MLX release (0.32.4; binds MLX-C 0.8)."
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/aosama/mlx-c-rust"
+repository = "https://github.com/aosama/mlx-bridge"
 documentation = "https://docs.rs/mlx-bridge"
 readme = "README.md"
 keywords = ["mlx", "apple-silicon", "machine-learning", "bindings", "gpu"]
