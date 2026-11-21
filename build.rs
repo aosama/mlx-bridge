@@ -25,6 +25,8 @@ mod native_build;
 mod native_link_directives;
 #[path = "native_prefix_variable.rs"]
 mod native_prefix_variable;
+#[path = "native_toolchain_requirements.rs"]
+mod native_toolchain_requirements;
 
 use std::{
     env,
@@ -41,6 +43,7 @@ use native_link_directives::{
 use native_prefix_variable::{
     FORMER_MLX_C_PREFIX_VARIABLE, MLX_C_PREFIX_VARIABLE, former_prefix_variable_notice,
 };
+use native_toolchain_requirements::{header_parse_failure_note, linux_native_build_prerequisites};
 use pkg_config::Config as PkgConfig;
 
 const VENDORED_HEADERS_DIRECTORY: &str = "vendor/mlx-c";
@@ -102,6 +105,17 @@ fn self_contained_parse_arguments(freestanding_directory: &Path) -> Vec<String> 
     ]
 }
 
+/// The header parse's failure, with the toolchain sentence appended when the
+/// diagnostic is one an outdated libclang produces: that diagnostic names a
+/// vendored header line, not the libclang release that is really at fault.
+fn explain_header_parse_failure(parse_failure: bindgen::BindgenError) -> Box<dyn Error> {
+    let parse_failure_text = parse_failure.to_string();
+    match header_parse_failure_note(&parse_failure_text) {
+        Some(toolchain_note) => format!("{parse_failure_text}\n{toolchain_note}").into(),
+        None => parse_failure.into(),
+    }
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let manifest_directory =
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").ok_or("CARGO_MANIFEST_DIR is unset")?);
@@ -159,7 +173,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .allowlist_function(GAP_SHIM_FUNCTION_ALLOWLIST)
         .allowlist_type(GAP_SHIM_TYPE_ALLOWLIST)
         .generate_comments(false)
-        .generate()?;
+        .generate()
+        .map_err(explain_header_parse_failure)?;
     let bindings_content = bindings.to_string();
     write_bridged_inventory(&bindings_content, &output_directory)?;
     bindings.write_to_file(output_directory.join("mlx_c_bindings.rs"))?;
@@ -265,9 +280,13 @@ fn emit_link_instructions() {
             "cargo:warning=no MLX-C library could be located or built; the crate compiles, \
              but linking a binary that uses it will report undefined MLX symbols. Set \
              {MLX_C_PREFIX_VARIABLE}, run `cargo xtask build-native`, or install CMake \
-             ({}) so the pinned sources can be built automatically. On Linux the \
-             build also needs the BLAS and LAPACK development headers.",
-            host_platform.tool_install_hint("cmake")
+             ({}) so the pinned sources can be built automatically.{}",
+            host_platform.tool_install_hint("cmake"),
+            if host_platform == NativeHostPlatform::Linux {
+                format!(" {}", linux_native_build_prerequisites())
+            } else {
+                String::new()
+            }
         ),
     }
 }

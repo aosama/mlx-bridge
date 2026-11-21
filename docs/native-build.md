@@ -31,6 +31,8 @@ A prefix you supply may hold dynamic libraries. Their install names use `@rpath`
 
 On Linux the automatic build compiles MLX's CPU backend alone: the same pins, the same static libraries and the same gap shim, without Metal. There is no GPU backend in this build, and no `mlx.metallib`.
 
+The toolchain has two minimums. MLX-C uses C++20 `std::format`, which GCC's standard library first provides in GCC 13, so GCC 12 fails with "'format' is not a member of 'std'". bindgen parses the headers with your libclang, which must be version 16 or newer: older releases stop with "\_\_bf16 is not supported on this target". Install the `clang` package as well as `libclang-dev`: bindgen asks the `clang` executable where clang's own headers live, and without it the parse stops with "'float.h' file not found". Ubuntu 24.04 and Debian 13 meet both with their default packages. Debian 12's defaults meet neither. Its `libclang-16-dev` package fixes the parse, but its standard library is GCC 12's, so build there in a newer distribution's container.
+
 MLX needs a BLAS and a LAPACK with their C headers (`cblas.h` and `lapacke.h`), for example the `libblas-dev`, `liblapack-dev` and `liblapacke-dev` packages on Debian and Ubuntu, or OpenBLAS. CMake finds them in the standard places. If yours are elsewhere, set CMake's own `CMAKE_PREFIX_PATH` and `CMAKE_INCLUDE_PATH` environment variables before building.
 
 The crate links the BLAS that MLX was configured against, which it reads from the CMake package MLX installs into the prefix (`share/cmake/MLX/MLXTargets.cmake`). A static prefix you supply through `MLX_BRIDGE_MLX_C_PREFIX` must therefore be an installed MLX, with that file present.

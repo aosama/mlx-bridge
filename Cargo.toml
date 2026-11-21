@@ -18,7 +18,7 @@ edition = "2024"
 # the pre-release counter (0.32.4-alpha.N), surface changes with an inventory
 # note; RELEASES.md records what the first stable release must settle.
 rust-version = "1.101"
-description = "A complete, low-level, policy-free Rust bridge to the MLX-C API of Apple's MLX for Apple silicon, tracking MLX releases. Version = the verified MLX release (0.32.4; binds MLX-C 0.8)."
+description = "A complete, low-level, policy-free Rust bridge to the MLX-C API of Apple's MLX for Apple silicon (and Linux on MLX's CPU backend), tracking MLX releases. Version = the verified MLX release (0.32.4; binds MLX-C 0.8)."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/aosama/mlx-bridge"
 documentation = "https://docs.rs/mlx-bridge"
