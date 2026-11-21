@@ -5,7 +5,7 @@
 #[path = "support/bridge_fixtures.rs"]
 mod bridge_fixtures;
 
-use bridge_fixtures::{float_array, floats_of, gpu_context};
+use bridge_fixtures::{float_array, floats_of, gpu_context, skip_without_gpu_backend};
 use mlx_bridge::{
     MlxBindingsContext, MlxDeviceHandle, MlxStream, MlxStreamThreadLocal, raw, set_default_stream,
     synchronize, synchronize_all_defaults,
@@ -21,6 +21,9 @@ fn cpu_device() -> MlxDeviceHandle {
 
 #[test]
 fn should_identify_the_default_streams_by_device() {
+    if skip_without_gpu_backend("should_identify_the_default_streams_by_device") {
+        return;
+    }
     gpu_context();
     let gpu_stream = MlxStream::default_gpu().unwrap();
     let cpu_stream = MlxStream::default_cpu().unwrap();
@@ -33,6 +36,9 @@ fn should_identify_the_default_streams_by_device() {
 
 #[test]
 fn should_describe_a_stream_with_its_device() {
+    if skip_without_gpu_backend("should_describe_a_stream_with_its_device") {
+        return;
+    }
     gpu_context();
 
     let description = MlxStream::default_gpu().unwrap().to_string_lossy().unwrap();
@@ -42,6 +48,9 @@ fn should_describe_a_stream_with_its_device() {
 
 #[test]
 fn should_create_a_new_distinct_stream_on_a_device() {
+    if skip_without_gpu_backend("should_create_a_new_distinct_stream_on_a_device") {
+        return;
+    }
     gpu_context();
     let default_stream = MlxStream::default_gpu().unwrap();
 
@@ -54,6 +63,9 @@ fn should_create_a_new_distinct_stream_on_a_device() {
 
 #[test]
 fn should_list_a_newly_created_stream() {
+    if skip_without_gpu_backend("should_list_a_newly_created_stream") {
+        return;
+    }
     gpu_context();
     let new_stream = MlxStream::on_device(&gpu_device()).unwrap();
 
@@ -74,6 +86,9 @@ fn should_list_a_newly_created_stream() {
 
 #[test]
 fn should_copy_a_stream_handle_through_set() {
+    if skip_without_gpu_backend("should_copy_a_stream_handle_through_set") {
+        return;
+    }
     gpu_context();
     let cpu_stream = MlxStream::default_cpu().unwrap();
     let mut copied_stream = MlxStream::default_gpu().unwrap();
@@ -85,6 +100,9 @@ fn should_copy_a_stream_handle_through_set() {
 
 #[test]
 fn should_replace_and_restore_the_default_stream_of_a_device() {
+    if skip_without_gpu_backend("should_replace_and_restore_the_default_stream_of_a_device") {
+        return;
+    }
     gpu_context();
     let original_default = MlxStream::default_for_device(&gpu_device()).unwrap();
     let replacement = MlxStream::on_device(&gpu_device()).unwrap();
@@ -103,6 +121,9 @@ fn should_replace_and_restore_the_default_stream_of_a_device() {
 
 #[test]
 fn should_compute_the_same_values_on_explicit_cpu_and_gpu_streams() {
+    if skip_without_gpu_backend("should_compute_the_same_values_on_explicit_cpu_and_gpu_streams") {
+        return;
+    }
     gpu_context();
     let gpu_bound = MlxBindingsContext::new().unwrap();
     let cpu_bound = MlxBindingsContext::on_cpu().unwrap();
@@ -130,6 +151,9 @@ fn should_compute_the_same_values_on_explicit_cpu_and_gpu_streams() {
 
 #[test]
 fn should_keep_one_thread_local_stream_stable_on_its_thread() {
+    if skip_without_gpu_backend("should_keep_one_thread_local_stream_stable_on_its_thread") {
+        return;
+    }
     gpu_context();
     let slot = MlxStreamThreadLocal::for_device(&gpu_device()).unwrap();
 
@@ -246,6 +270,9 @@ fn should_read_final_values_after_asynchronous_evaluation_and_synchronization() 
 
 #[test]
 fn should_submit_work_to_a_context_bound_to_a_custom_stream() {
+    if skip_without_gpu_backend("should_submit_work_to_a_context_bound_to_a_custom_stream") {
+        return;
+    }
     gpu_context();
     let custom_stream = MlxStream::on_device(&gpu_device()).unwrap();
     let expected_index = custom_stream.index().unwrap();
@@ -260,6 +287,9 @@ fn should_submit_work_to_a_context_bound_to_a_custom_stream() {
 
 #[test]
 fn should_compute_on_a_stream_registered_outside_any_thread() {
+    if skip_without_gpu_backend("should_compute_on_a_stream_registered_outside_any_thread") {
+        return;
+    }
     gpu_context();
     // SAFETY: This test is the stream's only user, so nothing can race on it.
     let unsynchronized_stream = unsafe { MlxStream::new_thread_unsafe(&gpu_device()) }.unwrap();
@@ -274,6 +304,9 @@ fn should_compute_on_a_stream_registered_outside_any_thread() {
 
 #[test]
 fn should_find_an_existing_default_stream_without_creating_one() {
+    if skip_without_gpu_backend("should_find_an_existing_default_stream_without_creating_one") {
+        return;
+    }
     gpu_context();
     let default_stream = MlxStream::default_for_device(&gpu_device()).unwrap();
 
@@ -294,6 +327,11 @@ fn peek_on_a_fresh_thread_finds_nothing() -> bool {
 
 #[test]
 fn should_report_no_default_stream_on_a_thread_that_never_created_one() {
+    if skip_without_gpu_backend(
+        "should_report_no_default_stream_on_a_thread_that_never_created_one",
+    ) {
+        return;
+    }
     gpu_context();
 
     let spawned = std::thread::spawn(peek_on_a_fresh_thread_finds_nothing);

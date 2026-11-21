@@ -1,6 +1,9 @@
 use std::os::raw::c_int;
 
-use crate::{MlxArray, MlxArrayVector, MlxCError, error::check_status, raw};
+use crate::{
+    MlxArray, MlxArrayVector, MlxCError, MlxStream, cuda_is_available, error::check_status,
+    metal_is_available, raw,
+};
 
 /// The MLX C closure ABI every compiled-graph builder follows: it receives the
 /// output vector to populate and the input vector to read, and returns zero on
@@ -101,6 +104,26 @@ impl MlxCompiledGraph {
         (0..output_count)
             .map(|output_index| output_vector.array_at(output_index, apply_operation))
             .collect::<Result<Vec<_>, MlxCError>>()
+    }
+}
+
+/// The stream a graph builder records its operations on: this thread's
+/// default GPU stream when the linked MLX has a GPU backend, and its default
+/// CPU stream when MLX was built for the CPU alone (MLX's Linux CPU build).
+///
+/// The builders fused here run in Apple silicon models on the GPU, and that
+/// choice is kept wherever a GPU backend exists; asking a GPU-less MLX for
+/// its GPU stream fails, which would make every compiled graph unusable on a
+/// build that can run them correctly on the CPU.
+///
+/// # Errors
+/// Returns the captured MLX-C description when MLX cannot report its
+/// backends or hand out the stream.
+pub(crate) fn graph_operation_stream() -> Result<MlxStream, MlxCError> {
+    if metal_is_available()? || cuda_is_available()? {
+        MlxStream::default_gpu()
+    } else {
+        MlxStream::default_cpu()
     }
 }
 

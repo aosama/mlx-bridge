@@ -7,7 +7,7 @@ mod bridge_fixtures;
 
 use bridge_fixtures::{
     FLOAT_TOLERANCE, array_at, assert_floats_close, cpu_context, float_array, floats_of,
-    gpu_context,
+    gpu_context, skip_without_gpu_backend,
 };
 use mlx_bridge::{MlxDtype, raw};
 
@@ -30,6 +30,9 @@ fn should_invert_a_small_matrix_on_the_cpu_stream() {
 
 #[test]
 fn should_refuse_matrix_inversion_on_the_gpu_stream() {
+    if skip_without_gpu_backend("should_refuse_matrix_inversion_on_the_gpu_stream") {
+        return;
+    }
     let context = gpu_context();
     let matrix = float_array(&[2.0, 0.0, 0.0, 4.0], &[2, 2]);
 

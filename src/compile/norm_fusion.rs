@@ -28,9 +28,10 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 use crate::MlxCError;
 use crate::compile::graph::{
-    MlxCompiledGraph, array_from_vector, graph_output_array, set_graph_output_vector,
+    MlxCompiledGraph, array_from_vector, graph_operation_stream, graph_output_array,
+    set_graph_output_vector,
 };
-use crate::{MlxArray, MlxBindingsContext, MlxStream, raw};
+use crate::{MlxArray, MlxBindingsContext, raw};
 
 static BAKED_RMS_NORM_EPSILON_BITS: AtomicU32 = AtomicU32::new(0);
 
@@ -122,8 +123,8 @@ unsafe extern "C" fn build_dual_head_norm_graph(
         Ok(key_scale_weight) => key_scale_weight,
         Err(get_status) => return get_status,
     };
-    let gpu_stream = match MlxStream::default_gpu() {
-        Ok(gpu_stream) => gpu_stream,
+    let operation_stream = match graph_operation_stream() {
+        Ok(operation_stream) => operation_stream,
         Err(_) => return 1,
     };
     let normalized_queries = match graph_output_array(|output_array| {
@@ -134,7 +135,7 @@ unsafe extern "C" fn build_dual_head_norm_graph(
                 queries.raw(),
                 query_scale_weight.raw(),
                 baked_rms_norm_epsilon(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -149,7 +150,7 @@ unsafe extern "C" fn build_dual_head_norm_graph(
                 keys.raw(),
                 key_scale_weight.raw(),
                 baked_rms_norm_epsilon(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {

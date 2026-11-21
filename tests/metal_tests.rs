@@ -10,7 +10,9 @@ use std::os::unix::io::FromRawFd;
 #[path = "support/bridge_fixtures.rs"]
 mod bridge_fixtures;
 
-use bridge_fixtures::{assert_translated_failure, float_array, floats_of, gpu_context};
+use bridge_fixtures::{
+    assert_translated_failure, float_array, floats_of, gpu_context, skip_without_gpu_backend,
+};
 use mlx_bridge::{
     MlxDtype, MlxMetalKernel, MlxMetalKernelConfig, MlxMetalKernelOutput,
     MlxMetalKernelTemplateArgument, apply_metal_kernel_in_graph_with_config, metallib_path,
@@ -46,6 +48,9 @@ fn single_float_output(element_count: i32) -> Vec<MlxMetalKernelOutput> {
 
 #[test]
 fn should_launch_a_custom_kernel_and_return_its_results() {
+    if skip_without_gpu_backend("should_launch_a_custom_kernel_and_return_its_results") {
+        return;
+    }
     let context = gpu_context();
     let kernel = MlxMetalKernel::new(
         "doubling_kernel",
@@ -73,6 +78,9 @@ fn should_launch_a_custom_kernel_and_return_its_results() {
 
 #[test]
 fn should_pass_template_arguments_to_the_shader() {
+    if skip_without_gpu_backend("should_pass_template_arguments_to_the_shader") {
+        return;
+    }
     let context = gpu_context();
     let kernel = MlxMetalKernel::new(
         "template_scaling_kernel",
@@ -109,6 +117,9 @@ fn should_pass_template_arguments_to_the_shader() {
 
 #[test]
 fn should_initialize_outputs_the_shader_leaves_unwritten() {
+    if skip_without_gpu_backend("should_initialize_outputs_the_shader_leaves_unwritten") {
+        return;
+    }
     let context = gpu_context();
     let kernel = MlxMetalKernel::new(
         "untouched_output_kernel",
@@ -141,6 +152,9 @@ fn should_initialize_outputs_the_shader_leaves_unwritten() {
 
 #[test]
 fn should_defer_a_shader_compilation_failure_to_evaluation() {
+    if skip_without_gpu_backend("should_defer_a_shader_compilation_failure_to_evaluation") {
+        return;
+    }
     let context = gpu_context();
     let kernel = MlxMetalKernel::new(
         "broken_shader_kernel",
@@ -243,6 +257,9 @@ fn should_reject_a_launch_without_inputs_or_outputs() {
 
 #[test]
 fn should_translate_a_capture_start_without_the_capture_layer() {
+    if skip_without_gpu_backend("should_translate_a_capture_start_without_the_capture_layer") {
+        return;
+    }
     // Metal records only under MTL_CAPTURE_ENABLED, which a run with the
     // capture layer deliberately opts into, so the failure path is unprovable there.
     if std::env::var_os("MTL_CAPTURE_ENABLED").is_some() {
@@ -260,6 +277,9 @@ fn should_translate_a_capture_start_without_the_capture_layer() {
 
 #[test]
 fn should_apply_a_caller_built_config_and_return_its_results() {
+    if skip_without_gpu_backend("should_apply_a_caller_built_config_and_return_its_results") {
+        return;
+    }
     let context = gpu_context();
     let kernel = doubling_kernel("config_doubling_kernel");
     let input = float_array(&[1.0, 2.0, 3.0], &[3]);
@@ -279,6 +299,9 @@ fn should_apply_a_caller_built_config_and_return_its_results() {
 
 #[test]
 fn should_print_the_generated_shader_when_the_config_is_verbose() {
+    if skip_without_gpu_backend("should_print_the_generated_shader_when_the_config_is_verbose") {
+        return;
+    }
     let context = gpu_context();
     let kernel = doubling_kernel("verbose_shader_kernel");
     let input = float_array(&[1.0], &[1]);
@@ -305,6 +328,9 @@ fn should_print_the_generated_shader_when_the_config_is_verbose() {
 
 #[test]
 fn should_not_print_the_generated_shader_when_verbose_is_off() {
+    if skip_without_gpu_backend("should_not_print_the_generated_shader_when_verbose_is_off") {
+        return;
+    }
     let context = gpu_context();
     let kernel = doubling_kernel("quiet_shader_kernel");
     let input = float_array(&[4.0], &[1]);
@@ -338,6 +364,9 @@ fn should_reject_a_kernel_config_with_a_non_positive_grid() {
 
 #[test]
 fn should_apply_a_configured_kernel_on_an_explicit_stream() {
+    if skip_without_gpu_backend("should_apply_a_configured_kernel_on_an_explicit_stream") {
+        return;
+    }
     let context = gpu_context();
     let kernel = doubling_kernel("graph_config_kernel");
     let input = float_array(&[1.0, 2.0], &[2]);
@@ -388,6 +417,9 @@ fn should_reject_a_configured_launch_without_inputs() {
 
 #[test]
 fn should_read_back_the_metallib_override_and_keep_computing() {
+    if skip_without_gpu_backend("should_read_back_the_metallib_override_and_keep_computing") {
+        return;
+    }
     let context = gpu_context();
     let values = float_array(&[1.0], &[1]);
     // The kernels load on first GPU use, so force that before overriding.

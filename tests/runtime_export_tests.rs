@@ -7,12 +7,12 @@ mod bridge_fixtures;
 use std::ffi::{c_char, c_int, c_void};
 
 use bridge_fixtures::{
-    array_at, float_array, floats_of, gpu_context, scratch_file_path, vector_of,
+    array_at, device_context, float_array, floats_of, gpu_context, scratch_file_path, vector_of,
 };
 use mlx_bridge::{
-    GraphOutputFile, MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxClosure,
-    MlxClosureKwargs, MlxFunctionExporter, MlxImportedFunction, MlxMapStringToArray, MlxNodeNamer,
-    export_function, export_function_with_keywords, export_graph_to_dot, print_graph,
+    GraphOutputFile, MlxArray, MlxArrayVector, MlxCError, MlxClosure, MlxClosureKwargs,
+    MlxFunctionExporter, MlxImportedFunction, MlxMapStringToArray, MlxNodeNamer, export_function,
+    export_function_with_keywords, export_graph_to_dot, print_graph,
 };
 
 unsafe extern "C" {
@@ -21,7 +21,7 @@ unsafe extern "C" {
 }
 
 fn doubled(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
-    let context = MlxBindingsContext::new()?;
+    let context = device_context()?;
     Ok(vec![context.multiply_scalar(&inputs[0], 2.0)?])
 }
 
@@ -29,7 +29,7 @@ fn keyword_scaled(
     inputs: &[MlxArray],
     keywords: &MlxMapStringToArray,
 ) -> Result<Vec<MlxArray>, MlxCError> {
-    let context = MlxBindingsContext::new()?;
+    let context = device_context()?;
     let scale = keywords.value_at("scale")?.ok_or(MlxCError {
         operation: "read the fixture keyword",
         description: "the scale keyword is required".to_owned(),

@@ -1,7 +1,7 @@
 use std::os::raw::c_int;
 
 use crate::compile::graph;
-use crate::{MlxStream, raw};
+use crate::raw;
 
 pub(crate) unsafe extern "C" fn build_attention_output_gate_graph(
     output_vector: *mut raw::mlx_vector_array,
@@ -18,13 +18,19 @@ pub(crate) unsafe extern "C" fn build_attention_output_gate_graph(
         Ok(output_gate_logits) => output_gate_logits,
         Err(get_status) => return get_status,
     };
-    let gpu_stream = match MlxStream::default_gpu() {
-        Ok(gpu_stream) => gpu_stream,
+    let operation_stream = match graph::graph_operation_stream() {
+        Ok(operation_stream) => operation_stream,
         Err(_) => return 1,
     };
     let output_gate_weights = match graph::graph_output_array(|output_array| {
         // SAFETY: The input and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_sigmoid(output_array, output_gate_logits.raw(), gpu_stream.raw()) }
+        unsafe {
+            raw::mlx_sigmoid(
+                output_array,
+                output_gate_logits.raw(),
+                operation_stream.raw(),
+            )
+        }
     }) {
         Ok(output_gate_weights) => output_gate_weights,
         Err(build_status) => return build_status,
@@ -36,7 +42,7 @@ pub(crate) unsafe extern "C" fn build_attention_output_gate_graph(
                 output_array,
                 attention_output.raw(),
                 output_gate_weights.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {

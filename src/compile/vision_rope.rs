@@ -1,7 +1,7 @@
 use std::os::raw::c_int;
 
 use crate::compile::graph;
-use crate::{MlxArrayVector, MlxStream, raw};
+use crate::{MlxArrayVector, raw};
 
 /// Builds the shapeless compiled graph for Qwen3-VL rotate-half rotary embedding.
 ///
@@ -47,14 +47,14 @@ pub(crate) unsafe extern "C" fn build_vision_rope_graph(
         Ok(second_half) => second_half,
         Err(get_status) => return get_status,
     };
-    let gpu_stream = match MlxStream::default_gpu() {
-        Ok(gpu_stream) => gpu_stream,
+    let operation_stream = match graph::graph_operation_stream() {
+        Ok(operation_stream) => operation_stream,
         Err(_) => return 1,
     };
     let output_dtype = unsafe { raw::mlx_array_dtype(attention_states.raw()) };
     let negative_second_half = match graph::graph_output_array(|output_array| {
         // SAFETY: The input and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_negative(output_array, second_half.raw(), gpu_stream.raw()) }
+        unsafe { raw::mlx_negative(output_array, second_half.raw(), operation_stream.raw()) }
     }) {
         Ok(negative_second_half) => negative_second_half,
         Err(build_status) => return build_status,
@@ -66,7 +66,12 @@ pub(crate) unsafe extern "C" fn build_vision_rope_graph(
     let rotated_states = match graph::graph_output_array(|output_array| {
         // SAFETY: The vector and stream are live, and the output is uniquely writable.
         unsafe {
-            raw::mlx_concatenate_axis(output_array, rotated_inputs.raw(), 2, gpu_stream.raw())
+            raw::mlx_concatenate_axis(
+                output_array,
+                rotated_inputs.raw(),
+                2,
+                operation_stream.raw(),
+            )
         }
     }) {
         Ok(rotated_states) => rotated_states,
@@ -79,7 +84,7 @@ pub(crate) unsafe extern "C" fn build_vision_rope_graph(
                 output_array,
                 attention_states.raw(),
                 rotary_cosines.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -93,7 +98,7 @@ pub(crate) unsafe extern "C" fn build_vision_rope_graph(
                 output_array,
                 rotated_states.raw(),
                 rotary_sines.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -107,7 +112,7 @@ pub(crate) unsafe extern "C" fn build_vision_rope_graph(
                 output_array,
                 cosine_component.raw(),
                 sine_component.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -121,7 +126,7 @@ pub(crate) unsafe extern "C" fn build_vision_rope_graph(
                 output_array,
                 summed_components.raw(),
                 output_dtype,
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {

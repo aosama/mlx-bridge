@@ -5,10 +5,13 @@ use crate::compile::attention_output_gate::build_attention_output_gate_graph;
 use crate::compile::signed_float32_cast::build_signed_float32_cast_graph;
 use crate::compile::sparse_shared_expert_combination::build_sparse_shared_expert_combination_graph;
 use crate::compile::vision_rope::build_vision_rope_graph;
-use crate::{MlxArray, MlxStream, raw};
+use crate::{MlxArray, raw};
 use crate::{
     MlxCError,
-    compile::graph::{MlxCompiledGraph, array_from_vector, graph_output_array, set_graph_output},
+    compile::graph::{
+        MlxCompiledGraph, array_from_vector, graph_operation_stream, graph_output_array,
+        set_graph_output,
+    },
 };
 
 const APPLY_ATTENTION_OUTPUT_GATE_OPERATION: &str = "apply the compiled MLX attention output gate";
@@ -257,8 +260,8 @@ unsafe extern "C" fn build_precise_swiglu_graph(
         Ok(gate_states) => gate_states,
         Err(get_status) => return get_status,
     };
-    let gpu_stream = match MlxStream::default_gpu() {
-        Ok(gpu_stream) => gpu_stream,
+    let operation_stream = match graph_operation_stream() {
+        Ok(operation_stream) => operation_stream,
         Err(_) => return 1,
     };
     let output_dtype = unsafe { raw::mlx_array_dtype(up_states.raw()) };
@@ -269,7 +272,7 @@ unsafe extern "C" fn build_precise_swiglu_graph(
                 output_array,
                 gate_states.raw(),
                 raw::mlx_dtype__MLX_FLOAT32,
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -278,7 +281,7 @@ unsafe extern "C" fn build_precise_swiglu_graph(
     };
     let gate_weights = match graph_output_array(|output_array| {
         // SAFETY: The input and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_sigmoid(output_array, float32_gate.raw(), gpu_stream.raw()) }
+        unsafe { raw::mlx_sigmoid(output_array, float32_gate.raw(), operation_stream.raw()) }
     }) {
         Ok(gate_weights) => gate_weights,
         Err(build_status) => return build_status,
@@ -290,7 +293,7 @@ unsafe extern "C" fn build_precise_swiglu_graph(
                 output_array,
                 float32_gate.raw(),
                 gate_weights.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -304,7 +307,7 @@ unsafe extern "C" fn build_precise_swiglu_graph(
                 output_array,
                 up_states.raw(),
                 raw::mlx_dtype__MLX_FLOAT32,
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -318,7 +321,7 @@ unsafe extern "C" fn build_precise_swiglu_graph(
                 output_array,
                 activated_gate.raw(),
                 float32_up.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -332,7 +335,7 @@ unsafe extern "C" fn build_precise_swiglu_graph(
                 output_array,
                 float32_activated_states.raw(),
                 output_dtype,
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -362,8 +365,8 @@ unsafe extern "C" fn build_gated_delta_decay_graph(
         Ok(decay_interval_bias) => decay_interval_bias,
         Err(get_status) => return get_status,
     };
-    let gpu_stream = match MlxStream::default_gpu() {
-        Ok(gpu_stream) => gpu_stream,
+    let operation_stream = match graph_operation_stream() {
+        Ok(operation_stream) => operation_stream,
         Err(_) => return 1,
     };
     let biased_decay_intervals = match graph_output_array(|output_array| {
@@ -373,7 +376,7 @@ unsafe extern "C" fn build_gated_delta_decay_graph(
                 output_array,
                 decay_interval_inputs.raw(),
                 decay_interval_bias.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -397,7 +400,7 @@ unsafe extern "C" fn build_gated_delta_decay_graph(
                 scalar_shape_storage.as_ptr(),
                 0,
                 biased_dtype.to_raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -411,7 +414,7 @@ unsafe extern "C" fn build_gated_delta_decay_graph(
                 output_array,
                 biased_decay_intervals.raw(),
                 zero_decay_interval_scalar.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -425,7 +428,7 @@ unsafe extern "C" fn build_gated_delta_decay_graph(
                 output_array,
                 decay_rate_logarithm.raw(),
                 raw::mlx_dtype__MLX_FLOAT32,
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -434,7 +437,13 @@ unsafe extern "C" fn build_gated_delta_decay_graph(
     };
     let decay_rates = match graph_output_array(|output_array| {
         // SAFETY: The input and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_exp(output_array, float32_decay_logs.raw(), gpu_stream.raw()) }
+        unsafe {
+            raw::mlx_exp(
+                output_array,
+                float32_decay_logs.raw(),
+                operation_stream.raw(),
+            )
+        }
     }) {
         Ok(decay_rates) => decay_rates,
         Err(build_status) => return build_status,
@@ -446,7 +455,7 @@ unsafe extern "C" fn build_gated_delta_decay_graph(
                 output_array,
                 decay_rates.raw(),
                 decay_intervals.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -455,7 +464,7 @@ unsafe extern "C" fn build_gated_delta_decay_graph(
     };
     let negative_decay_products = match graph_output_array(|output_array| {
         // SAFETY: The input and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_negative(output_array, decay_products.raw(), gpu_stream.raw()) }
+        unsafe { raw::mlx_negative(output_array, decay_products.raw(), operation_stream.raw()) }
     }) {
         Ok(negative_decay_products) => negative_decay_products,
         Err(build_status) => return build_status,
@@ -466,7 +475,7 @@ unsafe extern "C" fn build_gated_delta_decay_graph(
             raw::mlx_exp(
                 output_array,
                 negative_decay_products.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -488,13 +497,13 @@ unsafe extern "C" fn build_fused_silu_graph(
         Ok(input) => input,
         Err(get_status) => return get_status,
     };
-    let gpu_stream = match MlxStream::default_gpu() {
-        Ok(gpu_stream) => gpu_stream,
+    let operation_stream = match graph_operation_stream() {
+        Ok(operation_stream) => operation_stream,
         Err(_) => return 1,
     };
     let sigmoid_input = match graph_output_array(|output_array| {
         // SAFETY: The input and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_sigmoid(output_array, input.raw(), gpu_stream.raw()) }
+        unsafe { raw::mlx_sigmoid(output_array, input.raw(), operation_stream.raw()) }
     }) {
         Ok(sigmoid_input) => sigmoid_input,
         Err(build_status) => return build_status,
@@ -506,7 +515,7 @@ unsafe extern "C" fn build_fused_silu_graph(
                 output_array,
                 input.raw(),
                 sigmoid_input.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -528,8 +537,8 @@ unsafe extern "C" fn build_fused_softplus_graph(
         Ok(input) => input,
         Err(get_status) => return get_status,
     };
-    let gpu_stream = match MlxStream::default_gpu() {
-        Ok(gpu_stream) => gpu_stream,
+    let operation_stream = match graph_operation_stream() {
+        Ok(operation_stream) => operation_stream,
         Err(_) => return 1,
     };
     let ln2 = std::f32::consts::LN_2;
@@ -544,7 +553,7 @@ unsafe extern "C" fn build_fused_softplus_graph(
                 output_array,
                 ln2_scalar.raw(),
                 raw::mlx_array_dtype(input.raw()),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -553,21 +562,28 @@ unsafe extern "C" fn build_fused_softplus_graph(
     };
     let scaled_input = match graph_output_array(|output_array| {
         // SAFETY: Inputs and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_multiply(output_array, input.raw(), typed_ln2.raw(), gpu_stream.raw()) }
+        unsafe {
+            raw::mlx_multiply(
+                output_array,
+                input.raw(),
+                typed_ln2.raw(),
+                operation_stream.raw(),
+            )
+        }
     }) {
         Ok(scaled_input) => scaled_input,
         Err(build_status) => return build_status,
     };
     let exponent = match graph_output_array(|output_array| {
         // SAFETY: The input and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_exp(output_array, scaled_input.raw(), gpu_stream.raw()) }
+        unsafe { raw::mlx_exp(output_array, scaled_input.raw(), operation_stream.raw()) }
     }) {
         Ok(exponent) => exponent,
         Err(build_status) => return build_status,
     };
     let logarithm = match graph_output_array(|output_array| {
         // SAFETY: The input and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_log1p(output_array, exponent.raw(), gpu_stream.raw()) }
+        unsafe { raw::mlx_log1p(output_array, exponent.raw(), operation_stream.raw()) }
     }) {
         Ok(logarithm) => logarithm,
         Err(build_status) => return build_status,
@@ -583,7 +599,7 @@ unsafe extern "C" fn build_fused_softplus_graph(
                 output_array,
                 inverse_ln2_scalar.raw(),
                 raw::mlx_array_dtype(input.raw()),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -597,7 +613,7 @@ unsafe extern "C" fn build_fused_softplus_graph(
                 output_array,
                 logarithm.raw(),
                 typed_inverse_ln2.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {

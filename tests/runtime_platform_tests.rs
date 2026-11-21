@@ -6,14 +6,32 @@
 #[path = "support/bridge_fixtures.rs"]
 mod bridge_fixtures;
 
-use bridge_fixtures::{float_array, floats_of, gpu_context};
+use bridge_fixtures::{
+    float_array, floats_of, gpu_context, linked_mlx_has_a_gpu_backend, skip_without_gpu_backend,
+};
 use mlx_bridge::{
     clear_distributed_backends, cuda_is_available, distributed_is_available,
     initialize_distributed, metal_is_available, set_wired_limit,
 };
 
 #[test]
+fn should_report_no_metal_on_a_build_without_a_gpu_backend() {
+    // The other half of the agreement below: where the suites run on the CPU
+    // because MLX has no GPU backend, MLX must not claim Metal either.
+    if linked_mlx_has_a_gpu_backend() {
+        return;
+    }
+    gpu_context();
+
+    assert!(!metal_is_available().unwrap());
+}
+
+#[test]
 fn should_agree_on_metal_availability_with_an_actual_gpu_computation() {
+    if skip_without_gpu_backend("should_agree_on_metal_availability_with_an_actual_gpu_computation")
+    {
+        return;
+    }
     let context = gpu_context();
     let values = float_array(&[1.0, 2.0], &[2]);
 
@@ -40,6 +58,9 @@ fn should_answer_a_distributed_availability_query_and_reject_a_null_byte() {
 
 #[test]
 fn should_return_the_previous_wired_limit_when_it_changes() {
+    if skip_without_gpu_backend("should_return_the_previous_wired_limit_when_it_changes") {
+        return;
+    }
     gpu_context();
     const FIRST_WIRED_LIMIT_BYTES: usize = 1024 * 1024;
     let original_limit = set_wired_limit(FIRST_WIRED_LIMIT_BYTES).unwrap();

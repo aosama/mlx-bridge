@@ -5,7 +5,10 @@
 #[path = "support/bridge_fixtures.rs"]
 mod bridge_fixtures;
 
-use bridge_fixtures::{assert_translated_failure, float_array, floats_of, gpu_context, int_array};
+use bridge_fixtures::{
+    assert_translated_failure, float_array, floats_of, gpu_context, int_array,
+    skip_without_gpu_backend,
+};
 use mlx_bridge::error::set_closure_error;
 use mlx_bridge::{
     MlxArray, MlxCError, MlxDtype, check_status, clear_captured_mlx_error,
@@ -67,6 +70,10 @@ fn should_translate_an_empty_input_handle() {
 
 #[test]
 fn should_translate_an_operation_the_stream_device_does_not_support() {
+    if skip_without_gpu_backend("should_translate_an_operation_the_stream_device_does_not_support")
+    {
+        return;
+    }
     let context = gpu_context();
     let matrix = float_array(&[2.0, 0.0, 0.0, 2.0], &[2, 2]);
 
@@ -80,6 +87,11 @@ fn should_translate_an_operation_the_stream_device_does_not_support() {
 
 #[test]
 fn should_translate_an_element_type_the_stream_device_does_not_support() {
+    if skip_without_gpu_backend(
+        "should_translate_an_element_type_the_stream_device_does_not_support",
+    ) {
+        return;
+    }
     let context = gpu_context();
     let integers = int_array(&[1, 2], &[2]);
 

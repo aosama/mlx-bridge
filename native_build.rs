@@ -78,6 +78,10 @@ mod native_forward_edits;
 #[path = "native_gap_shim_build.rs"]
 mod native_gap_shim_build;
 
+#[path = "native_host_platform.rs"]
+mod native_host_platform;
+pub use native_host_platform::NativeHostPlatform;
+
 #[path = "native_prefix_completion.rs"]
 mod native_prefix_completion;
 // Only the crate's build script reads this; xtask and the test tree include
@@ -143,9 +147,15 @@ pub fn shared_prefix() -> Option<PathBuf> {
 
 /// Reports whether `prefix/lib` holds an MLX-C library, shared or static.
 pub fn prefix_carries_mlxc_library(prefix: &Path) -> bool {
+    prefix_carries_shared_mlxc_library(prefix) || prefix.join("lib/libmlxc.a").is_file()
+}
+
+/// Reports whether `prefix/lib` holds a shared MLX-C library, under the
+/// file name of either host the engine supports.
+pub fn prefix_carries_shared_mlxc_library(prefix: &Path) -> bool {
     let library_directory = prefix.join("lib");
     library_directory.join("libmlxc.dylib").is_file()
-        || library_directory.join("libmlxc.a").is_file()
+        || library_directory.join("libmlxc.so").is_file()
 }
 
 /// How many compile jobs to run: Cargo's choice inside a build script, and
@@ -226,6 +236,17 @@ pub fn ensure_pinned_pair() -> NativeBuildOutcome {
         );
         return NativeBuildOutcome::Failed;
     };
+    let Some(host_platform) = NativeHostPlatform::of_this_host() else {
+        println!(
+            "cargo:warning=the pinned MLX pair can be built on macOS (Apple silicon) and \
+             Linux only; no MLX-C library will be built on this host"
+        );
+        emit(
+            progress_file_path.as_deref(),
+            "status=failed reason=unsupported-host",
+        );
+        return NativeBuildOutcome::Failed;
+    };
     if prefix_carries_mlxc_library(&prefix) && prefix_carries_gap_shim_library(&prefix) {
         // The warm path most builds take: report the reuse so callers see
         // why this engine returned in milliseconds. The gap shim counts:
@@ -256,7 +277,8 @@ pub fn ensure_pinned_pair() -> NativeBuildOutcome {
         {
             println!(
                 "cargo:warning=automatic MLX build needs `{required_tool}` on PATH \
-                 (brew install {required_tool}); no MLX-C library will be linked"
+                 ({}); no MLX-C library will be linked",
+                host_platform.tool_install_hint(required_tool)
             );
             emit(
                 progress_file_path.as_deref(),
@@ -343,7 +365,7 @@ pub fn ensure_pinned_pair() -> NativeBuildOutcome {
     forward_edit_operation.complete("ok");
 
     let parallelism = build_job_count();
-    // The kernel build writes mlx.metallib directly into the prefix
+    // On macOS the kernel build writes mlx.metallib directly into the prefix
     // (MLX_METAL_PATH), so the install directory must exist at build time,
     // not only after cmake --install creates it.
     if let Err(create_error) = std::fs::create_dir_all(prefix.join("lib")) {
@@ -365,19 +387,13 @@ pub fn ensure_pinned_pair() -> NativeBuildOutcome {
                 .arg("-B")
                 .arg(&mlx_build)
                 .arg("-DCMAKE_BUILD_TYPE=Release")
-                // The kernel library's baked path must live INSIDE the
-                // prefix: MLX compiles METAL_PATH from this variable into
-                // the binary, and with the build-tree default a consumer
-                // machine must keep the entire (hundreds of megabytes)
-                // build tree alive or every binary dies at startup — the
-                // build-succeeds/load-dies class of defect this engine
-                // exists to prevent.
-                .arg(format!("-DMLX_METAL_PATH={}", prefix.join("lib").display()))
+                // Metal with its kernel library on macOS, the CPU backend
+                // alone on Linux.
+                .args(host_platform.mlx_backend_configure_arguments(&prefix))
                 // Static: downstream binaries embed the pair instead of
                 // loading @rpath dylibs they cannot resolve (a library
                 // crate cannot inject an rpath into consumers' binaries).
                 .arg("-DBUILD_SHARED_LIBS=OFF")
-                .arg("-DMLX_METAL_JIT=ON")
                 // MLX defaults these on for a top-level build. Consumers link
                 // the library only, so compiling them spent most of the build
                 // and fetched doctest for nothing.
@@ -433,7 +449,7 @@ pub fn ensure_pinned_pair() -> NativeBuildOutcome {
     }
 
     if let Err(completion_failure) =
-        native_prefix_completion::complete_mlx_prefix(&mlx_build, &prefix)
+        native_prefix_completion::complete_mlx_prefix(&mlx_build, &prefix, host_platform)
     {
         println!("cargo:warning={completion_failure}");
         return NativeBuildOutcome::Failed;

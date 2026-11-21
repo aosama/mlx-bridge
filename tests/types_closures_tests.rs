@@ -5,15 +5,14 @@
 #[path = "support/bridge_fixtures.rs"]
 mod bridge_fixtures;
 
-use bridge_fixtures::{array_at, float_array, floats_of, gpu_context, vector_of};
+use bridge_fixtures::{array_at, device_context, float_array, floats_of, gpu_context, vector_of};
 use mlx_bridge::error::take_closure_error;
 use mlx_bridge::{
-    MlxArray, MlxBindingsContext, MlxCError, MlxClosure, MlxClosureKwargs, MlxClosureValueAndGrad,
-    MlxMapStringToArray,
+    MlxArray, MlxCError, MlxClosure, MlxClosureKwargs, MlxClosureValueAndGrad, MlxMapStringToArray,
 };
 
 fn doubled_inputs(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
-    let context = MlxBindingsContext::new()?;
+    let context = device_context()?;
     let mut outputs = Vec::with_capacity(inputs.len());
     for input in inputs {
         outputs.push(context.multiply_scalar(input, 2.0)?);
@@ -46,7 +45,7 @@ fn keyword_scaled_input(
     inputs: &[MlxArray],
     keywords: &MlxMapStringToArray,
 ) -> Result<Vec<MlxArray>, MlxCError> {
-    let context = MlxBindingsContext::new()?;
+    let context = device_context()?;
     let scale = keywords.value_at("scale")?.ok_or(MlxCError {
         operation: "read the fixture keyword",
         description: "the scale keyword is required".to_owned(),
@@ -64,7 +63,7 @@ fn panicking_keyword_callback(
 fn square_value_with_doubled_gradient(
     inputs: &[MlxArray],
 ) -> Result<(Vec<MlxArray>, Vec<MlxArray>), MlxCError> {
-    let context = MlxBindingsContext::new()?;
+    let context = device_context()?;
     let squared = context.square(&inputs[0])?;
     let gradient = context.multiply_scalar(&inputs[0], 2.0)?;
     Ok((vec![squared], vec![gradient]))

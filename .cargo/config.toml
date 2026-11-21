@@ -45,8 +45,13 @@ warnings = "deny"
 #
 # Linking and tests
 # -----------------
-# Compilation and documentation builds succeed on any host (the build
-# script's link ladder stops with a warning on non-mac hosts). Test
+# Compilation and documentation builds succeed on any host. The build
+# script's link ladder runs on macOS and on Linux (MLX's CPU backend alone;
+# it needs the BLAS and LAPACK development headers, and CMake's own
+# CMAKE_PREFIX_PATH and CMAKE_INCLUDE_PATH environment variables point it at
+# ones outside the standard places). It stops with a warning on any other
+# host, when compiling for another operating system than the host, and on
+# docs.rs. Test
 # binaries are the one thing that must LINK an MLX-C library, resolved
 # first-match through MLX_BRIDGE_MLX_C_PREFIX=<prefix>, Homebrew,
 # `pkg-config mlx-c`, and finally the pinned pair compiled into the

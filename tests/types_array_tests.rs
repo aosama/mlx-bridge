@@ -150,8 +150,13 @@ fn should_refuse_every_vector_read_with_the_wrong_element_type() {
     assert!(single_precision.to_vec_u32().is_err());
     assert!(single_precision.to_vec_u64().is_err());
     assert!(single_precision.to_vec_bool().is_err());
-    assert!(single_precision.to_vec_f16_bits().is_err());
-    assert!(single_precision.to_vec_bf16_bits().is_err());
+    // The half-precision readers exist only on 64-bit ARM, like the
+    // vendored mlx/c/half.h entry points they call.
+    #[cfg(target_arch = "aarch64")]
+    {
+        assert!(single_precision.to_vec_f16_bits().is_err());
+        assert!(single_precision.to_vec_bf16_bits().is_err());
+    }
     assert!(int_array(&[1], &[1]).to_vec_f32().is_err());
 }
 
@@ -173,8 +178,13 @@ fn should_refuse_every_scalar_read_with_the_wrong_element_type() {
     assert!(single_precision.item_u64().is_err());
     assert!(single_precision.item_bool().is_err());
     assert!(single_precision.item_complex().is_err());
-    assert!(single_precision.item_f16_bits().is_err());
-    assert!(single_precision.item_bf16_bits().is_err());
+    // The half-precision readers exist only on 64-bit ARM, like the
+    // vendored mlx/c/half.h entry points they call.
+    #[cfg(target_arch = "aarch64")]
+    {
+        assert!(single_precision.item_f16_bits().is_err());
+        assert!(single_precision.item_bf16_bits().is_err());
+    }
 }
 
 #[test]
@@ -370,6 +380,8 @@ fn should_round_trip_integer_element_types_through_their_typed_readers() {
     assert_eq!(signed_longs.to_vec_i64().unwrap(), vec![1, 2]);
 }
 
+// The half-precision readers exist only on 64-bit ARM.
+#[cfg(target_arch = "aarch64")]
 #[test]
 fn should_read_half_precision_values_as_their_raw_bits() {
     let context = gpu_context();

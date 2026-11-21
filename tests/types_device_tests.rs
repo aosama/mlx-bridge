@@ -4,11 +4,14 @@
 #[path = "support/bridge_fixtures.rs"]
 mod bridge_fixtures;
 
-use bridge_fixtures::gpu_context;
+use bridge_fixtures::{gpu_context, skip_without_gpu_backend};
 use mlx_bridge::{MlxDeviceHandle, raw};
 
 #[test]
 fn should_make_the_gpu_the_default_device_on_apple_silicon() {
+    if skip_without_gpu_backend("should_make_the_gpu_the_default_device_on_apple_silicon") {
+        return;
+    }
     gpu_context();
     let gpu_device = MlxDeviceHandle::of_type(raw::mlx_device_type__MLX_GPU, 0).unwrap();
 
@@ -24,13 +27,25 @@ fn should_make_the_gpu_the_default_device_on_apple_silicon() {
 }
 
 #[test]
-fn should_distinguish_the_cpu_device_and_report_it_available() {
+fn should_report_the_cpu_device_available() {
+    // The CPU is the one device every MLX build has, including a build with
+    // no GPU backend, where it is the only device.
+    gpu_context();
+    let cpu_device = MlxDeviceHandle::of_type(raw::mlx_device_type__MLX_CPU, 0).unwrap();
+
+    assert!(cpu_device.is_available().unwrap());
+}
+
+#[test]
+fn should_distinguish_the_cpu_device_from_an_available_gpu() {
+    if skip_without_gpu_backend("should_distinguish_the_cpu_device_from_an_available_gpu") {
+        return;
+    }
     gpu_context();
     let cpu_device = MlxDeviceHandle::of_type(raw::mlx_device_type__MLX_CPU, 0).unwrap();
     let gpu_device = MlxDeviceHandle::of_type(raw::mlx_device_type__MLX_GPU, 0).unwrap();
 
     assert!(!cpu_device.equals(&gpu_device));
-    assert!(cpu_device.is_available().unwrap());
     assert!(gpu_device.is_available().unwrap());
     assert!(MlxDeviceHandle::count_of_type(raw::mlx_device_type__MLX_GPU).unwrap() >= 1);
 }
@@ -66,6 +81,9 @@ fn should_copy_a_device_handle_through_set() {
 
 #[test]
 fn should_describe_the_gpu_through_typed_information_entries() {
+    if skip_without_gpu_backend("should_describe_the_gpu_through_typed_information_entries") {
+        return;
+    }
     gpu_context();
     let gpu_device = MlxDeviceHandle::of_type(raw::mlx_device_type__MLX_GPU, 0).unwrap();
 

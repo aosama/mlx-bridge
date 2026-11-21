@@ -12,8 +12,10 @@
 
 use std::os::raw::c_int;
 
-use crate::compile::graph::{array_from_vector, graph_output_array, set_graph_output};
-use crate::{MlxStream, raw};
+use crate::compile::graph::{
+    array_from_vector, graph_operation_stream, graph_output_array, set_graph_output,
+};
+use crate::raw;
 
 pub(crate) unsafe extern "C" fn build_signed_float32_cast_graph(
     output_vector: *mut raw::mlx_vector_array,
@@ -30,8 +32,8 @@ pub(crate) unsafe extern "C" fn build_signed_float32_cast_graph(
         Ok(signs) => signs,
         Err(get_status) => return get_status,
     };
-    let gpu_stream = match MlxStream::default_gpu() {
-        Ok(gpu_stream) => gpu_stream,
+    let operation_stream = match graph_operation_stream() {
+        Ok(operation_stream) => operation_stream,
         Err(_) => return 1,
     };
     let float32_activations = match graph_output_array(|output_array| {
@@ -41,7 +43,7 @@ pub(crate) unsafe extern "C" fn build_signed_float32_cast_graph(
                 output_array,
                 activations.raw(),
                 raw::mlx_dtype__MLX_FLOAT32,
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -55,7 +57,7 @@ pub(crate) unsafe extern "C" fn build_signed_float32_cast_graph(
                 output_array,
                 float32_activations.raw(),
                 signs.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {

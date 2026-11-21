@@ -14,9 +14,10 @@ use std::os::raw::c_int;
 
 use crate::MlxCError;
 use crate::compile::graph::{
-    MlxCompiledGraph, array_from_vector, graph_output_array, set_graph_output_vector,
+    MlxCompiledGraph, array_from_vector, graph_operation_stream, graph_output_array,
+    set_graph_output_vector,
 };
-use crate::{MlxArray, MlxBindingsContext, MlxStream, raw};
+use crate::{MlxArray, MlxBindingsContext, raw};
 
 const APPLY_GATED_DELTA_RATE_ACTIVATION_OPERATION: &str =
     "apply the compiled MLX gated-delta rate activation";
@@ -107,13 +108,13 @@ unsafe extern "C" fn build_gated_delta_rate_activation_graph(
         Ok(decay_interval_bias) => decay_interval_bias,
         Err(get_status) => return get_status,
     };
-    let gpu_stream = match MlxStream::default_gpu() {
-        Ok(gpu_stream) => gpu_stream,
+    let operation_stream = match graph_operation_stream() {
+        Ok(operation_stream) => operation_stream,
         Err(_) => return 1,
     };
     let update_rates = match graph_output_array(|output_array| {
         // SAFETY: The input and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_sigmoid(output_array, update_logits.raw(), gpu_stream.raw()) }
+        unsafe { raw::mlx_sigmoid(output_array, update_logits.raw(), operation_stream.raw()) }
     }) {
         Ok(update_rates) => update_rates,
         Err(build_status) => return build_status,
@@ -129,7 +130,7 @@ unsafe extern "C" fn build_gated_delta_rate_activation_graph(
                 output_array,
                 decay_interval_inputs.raw(),
                 decay_interval_bias.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -149,7 +150,7 @@ unsafe extern "C" fn build_gated_delta_rate_activation_graph(
                 scalar_shape_storage.as_ptr(),
                 0,
                 biased_dtype.to_raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -163,7 +164,7 @@ unsafe extern "C" fn build_gated_delta_rate_activation_graph(
                 output_array,
                 biased_decay_intervals.raw(),
                 zero_decay_interval_scalar.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -177,7 +178,7 @@ unsafe extern "C" fn build_gated_delta_rate_activation_graph(
                 output_array,
                 decay_rate_logarithm.raw(),
                 raw::mlx_dtype__MLX_FLOAT32,
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -186,7 +187,13 @@ unsafe extern "C" fn build_gated_delta_rate_activation_graph(
     };
     let decay_rates = match graph_output_array(|output_array| {
         // SAFETY: The input and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_exp(output_array, float32_decay_logs.raw(), gpu_stream.raw()) }
+        unsafe {
+            raw::mlx_exp(
+                output_array,
+                float32_decay_logs.raw(),
+                operation_stream.raw(),
+            )
+        }
     }) {
         Ok(decay_rates) => decay_rates,
         Err(build_status) => return build_status,
@@ -198,7 +205,7 @@ unsafe extern "C" fn build_gated_delta_rate_activation_graph(
                 output_array,
                 decay_rates.raw(),
                 decay_intervals.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -207,7 +214,7 @@ unsafe extern "C" fn build_gated_delta_rate_activation_graph(
     };
     let negative_decay_products = match graph_output_array(|output_array| {
         // SAFETY: The input and stream are live, and the output is uniquely writable.
-        unsafe { raw::mlx_negative(output_array, decay_products.raw(), gpu_stream.raw()) }
+        unsafe { raw::mlx_negative(output_array, decay_products.raw(), operation_stream.raw()) }
     }) {
         Ok(negative_decay_products) => negative_decay_products,
         Err(build_status) => return build_status,
@@ -218,7 +225,7 @@ unsafe extern "C" fn build_gated_delta_rate_activation_graph(
             raw::mlx_exp(
                 output_array,
                 negative_decay_products.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {

@@ -4,6 +4,10 @@
 //! through the combined parse, and behaves like any MLX-C family: real
 //! values, captured errors, owned handles.
 
+#[path = "support/bridge_fixtures.rs"]
+mod bridge_fixtures;
+
+use bridge_fixtures::gpu_context;
 use mlx_bridge::{
     MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxDtype, broadcast_shapes,
     einsum_path, install_non_terminating_error_handler, normalize_axis_index, raw,
@@ -12,7 +16,7 @@ use mlx_bridge::{
 #[test]
 fn should_compute_minmax_over_axes_with_both_outputs() {
     install_non_terminating_error_handler();
-    let context = MlxBindingsContext::new().expect("the bindings context should initialize");
+    let context = gpu_context();
 
     let values = context
         .array_from_f32(&[3.0, 1.0, 4.0, 1.0, 5.0, 9.0], &[2, 3])
@@ -35,7 +39,7 @@ fn should_compute_minmax_over_axes_with_both_outputs() {
 #[test]
 fn should_keep_minmax_axis_dimensions_when_requested() {
     install_non_terminating_error_handler();
-    let context = MlxBindingsContext::new().expect("the bindings context should initialize");
+    let context = gpu_context();
 
     let values = context
         .array_from_f32(&[2.0, 8.0, 4.0, 6.0], &[2, 2])
@@ -56,7 +60,7 @@ fn should_keep_minmax_axis_dimensions_when_requested() {
 #[test]
 fn should_surface_the_captured_error_for_an_out_of_range_axis() {
     install_non_terminating_error_handler();
-    let context = MlxBindingsContext::new().expect("the bindings context should initialize");
+    let context = gpu_context();
 
     let values = context
         .array_from_f32(&[1.0, 2.0], &[2])
@@ -92,7 +96,7 @@ fn eight_sample_ramp(context: &MlxBindingsContext) -> MlxArray {
 #[test]
 fn should_forward_the_transform_length_and_hop_to_stft() {
     install_non_terminating_error_handler();
-    let context = MlxBindingsContext::new().expect("the bindings context should initialize");
+    let context = gpu_context();
     let signal = eight_sample_ramp(&context);
 
     let frames = context
@@ -117,7 +121,7 @@ fn should_forward_the_transform_length_and_hop_to_stft() {
 #[test]
 fn should_forward_the_onesided_choice_to_stft() {
     install_non_terminating_error_handler();
-    let context = MlxBindingsContext::new().expect("the bindings context should initialize");
+    let context = gpu_context();
     let signal = eight_sample_ramp(&context);
 
     let two_sided = context
@@ -140,7 +144,7 @@ fn should_forward_the_onesided_choice_to_stft() {
 #[test]
 fn should_forward_the_centering_choice_and_window_to_stft() {
     install_non_terminating_error_handler();
-    let context = MlxBindingsContext::new().expect("the bindings context should initialize");
+    let context = gpu_context();
     let signal = eight_sample_ramp(&context);
     let zero_window = context.zeros(&[4], MlxDtype::Float32).unwrap();
 
@@ -181,7 +185,7 @@ fn should_forward_the_centering_choice_and_window_to_stft() {
 #[test]
 fn should_round_trip_a_signal_through_stft_and_istft() {
     install_non_terminating_error_handler();
-    let context = MlxBindingsContext::new().expect("the bindings context should initialize");
+    let context = gpu_context();
     let signal = eight_sample_ramp(&context);
 
     let frames = context
@@ -225,7 +229,7 @@ fn should_round_trip_a_signal_through_stft_and_istft() {
 #[test]
 fn should_reject_a_pad_mode_with_an_interior_null_byte() {
     install_non_terminating_error_handler();
-    let context = MlxBindingsContext::new().expect("the bindings context should initialize");
+    let context = gpu_context();
     let signal = eight_sample_ramp(&context);
 
     let failure = context

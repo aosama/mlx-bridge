@@ -7,18 +7,20 @@ mod bridge_fixtures;
 
 use std::os::raw::c_int;
 
-use bridge_fixtures::{FLOAT_TOLERANCE, assert_floats_close, float_array, floats_of, gpu_context};
+use bridge_fixtures::{
+    FLOAT_TOLERANCE, assert_floats_close, device_stream, float_array, floats_of, gpu_context,
+};
 use mlx_bridge::{
     MlxArray, MlxCompiledDualHeadNorm, MlxCompiledElementwiseGraphs,
     MlxCompiledGatedDeltaRateActivation, MlxCompiledMultiOutputGraph, MlxCompiledSwiGlu, MlxDtype,
-    MlxStream, array_from_vector, raw, set_graph_output_vector,
+    array_from_vector, raw, set_graph_output_vector,
 };
 
 /// Half precision cannot hold the float32 comparison tolerance.
 const HALF_PRECISION_TOLERANCE: f32 = 1e-2;
 
 /// A graph builder following the MLX closure ABI: outputs the sum and the
-/// difference of its two inputs on the GPU stream.
+/// difference of its two inputs on the stream `gpu_context` computes on.
 unsafe extern "C" fn sum_and_difference_graph(
     output_vector: *mut raw::mlx_vector_array,
     input_vector: raw::mlx_vector_array,
@@ -29,7 +31,7 @@ unsafe extern "C" fn sum_and_difference_graph(
     let Ok(right) = array_from_vector(input_vector, 1) else {
         return 1;
     };
-    let Ok(gpu_stream) = MlxStream::default_gpu() else {
+    let Ok(operation_stream) = device_stream() else {
         return 1;
     };
     let mut sum = MlxArray::empty();
@@ -37,13 +39,17 @@ unsafe extern "C" fn sum_and_difference_graph(
     // SAFETY: Every input handle and the stream are live, and each output
     // handle is uniquely writable.
     let build_status = unsafe {
-        raw::mlx_add(sum.raw_mut(), left.raw(), right.raw(), gpu_stream.raw())
-            + raw::mlx_subtract(
-                difference.raw_mut(),
-                left.raw(),
-                right.raw(),
-                gpu_stream.raw(),
-            )
+        raw::mlx_add(
+            sum.raw_mut(),
+            left.raw(),
+            right.raw(),
+            operation_stream.raw(),
+        ) + raw::mlx_subtract(
+            difference.raw_mut(),
+            left.raw(),
+            right.raw(),
+            operation_stream.raw(),
+        )
     };
     if build_status != 0 {
         return 1;

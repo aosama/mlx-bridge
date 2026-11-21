@@ -1,7 +1,7 @@
 use std::os::raw::c_int;
 
 use crate::compile::graph;
-use crate::{MlxStream, raw};
+use crate::raw;
 
 pub(crate) unsafe extern "C" fn build_sparse_shared_expert_combination_graph(
     output_vector: *mut raw::mlx_vector_array,
@@ -22,8 +22,8 @@ pub(crate) unsafe extern "C" fn build_sparse_shared_expert_combination_graph(
         Ok(shared_expert_gate_logits) => shared_expert_gate_logits,
         Err(get_status) => return get_status,
     };
-    let gpu_stream = match MlxStream::default_gpu() {
-        Ok(gpu_stream) => gpu_stream,
+    let operation_stream = match graph::graph_operation_stream() {
+        Ok(operation_stream) => operation_stream,
         Err(_) => return 1,
     };
     let shared_expert_gate_weights = match graph::graph_output_array(|output_array| {
@@ -32,7 +32,7 @@ pub(crate) unsafe extern "C" fn build_sparse_shared_expert_combination_graph(
             raw::mlx_sigmoid(
                 output_array,
                 shared_expert_gate_logits.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -46,7 +46,7 @@ pub(crate) unsafe extern "C" fn build_sparse_shared_expert_combination_graph(
                 output_array,
                 shared_expert_output.raw(),
                 shared_expert_gate_weights.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
@@ -60,7 +60,7 @@ pub(crate) unsafe extern "C" fn build_sparse_shared_expert_combination_graph(
                 output_array,
                 sparse_expert_output.raw(),
                 gated_shared_expert_output.raw(),
-                gpu_stream.raw(),
+                operation_stream.raw(),
             )
         }
     }) {
