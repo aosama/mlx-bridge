@@ -37,6 +37,10 @@ const DEFAULT_MAX_ENTRY_BYTES: u64 = 0;
 /// stays warm.
 const SCCACHE_OTHER_REF_KEEP_COUNT: usize = 0;
 const DEFAULT_OTHER_REF_KEEP_COUNT: usize = 1;
+/// The macOS Metal shader cache is saved, like sccache, from the default
+/// branch only: pull requests restore it, so a pull-request copy only burns
+/// budget and is never superseded.
+const METAL_SHADERS_FAMILY_PREFIX: &str = "metal-shaders";
 const LEGACY_SCCACHE_KEY_PREFIX: &str = "sccache/";
 const LEGACY_SCCACHE_FAMILY_NAME: &str = "sccache-legacy-backend";
 
@@ -92,6 +96,7 @@ fn keep_count_for_family(family_with_platform: &str) -> usize {
         NATIVE_PAIR_KEEP_COUNT
     } else if family_with_platform.starts_with("sccache")
         || family_with_platform.starts_with("cargo-downloads")
+        || family_with_platform.starts_with(METAL_SHADERS_FAMILY_PREFIX)
     {
         DEFAULT_KEEP_COUNT
     } else {
@@ -110,7 +115,9 @@ fn max_entry_bytes_for_family(family_with_platform: &str) -> u64 {
 fn other_ref_keep_count_for_family(family_with_platform: &str) -> usize {
     if family_with_platform == LEGACY_SCCACHE_FAMILY_NAME {
         0
-    } else if family_with_platform.starts_with("sccache") {
+    } else if family_with_platform.starts_with("sccache")
+        || family_with_platform.starts_with(METAL_SHADERS_FAMILY_PREFIX)
+    {
         SCCACHE_OTHER_REF_KEEP_COUNT
     } else if family_with_platform.starts_with("native-pair")
         || family_with_platform.starts_with("cargo-downloads")
@@ -386,6 +393,12 @@ mod tests {
             family_of_key("sccache/f/a/9/fa9f81cd"),
             "sccache-legacy-backend"
         );
+        // The macOS build rides inside the final segment, so every OS build
+        // stays one family per platform.
+        assert_eq!(
+            family_of_key("mlx-bridge-v1-metal-shaders-macOS-ARM64-24G90_ab12"),
+            "metal-shaders-macOS-ARM64"
+        );
     }
 
     #[test]
@@ -560,6 +573,23 @@ mod tests {
                 size_bytes: 1
             }]
         );
+    }
+
+    #[test]
+    fn should_keep_only_the_newest_default_branch_metal_shader_cache() {
+        let mut metal_shader_entries = Vec::new();
+        for (id, ref_name, created_at) in [
+            (90, DEFAULT_BRANCH_REF, "2026-11-02T00:00:00Z"),
+            (91, DEFAULT_BRANCH_REF, "2026-11-01T00:00:00Z"),
+            (92, "refs/pull/7/merge", "2026-11-03T00:00:00Z"),
+        ] {
+            let cache_key = format!("metal-shaders-macOS-{id}");
+            metal_shader_entries.push(cache_entry(id, &cache_key, ref_name, created_at, 1));
+        }
+        let deletions = deletion_plan(&metal_shader_entries, DEFAULT_BRANCH_REF);
+        // Newest first: the pull-request copy, then the older default-branch one.
+        assert_eq!(deletions.len(), 2);
+        assert_eq!((deletions[0].id, deletions[1].id), (92, 91));
     }
 
     #[test]
