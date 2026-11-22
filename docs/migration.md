@@ -1,8 +1,8 @@
-# Migrating to 0.32.4-alpha.5
+# Migrating to 0.32.4-alpha.6
 
-This release renames the crate from `mlx-c-rust` to `mlx-bridge`. The API is unchanged apart from two additions for Metal kernels, so moving from `alpha.4` only needs the new names below. The automatic native pair compiles once more, into the new cache folder.
+This release changes no Rust API, so moving from `alpha.5` only needs the new version number. It adds Linux: the crate now links and runs there on MLX's CPU backend; see [Native build](native-build.md#linux). The automatic native pair keeps its identity, so a Mac that built it for `alpha.5` reuses it without compiling again.
 
-Coming from `alpha.3` or earlier, the `alpha.4` changes further down apply as well.
+Coming from `alpha.4` or earlier, the `alpha.5` rename below applies, and from `alpha.3` or earlier, the `alpha.4` changes further down apply as well.
 
 ## The crate is now named `mlx-bridge`
 
