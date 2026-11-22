@@ -309,36 +309,6 @@ jobs:
       - name: Compile the test binaries
         timeout-minutes: 3
         run: cargo nextest run --workspace --no-run
-      # MLX's Metal kernels compile at run time (MLX_METAL_JIT) in every test
-      # process, and macOS keeps the compiled pipelines in a per-user cache
-      # that starts empty on a fresh runner. Measured: a GPU test that loads
-      # its kernels from a warm cache in 0.04s spends 1.3 to 1.9s compiling
-      # them into an empty one, which made the suite's GPU tests most of this
-      # job's test time. The cache travels between runs through a stable
-      # path, because the per-user cache folder has a random name that the
-      # cache action would bake into its key. The key carries the macOS build,
-      # so shaders compiled for one OS build never restore onto another.
-      - name: Locate the Metal shader cache
-        id: metal-shader-cache-location
-        run: |
-          printf 'macos_build=%s\n' "$(sw_vers -buildVersion)" >> "$GITHUB_OUTPUT"
-          printf 'parent_directory=%s\n' "$(getconf DARWIN_USER_CACHE_DIR)" >> "$GITHUB_OUTPUT"
-      - name: Restore the Metal shader cache
-        id: metal-shader-cache
-        uses: ./.github/actions/mlx-bridge-cache
-        with:
-          operation: restore
-          owner: metal-shaders
-          path: ~/.cache/mlx-bridge/metal-shaders
-          key: mlx-bridge-v1-metal-shaders-${{ runner.os }}-${{ runner.arch }}-${{ steps.metal-shader-cache-location.outputs.macos_build }}_${{ hashFiles('native_build.rs', 'native_host_platform.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**', 'src/**', 'tests/**', 'docs/**') }}
-          restore-keys: mlx-bridge-v1-metal-shaders-${{ runner.os }}-${{ runner.arch }}-${{ steps.metal-shader-cache-location.outputs.macos_build }}_
-      - name: Seed the Metal shader cache
-        env:
-          METAL_SHADER_CACHE_PARENT: ${{ steps.metal-shader-cache-location.outputs.parent_directory }}
-        run: |
-          if [ -d ~/.cache/mlx-bridge/metal-shaders ]; then
-            cp -R ~/.cache/mlx-bridge/metal-shaders/. "$METAL_SHADER_CACHE_PARENT"
-          fi
       - name: Run the tests
         timeout-minutes: 2
         run: cargo nextest run --workspace --profile ci
@@ -346,24 +316,6 @@ jobs:
       - name: Run the documentation tests
         timeout-minutes: 2
         run: cargo test --workspace --doc
-      # Default-branch-only, like sccache: pull requests restore main's copy,
-      # and the key moves with the sources, so a save follows each change.
-      - name: Collect the Metal shader cache
-        if: ${{ success() && github.ref_name == github.event.repository.default_branch && steps.metal-shader-cache.outputs.cache-hit != 'true' }}
-        env:
-          METAL_SHADER_CACHE_PARENT: ${{ steps.metal-shader-cache-location.outputs.parent_directory }}
-        run: |
-          rm -rf ~/.cache/mlx-bridge/metal-shaders
-          mkdir -p ~/.cache/mlx-bridge/metal-shaders
-          cp -R "$METAL_SHADER_CACHE_PARENT"com.apple.metal* ~/.cache/mlx-bridge/metal-shaders/
-      - name: Save the Metal shader cache
-        if: ${{ success() && github.ref_name == github.event.repository.default_branch && steps.metal-shader-cache.outputs.cache-hit != 'true' }}
-        uses: ./.github/actions/mlx-bridge-cache
-        with:
-          operation: save
-          owner: metal-shaders
-          path: ~/.cache/mlx-bridge/metal-shaders
-          key: mlx-bridge-v1-metal-shaders-${{ runner.os }}-${{ runner.arch }}-${{ steps.metal-shader-cache-location.outputs.macos_build }}_${{ hashFiles('native_build.rs', 'native_host_platform.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**', 'src/**', 'tests/**', 'docs/**') }}
       - name: Print compiler cache statistics
         if: ${{ !cancelled() }}
         run: sccache --show-stats
