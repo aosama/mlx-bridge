@@ -4,10 +4,17 @@
 //! virtual machine exposes the Metal device (verified by the metal_probe
 //! example); locally they require an MLX-C library (see the README).
 
+#[path = "support/bridge_fixtures.rs"]
+mod bridge_fixtures;
+
+use bridge_fixtures::skip_without_gpu_backend;
 use mlx_bridge::{MlxBindingsContext, install_non_terminating_error_handler};
 
 #[test]
 fn should_execute_an_elementwise_addition_on_the_gpu_stream() {
+    if skip_without_gpu_backend("should_execute_an_elementwise_addition_on_the_gpu_stream") {
+        return;
+    }
     install_non_terminating_error_handler();
     let context = MlxBindingsContext::new().expect("the bindings context should initialize");
 
@@ -34,7 +41,9 @@ fn should_execute_an_elementwise_addition_on_the_gpu_stream() {
 #[test]
 fn should_report_the_linked_mlx_version() {
     install_non_terminating_error_handler();
-    let context = MlxBindingsContext::new().expect("the bindings context should initialize");
+    // The version is a property of the linked library, not of a device, so
+    // the CPU context serves every build, including one without a GPU.
+    let context = MlxBindingsContext::on_cpu().expect("the bindings context should initialize");
     assert!(
         !context.version().is_empty(),
         "the linked MLX version string must not be empty"

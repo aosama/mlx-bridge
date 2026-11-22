@@ -1,10 +1,13 @@
 use std::os::raw::c_int;
 
 use crate::MlxBindingsContext;
-use crate::{MlxArray, MlxStream, raw};
+use crate::{MlxArray, raw};
 use crate::{
     MlxCError,
-    compile::graph::{MlxCompiledGraph, array_from_vector, graph_output_array, set_graph_output},
+    compile::graph::{
+        MlxCompiledGraph, array_from_vector, graph_operation_stream, graph_output_array,
+        set_graph_output,
+    },
 };
 
 const APPLY_COMPILED_SWIGLU_OPERATION: &str = "apply a compiled MLX SwiGLU graph";
@@ -61,27 +64,41 @@ unsafe extern "C" fn build_swiglu_graph(
         Ok(input) => input,
         Err(status) => return status,
     };
-    let gpu_stream = match MlxStream::default_gpu() {
-        Ok(gpu_stream) => gpu_stream,
+    let operation_stream = match graph_operation_stream() {
+        Ok(operation_stream) => operation_stream,
         Err(_) => return 1,
     };
     let sigmoid_gate = match graph_output_array(|output| {
         // SAFETY: Inputs and stream are live, and `output` is uniquely writable.
-        unsafe { raw::mlx_sigmoid(output, gate.raw(), gpu_stream.raw()) }
+        unsafe { raw::mlx_sigmoid(output, gate.raw(), operation_stream.raw()) }
     }) {
         Ok(sigmoid_gate) => sigmoid_gate,
         Err(status) => return status,
     };
     let activated_gate = match graph_output_array(|output| {
         // SAFETY: Inputs and stream are live, and `output` is uniquely writable.
-        unsafe { raw::mlx_multiply(output, gate.raw(), sigmoid_gate.raw(), gpu_stream.raw()) }
+        unsafe {
+            raw::mlx_multiply(
+                output,
+                gate.raw(),
+                sigmoid_gate.raw(),
+                operation_stream.raw(),
+            )
+        }
     }) {
         Ok(activated_gate) => activated_gate,
         Err(status) => return status,
     };
     let swiglu_output = match graph_output_array(|output| {
         // SAFETY: Inputs and stream are live, and `output` is uniquely writable.
-        unsafe { raw::mlx_multiply(output, activated_gate.raw(), input.raw(), gpu_stream.raw()) }
+        unsafe {
+            raw::mlx_multiply(
+                output,
+                activated_gate.raw(),
+                input.raw(),
+                operation_stream.raw(),
+            )
+        }
     }) {
         Ok(swiglu_output) => swiglu_output,
         Err(status) => return status,

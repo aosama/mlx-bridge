@@ -42,6 +42,18 @@ The automatic build fetches sources, and MLX's configure step fetches dependenci
 
 Install CMake with `brew install cmake`, then rebuild.
 
+## "\_\_bf16 is not supported on this target"
+
+Your libclang is older than version 16. bindgen parses the headers with it on every host, and older releases reject the half-precision type the headers declare. Install libclang 16 or newer, and set `LIBCLANG_PATH` to its `lib` directory if it is not the default. See [Linux](native-build.md#linux).
+
+## "'float.h' file not found" when the build script parses the headers
+
+The `clang` executable is missing. bindgen asks it where clang's own headers live, and `libclang-dev` alone does not install it. Install the `clang` package. See [Linux](native-build.md#linux).
+
+## "'format' is not a member of 'std'" during the native build on Linux
+
+Your GCC is older than version 13, whose standard library first provides `std::format`, which MLX-C uses. Install GCC 13 or newer. See [Linux](native-build.md#linux).
+
 ## The binary fails to start with "Library not loaded"
 
 You linked MLX-C dylibs from your own prefix, and their `@rpath` install names can't be resolved. A library crate cannot add an rpath to your binary, so add one in your own build, as [Native build](native-build.md#the-link-ladder) shows, or use the automatic static build.

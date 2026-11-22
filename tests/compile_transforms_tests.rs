@@ -6,28 +6,29 @@
 mod bridge_fixtures;
 
 use bridge_fixtures::{
-    FLOAT_TOLERANCE, array_at, assert_floats_close, float_array, floats_of, gpu_context, vector_of,
+    FLOAT_TOLERANCE, array_at, assert_floats_close, device_context, float_array, floats_of,
+    gpu_context, vector_of,
 };
 use mlx_bridge::{
-    MlxArray, MlxBindingsContext, MlxCError, MlxClosure, MlxClosureCustom, MlxClosureCustomJvp,
-    MlxClosureCustomVmap, MlxCompileCache, disable_compile, enable_compile, jvp_of_closure, raw,
-    set_compile_mode, value_and_grad_of_closure, vjp_of_closure, vmap_replace, vmap_trace,
+    MlxArray, MlxCError, MlxClosure, MlxClosureCustom, MlxClosureCustomJvp, MlxClosureCustomVmap,
+    MlxCompileCache, disable_compile, enable_compile, jvp_of_closure, raw, set_compile_mode,
+    value_and_grad_of_closure, vjp_of_closure, vmap_replace, vmap_trace,
 };
 
 fn sum_of_squares(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
-    let context = MlxBindingsContext::new()?;
+    let context = device_context()?;
     Ok(vec![context.sum(&context.square(&inputs[0])?, false)?])
 }
 
 fn sum_of_products(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
-    let context = MlxBindingsContext::new()?;
+    let context = device_context()?;
     Ok(vec![
         context.sum(&context.multiply(&inputs[0], &inputs[1])?, false)?,
     ])
 }
 
 fn doubled(inputs: &[MlxArray]) -> Result<Vec<MlxArray>, MlxCError> {
-    let context = MlxBindingsContext::new()?;
+    let context = device_context()?;
     Ok(vec![context.multiply_scalar(&inputs[0], 2.0)?])
 }
 

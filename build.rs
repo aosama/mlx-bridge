@@ -14,14 +14,19 @@
 //! machine-shared identity-keyed prefix or else downloads the checksum-verified
 //! pinned sources and compiles them once into it. The
 //! pair therefore compiles once per machine per pin, and every later
-//! consumer reuses it. Non-mac hosts never enter the ladder at all: the
-//! link line it emits is Apple-framework-shaped end to end, so those hosts
-//! get a warning instead and compile or document without linking.
+//! consumer reuses it. The ladder runs on macOS and on Linux, where the pair
+//! is MLX's CPU backend alone; the link line for each host is composed in
+//! `native_link_directives.rs`. Any other host gets a warning instead and
+//! compiles or documents without linking.
 
 #[path = "native_build.rs"]
 mod native_build;
+#[path = "native_link_directives.rs"]
+mod native_link_directives;
 #[path = "native_prefix_variable.rs"]
 mod native_prefix_variable;
+#[path = "native_toolchain_requirements.rs"]
+mod native_toolchain_requirements;
 
 use std::{
     env,
@@ -29,9 +34,16 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use native_build::NativeHostPlatform;
+use native_link_directives::{
+    MLX_EXPORTED_TARGETS_FILE, StaticPrefixArchives, exported_mlx_link_libraries,
+    linux_static_pair_link_directives, macos_static_pair_link_directives,
+    shared_pair_link_directives,
+};
 use native_prefix_variable::{
     FORMER_MLX_C_PREFIX_VARIABLE, MLX_C_PREFIX_VARIABLE, former_prefix_variable_notice,
 };
+use native_toolchain_requirements::{header_parse_failure_note, linux_native_build_prerequisites};
 use pkg_config::Config as PkgConfig;
 
 const VENDORED_HEADERS_DIRECTORY: &str = "vendor/mlx-c";
@@ -49,6 +61,9 @@ const GAP_SHIM_TYPE_ALLOWLIST: &str = "mlxrs_.*";
 /// bridged symbol sets the coverage contract compares against the vendored
 /// headers.
 const BRIDGED_INVENTORY_FILE_NAME: &str = "bridged_inventory.rs";
+
+/// docs.rs sets this variable in the environment of every build it runs.
+const DOCS_RS_BUILD_VARIABLE: &str = "DOCS_RS";
 
 /// The freestanding stubs that replace host libc in the self-contained
 /// parse; see `self_contained_parse_arguments`.
@@ -90,6 +105,17 @@ fn self_contained_parse_arguments(freestanding_directory: &Path) -> Vec<String> 
     ]
 }
 
+/// The header parse's failure, with the toolchain sentence appended when the
+/// diagnostic is one an outdated libclang produces: that diagnostic names a
+/// vendored header line, not the libclang release that is really at fault.
+fn explain_header_parse_failure(parse_failure: bindgen::BindgenError) -> Box<dyn Error> {
+    let parse_failure_text = parse_failure.to_string();
+    match header_parse_failure_note(&parse_failure_text) {
+        Some(toolchain_note) => format!("{parse_failure_text}\n{toolchain_note}").into(),
+        None => parse_failure.into(),
+    }
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let manifest_directory =
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").ok_or("CARGO_MANIFEST_DIR is unset")?);
@@ -126,6 +152,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // consumers (no `link` feature) never read it, so their builds do not
     // rebuild when it moves.
     if link_feature_is_enabled() {
+        println!("cargo:rerun-if-env-changed={DOCS_RS_BUILD_VARIABLE}");
         println!("cargo:rerun-if-env-changed={MLX_C_PREFIX_VARIABLE}");
         // The former name is watched too, so removing it clears the warning
         // below on the next build instead of leaving it cached.
@@ -146,7 +173,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .allowlist_function(GAP_SHIM_FUNCTION_ALLOWLIST)
         .allowlist_type(GAP_SHIM_TYPE_ALLOWLIST)
         .generate_comments(false)
-        .generate()?;
+        .generate()
+        .map_err(explain_header_parse_failure)?;
     let bindings_content = bindings.to_string();
     write_bridged_inventory(&bindings_content, &output_directory)?;
     bindings.write_to_file(output_directory.join("mlx_c_bindings.rs"))?;
@@ -170,39 +198,46 @@ fn link_feature_is_enabled() -> bool {
     env::var_os("CARGO_FEATURE_LINK").is_some_and(|feature_value| feature_value != "0")
 }
 
-/// Emits the linker instructions for an MLX-C library. Non-mac hosts stop
-/// at a warning before any rung: the link line this ladder produces — a
-/// `libmlxc.dylib` plus Apple frameworks — could never work there, so even
-/// an explicit prefix variable would only yield unusable flags. On macOS,
-/// the ladder, first match wins: the prefix variable, Homebrew, pkg-config,
-/// and finally the machine-shared identity-keyed prefix (building it if
-/// absent — the zero-configuration default on a machine that provides no
-/// MLX-C of its own). When nothing resolves, a warning is printed and no
-/// link flags are emitted: library compilation and documentation builds
-/// still work, and the failure surfaces only when a consumer links a binary.
+/// Emits the linker instructions for an MLX-C library. A build that cannot
+/// link stops at a warning before any rung: a host that is neither macOS nor
+/// Linux, a cross-compilation to any other target triple, or a docs.rs
+/// documentation build. The pinned pair cannot serve any of them, so even an
+/// explicit prefix variable would only yield unusable flags. Otherwise the
+/// ladder, first match wins: the prefix variable, Homebrew (macOS only),
+/// pkg-config, and finally the machine-shared identity-keyed prefix
+/// (building it if absent — the zero-configuration default on a machine
+/// that provides no MLX-C of its own). When nothing resolves, a warning is
+/// printed and no link flags are emitted: library compilation and
+/// documentation builds still work, and the failure surfaces only when a
+/// consumer links a binary.
 fn emit_link_instructions() {
-    if !cfg!(target_os = "macos") {
-        // The pinned pair compiles MLX, which needs Apple's Metal stack: a
-        // non-mac host can never provide it, and the dylib-plus-frameworks
-        // link line below has no meaning there — including for an explicit
-        // prefix variable. Documentation and check lanes never link, so the
-        // ladder stops here with a warning instead of burning build minutes
-        // (docs.rs builds are time-boxed) on a doomed CMake attempt.
-        // Linking consumers are on Apple silicon by definition.
+    // Cargo hands every build script both triples; they differ exactly when
+    // the crate is cross-compiled.
+    let Some(host_platform) = NativeHostPlatform::for_linking(
+        NativeHostPlatform::of_this_host(),
+        &env::var("HOST").unwrap_or_default(),
+        &env::var("TARGET").unwrap_or_default(),
+        env::var_os(DOCS_RS_BUILD_VARIABLE).is_some(),
+    ) else {
+        // Documentation and check lanes never link, so the ladder stops
+        // here with a warning instead of burning build minutes (docs.rs
+        // builds are time-boxed) on a CMake attempt that cannot serve them.
         println!(
-            "cargo:warning=no MLX-C library can be built on this host operating system; \
-             the crate compiles and documents, but linking a binary that uses it needs \
-             an Apple silicon Mac"
+            "cargo:warning=no MLX-C library is linked for this build; the crate compiles \
+             and documents, but linking a binary that uses it needs a build on macOS \
+             (Apple silicon) or Linux for that same host, not a cross-compilation"
         );
         return;
-    }
+    };
     warn_about_former_prefix_variable();
     if let Some(prefix) = prefix_from_environment() {
-        emit_prefix_link_flags(&prefix);
+        emit_prefix_link_flags(&prefix, host_platform);
         return;
     }
-    if let Some(prefix) = homebrew_prefix_with_mlxc() {
-        emit_prefix_link_flags(&prefix);
+    if host_platform == NativeHostPlatform::MacOs
+        && let Some(prefix) = homebrew_prefix_with_mlxc()
+    {
+        emit_prefix_link_flags(&prefix, host_platform);
         return;
     }
     if let Ok(mlx_c) = PkgConfig::new().atleast_version("0.8.0").probe("mlx-c") {
@@ -233,7 +268,7 @@ fn emit_link_instructions() {
             if let Some(prefix) = native_build::shared_prefix()
                 .filter(|candidate| native_build::prefix_carries_mlxc_library(candidate))
             {
-                emit_prefix_link_flags(&prefix);
+                emit_prefix_link_flags(&prefix, host_platform);
                 return;
             }
             println!(
@@ -244,9 +279,14 @@ fn emit_link_instructions() {
         native_build::NativeBuildOutcome::Failed => println!(
             "cargo:warning=no MLX-C library could be located or built; the crate compiles, \
              but linking a binary that uses it will report undefined MLX symbols. Set \
-             {MLX_C_PREFIX_VARIABLE}, run `cargo xtask build-native`, install mlx-c \
-             through Homebrew, or install CMake (brew install cmake) so the pinned \
-             sources can be built automatically."
+             {MLX_C_PREFIX_VARIABLE}, run `cargo xtask build-native`, or install CMake \
+             ({}) so the pinned sources can be built automatically.{}",
+            host_platform.tool_install_hint("cmake"),
+            if host_platform == NativeHostPlatform::Linux {
+                format!(" {}", linux_native_build_prerequisites())
+            } else {
+                String::new()
+            }
         ),
     }
 }
@@ -290,47 +330,54 @@ fn homebrew_prefix_with_mlxc() -> Option<PathBuf> {
 }
 
 /// Emits the link flags for a prefix whose `lib` holds the libraries: the
-/// two dylibs plus an embedded rpath (their install names are `@rpath/...`
-/// and they carry their own framework dependencies), or the static pair
-/// with everything MLX needs spelled out — the GGUF archive and the jaccl
-/// acceleration archive MLX v0.32.4 links as its own libraries, the Apple
-/// frameworks, and the
-/// C++ runtime the dylibs used to carry transitively. Order matters for
-/// archives: mlxc references mlx, mlx references jaccl, and the linker
-/// resolves left to right.
-fn emit_prefix_link_flags(prefix: &Path) {
+/// two shared libraries plus an embedded rpath, or the static pair with
+/// everything MLX needs spelled out for this host. The lines themselves are
+/// composed in `native_link_directives.rs`.
+fn emit_prefix_link_flags(prefix: &Path, host_platform: NativeHostPlatform) {
     let library_directory = prefix.join("lib");
     println!(
         "cargo:rustc-link-search=native={}",
         library_directory.display()
     );
-    if library_directory.join("libmlxc.dylib").is_file() {
-        println!("cargo:rustc-link-lib=dylib=mlxc");
-        println!("cargo:rustc-link-lib=dylib=mlx");
-        println!(
-            "cargo:rustc-link-arg=-Wl,-rpath,{}",
-            library_directory.display()
-        );
+    let link_directives = if native_build::prefix_carries_shared_mlxc_library(prefix) {
+        shared_pair_link_directives(&library_directory)
     } else {
-        // The gap shim precedes the pair: it references mlxc and mlx
-        // symbols, and the linker resolves archives left to right. Only
-        // the engine's prefix carries the shim; a consumer-supplied
-        // prefix omits it and the mlxrs_* wrappers stay unlinked unless
-        // the consumer compiles the self-contained shim themselves.
-        if native_build::prefix_carries_gap_shim_library(prefix) {
-            println!("cargo:rustc-link-lib=static=mlxrs_gap_shim");
+        static_prefix_link_directives(prefix, host_platform)
+    };
+    for link_directive in link_directives {
+        println!("{link_directive}");
+    }
+}
+
+/// The link directives for a static prefix on this host. On Linux the
+/// libraries MLX was configured against are read back from the package MLX
+/// installed into the prefix.
+fn static_prefix_link_directives(prefix: &Path, host_platform: NativeHostPlatform) -> Vec<String> {
+    let prefix_archives = StaticPrefixArchives {
+        carries_gap_shim: native_build::prefix_carries_gap_shim_library(prefix),
+        carries_gguf_archive: native_build::prefix_carries_gguf_archive(prefix),
+    };
+    match host_platform {
+        NativeHostPlatform::MacOs => macos_static_pair_link_directives(prefix_archives),
+        NativeHostPlatform::Linux => {
+            let exported_targets_file = prefix.join(MLX_EXPORTED_TARGETS_FILE);
+            let exported_link_libraries = std::fs::read_to_string(&exported_targets_file)
+                .ok()
+                .as_deref()
+                .and_then(exported_mlx_link_libraries);
+            if exported_link_libraries.is_none() {
+                println!(
+                    "cargo:warning={} does not name the libraries MLX was built against; \
+                     linking continues without a BLAS and will report undefined symbols \
+                     unless the consumer links one",
+                    exported_targets_file.display()
+                );
+            }
+            linux_static_pair_link_directives(
+                prefix_archives,
+                &exported_link_libraries.unwrap_or_default(),
+            )
         }
-        println!("cargo:rustc-link-lib=static=mlxc");
-        println!("cargo:rustc-link-lib=static=mlx");
-        // Follows mlx, which references it.
-        if native_build::prefix_carries_gguf_archive(prefix) {
-            println!("cargo:rustc-link-lib=static=gguflib");
-        }
-        println!("cargo:rustc-link-lib=static=jaccl");
-        for framework in ["Metal", "Foundation", "QuartzCore", "Accelerate"] {
-            println!("cargo:rustc-link-lib=framework={framework}");
-        }
-        println!("cargo:rustc-link-lib=dylib=c++");
     }
 }
 

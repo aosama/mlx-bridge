@@ -45,8 +45,16 @@ warnings = "deny"
 #
 # Linking and tests
 # -----------------
-# Compilation and documentation builds succeed on any host (the build
-# script's link ladder stops with a warning on non-mac hosts). Test
+# Compilation and documentation builds succeed on any host. The build
+# script's link ladder runs on macOS and on Linux. Linux builds MLX's CPU
+# backend alone and needs GCC 13 or newer (MLX-C uses C++20 std::format) and
+# the BLAS and LAPACK development headers; CMake's own CMAKE_PREFIX_PATH and
+# CMAKE_INCLUDE_PATH environment variables point it at headers outside the
+# standard places. Every host's bindgen needs libclang 16 or newer. The
+# minimums live in native_toolchain_requirements.rs, and `cargo native-test
+# --test native_toolchain_requirements_tests` covers the failure notes that
+# name them. The ladder stops with a warning on any other host, when
+# compiling for another operating system than the host, and on docs.rs. Test
 # binaries are the one thing that must LINK an MLX-C library, resolved
 # first-match through MLX_BRIDGE_MLX_C_PREFIX=<prefix>, Homebrew,
 # `pkg-config mlx-c`, and finally the pinned pair compiled into the

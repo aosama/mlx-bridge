@@ -4,7 +4,7 @@ This guide takes you from an empty project to a working MLX computation in Rust.
 
 ## Requirements
 
-You need an Apple silicon Mac, a Rust toolchain that supports edition 2024 and `rust-version` 1.101, Clang for `bindgen`, and `curl`, `tar`, and `cmake` on your `PATH`. `brew install cmake` covers the one that is usually missing.
+You need an Apple silicon Mac, or a Linux machine for MLX's CPU backend (see [Native build](native-build.md#linux)), a Rust toolchain that supports edition 2024 and `rust-version` 1.101, Clang for `bindgen` (libclang 16 or newer), and `curl`, `tar`, and `cmake` on your `PATH`. `brew install cmake` on macOS, or your distribution's package manager on Linux, covers the one that is usually missing.
 
 ## Add the crate
 

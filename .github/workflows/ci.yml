@@ -43,9 +43,10 @@ jobs:
   check:
     name: Lint and document exactly as docs.rs builds it
     runs-on: ubuntu-latest
-    # The hard limit for every job in this workflow. The build script skips
-    # the native ladder on non-mac hosts, so this lane normally takes about a
-    # minute; anything near the limit is a stall, and it should fail loudly.
+    # The build script skips the native ladder when compiling for another
+    # operating system than the host, as this lane does, so it normally takes
+    # about a minute; anything near the limit is a stall, and it should fail
+    # loudly.
     timeout-minutes: 10
     env:
       RUSTC_WRAPPER: sccache
@@ -263,7 +264,7 @@ jobs:
         with:
           operation: restore
           owner: native-pair
-          key: native-pair-${{ hashFiles('native_build.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**') }}
+          key: native-pair-${{ hashFiles('native_build.rs', 'native_host_platform.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**') }}
           path: ~/.cache/mlx-bridge/native
       - name: Restore sccache
         id: sccache-cache
@@ -287,7 +288,7 @@ jobs:
         with:
           operation: save
           owner: native-pair
-          key: native-pair-${{ hashFiles('native_build.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**') }}
+          key: native-pair-${{ hashFiles('native_build.rs', 'native_host_platform.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**') }}
           path: ~/.cache/mlx-bridge/native
       # install-action verifies the release's SHA-256 from inside the pinned
       # action commit; fallback: none forbids a silent source build if the
@@ -346,3 +347,140 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: cargo xtask prune-caches
+
+  linux-native:
+    name: Build and test on Linux with MLX's CPU backend
+    # 64-bit ARM, so the half-precision accessors, which exist only on
+    # aarch64, are compiled and tested here as they are on the Mac.
+    runs-on: ubuntu-24.04-arm
+    # A warm run takes a few minutes; a cold compile of MLX's CPU backend on
+    # this runner takes most of the rest, and must fit, as on the macOS lane.
+    timeout-minutes: 30
+    env:
+      RUSTC_WRAPPER: sccache
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      # The documented Linux prerequisites, nothing more: Clang for bindgen,
+      # and the BLAS and LAPACK headers MLX's CPU backend compiles against.
+      # bindgen needs the clang executable as well as libclang: it asks the
+      # executable for clang's builtin include directory (float.h, stddef.h),
+      # and libclang alone cannot find it from its multiarch library path.
+      # The runner image happens to ship clang; naming it keeps the lane
+      # honest about what an adopter installs. Ubuntu 24.04's GCC 13 and
+      # libclang 18 meet the toolchain minimums in docs/native-build.md.
+      # Cached and bounded for the same mirror-stall reason as the lint lane.
+      - name: Install Clang, CMake, and the BLAS and LAPACK headers
+        timeout-minutes: 5
+        uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
+        with:
+          packages: clang libclang-dev libc6-dev cmake libopenblas-dev liblapacke-dev
+          version: mlx-bridge-linux-native-v1
+      - name: Restore the Rust toolchain
+        id: rust-toolchain-cache
+        uses: ./.github/actions/mlx-bridge-cache
+        with:
+          operation: restore
+          owner: rust-toolchain
+          path: ~/.rustup/toolchains
+          key: mlx-bridge-v1-rust-toolchain-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
+      - name: Activate the pinned toolchain
+        run: rustup show
+      - name: Save the Rust toolchain
+        if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && steps.rust-toolchain-cache.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/mlx-bridge-cache
+        with:
+          operation: save
+          owner: rust-toolchain
+          path: ~/.rustup/toolchains
+          key: mlx-bridge-v1-rust-toolchain-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml') }}
+      - name: Pin the sccache directory
+        run: printf 'SCCACHE_DIR=%s\n' "$HOME/.cache/mlx-bridge/sccache" >> "$GITHUB_ENV"
+      - name: Install sccache
+        uses: mozilla/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+      - name: Restore cargo downloads
+        id: cargo-downloads-cache
+        uses: ./.github/actions/mlx-bridge-cache
+        with:
+          operation: restore
+          owner: cargo-downloads
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: mlx-bridge-v1-cargo-downloads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
+          restore-keys: mlx-bridge-v1-cargo-downloads-${{ runner.os }}-${{ runner.arch }}-
+      # The platform segment keeps this pair apart from the macOS one, which
+      # holds different archives, and lets cargo xtask prune-caches count its
+      # generations separately (family native-pair-Linux-ARM64).
+      - name: Restore the compiled pinned pair
+        id: native-pair-cache
+        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.cold-native }}
+        uses: ./.github/actions/mlx-bridge-cache
+        with:
+          operation: restore
+          owner: native-pair
+          key: mlx-bridge-v1-native-pair-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('native_build.rs', 'native_host_platform.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**') }}
+          path: ~/.cache/mlx-bridge/native
+      - name: Restore sccache
+        id: sccache-cache
+        uses: ./.github/actions/mlx-bridge-cache
+        with:
+          operation: restore
+          owner: sccache
+          path: ~/.cache/mlx-bridge/sccache
+          key: mlx-bridge-v1-sccache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
+          restore-keys: |
+            mlx-bridge-v1-sccache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}-
+            mlx-bridge-v1-sccache-${{ runner.os }}-${{ runner.arch }}-
+      - name: Build the pinned pair (typed, live progress)
+        run: cargo xtask build-native
+      - name: Save the compiled pinned pair
+        if: ${{ !cancelled() && steps.native-pair-cache.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/mlx-bridge-cache
+        with:
+          operation: save
+          owner: native-pair
+          key: mlx-bridge-v1-native-pair-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('native_build.rs', 'native_host_platform.rs', 'native_forward_edits.rs', 'native_gap_shim_build.rs', 'native_prefix_completion.rs', 'native_gap_shim/**') }}
+          path: ~/.cache/mlx-bridge/native
+      - name: Provision pinned cargo-nextest
+        timeout-minutes: 1
+        uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
+        with:
+          tool: cargo-nextest@0.9.149
+          fallback: none
+      # The build script links through the Linux line it composes from the
+      # prefix MLX installed — the adopter experience on Linux, proven. The
+      # GPU contracts report themselves skipped on this CPU-only build.
+      - name: Compile the test binaries
+        timeout-minutes: 5
+        run: cargo nextest run --workspace --no-run
+      - name: Run the tests
+        timeout-minutes: 3
+        run: cargo nextest run --workspace --profile ci
+      # No documentation-test step: the guide examples open the GPU context
+      # MlxBindingsContext::new(), which a CPU-only MLX cannot provide, as the
+      # Linux section of docs/native-build.md states. The macOS lane runs them.
+      - name: Print compiler cache statistics
+        if: ${{ !cancelled() }}
+        run: sccache --show-stats
+      - name: Save cargo downloads
+        if: ${{ !cancelled() && steps.cargo-downloads-cache.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/mlx-bridge-cache
+        with:
+          operation: save
+          owner: cargo-downloads
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: mlx-bridge-v1-cargo-downloads-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
+      - name: Save sccache
+        if: ${{ !cancelled() && github.ref_name == github.event.repository.default_branch && steps.sccache-cache.outputs.cache-hit != 'true' }}
+        uses: ./.github/actions/mlx-bridge-cache
+        with:
+          operation: save
+          owner: sccache
+          path: ~/.cache/mlx-bridge/sccache
+          key: mlx-bridge-v1-sccache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}

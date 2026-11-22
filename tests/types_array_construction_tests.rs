@@ -45,6 +45,8 @@ fn should_round_trip_boolean_values() {
     assert_eq!(flags.to_vec_bool().unwrap(), vec![true, false, true]);
 }
 
+// The half-precision readers exist only on 64-bit ARM.
+#[cfg(target_arch = "aarch64")]
 #[test]
 fn should_round_trip_half_precision_bits_unchanged() {
     const HALF_ONE_BITS: u16 = 0x3C00;

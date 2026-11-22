@@ -6,6 +6,14 @@
 # Per-test hang budget: reported slow at 30 seconds and terminated at 60, so a
 # hung test names itself instead of consuming the whole job's time limit.
 slow-timeout = { period = "30s", terminate-after = 2 }
+# How long a finished test's output handles may stay open before nextest calls
+# the test leaky. No test here starts a subprocess, so a real leak is a defect
+# and fails the run. The 500ms period exists because the default 100ms was
+# too short for a loaded machine: a full parallel run marked a different,
+# leak-free test LEAK on some runs and none on others, each time a test that
+# itself had run slowly (0.2s instead of 0.01s) while hundreds of test
+# processes competed for the cores.
+leak-timeout = { period = "500ms", result = "fail" }
 
 [profile.ci]
 # One run should report every failure, not stop at the first.

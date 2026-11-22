@@ -4,7 +4,7 @@
 #[path = "support/bridge_fixtures.rs"]
 mod bridge_fixtures;
 
-use bridge_fixtures::{float_array, gpu_context, vector_of};
+use bridge_fixtures::{device_stream, float_array, gpu_context, vector_of};
 use mlx_bridge::{MlxStream, MlxVectorInt, MlxVectorStream, MlxVectorString, MlxVectorVectorArray};
 
 #[test]
@@ -133,17 +133,17 @@ fn should_copy_a_string_vector_independently_through_set() {
 
 #[test]
 fn should_round_trip_streams_by_identity() {
-    let gpu_stream = MlxStream::default_gpu().expect("the GPU stream should exist");
+    let computing_stream = device_stream().expect("the device stream should exist");
     let cpu_stream = MlxStream::default_cpu().expect("the CPU stream should exist");
 
     let mut vector =
-        MlxVectorStream::from_streams(&[&gpu_stream]).expect("the vector should build");
+        MlxVectorStream::from_streams(&[&computing_stream]).expect("the vector should build");
     vector
         .append_stream(&cpu_stream)
         .expect("the append should work");
 
     assert_eq!(vector.len(), 2);
-    assert!(vector.stream_at(0).unwrap().equals(&gpu_stream));
+    assert!(vector.stream_at(0).unwrap().equals(&computing_stream));
     assert!(vector.stream_at(1).unwrap().equals(&cpu_stream));
 }
 
@@ -158,8 +158,8 @@ fn should_fail_to_read_any_index_of_an_empty_stream_vector() {
 
 #[test]
 fn should_copy_a_stream_vector_through_set() {
-    let gpu_stream = MlxStream::default_gpu().expect("the GPU stream should exist");
-    let source = MlxVectorStream::from_streams(&[&gpu_stream]).expect("should build");
+    let computing_stream = device_stream().expect("the device stream should exist");
+    let source = MlxVectorStream::from_streams(&[&computing_stream]).expect("should build");
     let mut copy = MlxVectorStream::empty();
 
     copy.set(&source).expect("the copy should work");
@@ -213,12 +213,12 @@ fn should_build_and_grow_a_string_vector_from_one_and_many_strings() {
 
 #[test]
 fn should_build_replace_and_grow_a_stream_vector() {
-    let gpu_stream = MlxStream::default_gpu().expect("the GPU stream should exist");
+    let computing_stream = device_stream().expect("the device stream should exist");
     let cpu_stream = MlxStream::default_cpu().expect("the CPU stream should exist");
 
-    let mut vector = MlxVectorStream::from_stream(&gpu_stream).expect("should build");
+    let mut vector = MlxVectorStream::from_stream(&computing_stream).expect("should build");
     vector
-        .append_streams(&[&cpu_stream, &gpu_stream])
+        .append_streams(&[&cpu_stream, &computing_stream])
         .expect("the append should work");
     assert_eq!(vector.len(), 3);
     assert!(vector.stream_at(1).unwrap().equals(&cpu_stream));
@@ -229,7 +229,7 @@ fn should_build_replace_and_grow_a_stream_vector() {
     assert_eq!(vector.len(), 1);
 
     vector
-        .set_streams(&[&gpu_stream, &cpu_stream])
+        .set_streams(&[&computing_stream, &cpu_stream])
         .expect("the replacement should work");
     assert_eq!(vector.len(), 2);
 }

@@ -15,16 +15,73 @@
 #![allow(dead_code)]
 
 use mlx_bridge::{
-    MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, install_non_terminating_error_handler,
+    MlxArray, MlxArrayVector, MlxBindingsContext, MlxCError, MlxStream, cuda_is_available,
+    install_non_terminating_error_handler, metal_is_available,
 };
 
 /// Single-precision comparison tolerance for values MLX computes rather than
 /// stores; exact equality stays the rule for integers, booleans, and copies.
 pub const FLOAT_TOLERANCE: f32 = 1e-5;
 
+/// A context on MLX's default GPU stream, or on the CPU when the linked MLX
+/// was built without any GPU backend (MLX's CPU-only build on Linux).
+///
+/// These suites prove the bridge's marshalling and ownership, which is the
+/// same on either device, so a CPU-only build runs them rather than failing
+/// them all at the first stream request. On macOS, and wherever MLX reports
+/// a GPU backend, the GPU is used, so a Mac whose Metal fails still fails
+/// here instead of quietly moving to the CPU.
 pub fn gpu_context() -> MlxBindingsContext {
     install_non_terminating_error_handler();
-    MlxBindingsContext::new().expect("the GPU bindings context should initialize")
+    device_context().expect("the bindings context should initialize")
+}
+
+/// The context `gpu_context` returns, as a `Result`, for callbacks that run
+/// inside MLX and must hand a failure back rather than panic.
+pub fn device_context() -> Result<MlxBindingsContext, MlxCError> {
+    if linked_mlx_has_a_gpu_backend() {
+        MlxBindingsContext::new()
+    } else {
+        MlxBindingsContext::on_cpu()
+    }
+}
+
+/// The default stream of the device `gpu_context` computes on, for graph
+/// builders and stream fixtures.
+pub fn device_stream() -> Result<MlxStream, MlxCError> {
+    if linked_mlx_has_a_gpu_backend() {
+        MlxStream::default_gpu()
+    } else {
+        MlxStream::default_cpu()
+    }
+}
+
+/// True, after saying so on standard error, when the linked MLX has no GPU
+/// backend. A contract about the GPU itself (Metal kernels, the GPU stream's
+/// identity, GPU-only refusals) returns early on that build instead of
+/// failing: there is no GPU for it to describe, and the same contract still
+/// runs on every build that has one. Never true on macOS.
+pub fn skip_without_gpu_backend(contract_name: &str) -> bool {
+    if linked_mlx_has_a_gpu_backend() {
+        return false;
+    }
+    eprintln!("skipped {contract_name}: the linked MLX was built without a GPU backend");
+    true
+}
+
+/// Whether these suites treat the linked MLX as having a GPU backend.
+///
+/// Always true on macOS, whatever MLX reports: the crate's macOS build always
+/// carries Metal, so a Mac where MLX reports no Metal is a fault the GPU
+/// contracts must fail on, not a reason to skip them or move to the CPU.
+/// Elsewhere it is MLX's own report of a Metal or CUDA backend.
+pub fn linked_mlx_has_a_gpu_backend() -> bool {
+    if cfg!(target_os = "macos") {
+        return true;
+    }
+    let has_metal = metal_is_available().expect("MLX should report whether Metal is available");
+    let has_cuda = cuda_is_available().expect("MLX should report whether CUDA is available");
+    has_metal || has_cuda
 }
 
 /// A context for MLX's CPU-only families, such as linear algebra and float64.
