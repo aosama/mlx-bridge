@@ -281,9 +281,11 @@ jobs:
         run: cargo xtask build-native
       # Saved here, not at the end of the job: if anything later hits the job's
       # time limit, losing this compile would make the next run compile again
-      # and hit the same limit.
+      # and hit the same limit. Saved only when the build succeeded: an entry
+      # saved after a failure hits exactly on the next run of this ref, which
+      # then skips the save, so the good pair would never be stored.
       - name: Save the compiled pinned pair
-        if: ${{ !cancelled() && steps.native-pair-cache.outputs.cache-hit != 'true' }}
+        if: ${{ success() && steps.native-pair-cache.outputs.cache-hit != 'true' }}
         uses: ./.github/actions/mlx-bridge-cache
         with:
           operation: save
@@ -364,21 +366,30 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
-      # The documented Linux prerequisites, nothing more: Clang for bindgen,
-      # and the BLAS and LAPACK headers MLX's CPU backend compiles against.
-      # bindgen needs the clang executable as well as libclang: it asks the
-      # executable for clang's builtin include directory (float.h, stddef.h),
-      # and libclang alone cannot find it from its multiarch library path.
-      # The runner image happens to ship clang; naming it keeps the lane
-      # honest about what an adopter installs. Ubuntu 24.04's GCC 13 and
-      # libclang 18 meet the toolchain minimums in docs/native-build.md.
-      # Cached and bounded for the same mirror-stall reason as the lint lane.
-      - name: Install Clang, CMake, and the BLAS and LAPACK headers
+      # Clang and CMake for the build: bindgen needs the clang executable as
+      # well as libclang, because it asks the executable for clang's builtin
+      # include directory (float.h, stddef.h), which libclang alone cannot
+      # find from its multiarch library path. The runner image happens to
+      # ship clang; naming it keeps the lane honest about what an adopter
+      # installs. Ubuntu 24.04's GCC 13 and libclang 18 meet the toolchain
+      # minimums in docs/native-build.md. Cached and bounded for the same
+      # mirror-stall reason as the lint lane.
+      - name: Install Clang and CMake
         timeout-minutes: 5
         uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # v1.6.3
         with:
-          packages: clang libclang-dev libc6-dev cmake libopenblas-dev liblapacke-dev
-          version: mlx-bridge-linux-native-v1
+          packages: clang libclang-dev libc6-dev cmake
+          version: mlx-bridge-linux-native-v2
+      # Not through the apt cache: the cache restores package files without
+      # running their install scripts, and Debian's BLAS and LAPACK packages
+      # register libblas.so and liblapack.so through update-alternatives in
+      # those scripts. A restored set left MLX's configure with "Could NOT
+      # find BLAS" on every warm run, so these install for real each time.
+      - name: Install the BLAS and LAPACK development packages
+        timeout-minutes: 5
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends libopenblas-dev liblapacke-dev
       - name: Restore the Rust toolchain
         id: rust-toolchain-cache
         uses: ./.github/actions/mlx-bridge-cache
@@ -438,7 +449,7 @@ jobs:
       - name: Build the pinned pair (typed, live progress)
         run: cargo xtask build-native
       - name: Save the compiled pinned pair
-        if: ${{ !cancelled() && steps.native-pair-cache.outputs.cache-hit != 'true' }}
+        if: ${{ success() && steps.native-pair-cache.outputs.cache-hit != 'true' }}
         uses: ./.github/actions/mlx-bridge-cache
         with:
           operation: save
