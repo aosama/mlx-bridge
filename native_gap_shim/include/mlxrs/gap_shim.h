@@ -12,13 +12,17 @@
  * exactly like MLX-C ones: status-returning functions that report through
  * MLX's installed error handler, MLX-C handle types in and out, and
  * multi-output results as res_0/res_1 out parameters (the eig/qr
- * precedent). The prefix is mlxrs_ so shim symbols can never collide with
- * a future MLX-C symbol.
+ * precedent). Where MLX-C has no type for a value, the shim declares one in
+ * MLX-C's shape: a C enum for an MLX enum (mlxrs_dtype_kind) and a struct
+ * holding a void* ctx for an owned C++ object (mlxrs_config_scope). The
+ * prefix is mlxrs_ so shim symbols and types can never collide with a
+ * future MLX-C one.
  *
  * Consumers who own their native image (default-features = false, or a
- * prefix of their own) compile this one-file shim themselves: it is
- * self-contained — public headers only, no MLX-C private headers — and
- * links the same mlx and mlxc libraries any consumer already links.
+ * prefix of their own) compile the shim's sources in native_gap_shim/src
+ * themselves: they are self-contained — public headers only, no MLX-C
+ * private headers — and link the same mlx and mlxc libraries any consumer
+ * already links.
  */
 
 #include <stdbool.h>
@@ -124,11 +128,6 @@ int mlxrs_peek_default_stream(
     bool* has_stream,
     const mlx_device device);
 
-/* Whether MLX's Metal kernels can use the GPU neural accelerators (MLX
- * metal::is_nax_available). MLX answers false when it was built without the
- * Metal backend, so the query is safe on every host. */
-int mlxrs_is_nax_available(bool* res);
-
 /* Sets how arrays print (MLX core set_printoptions, plus the formatter's
  * boolean capitalization). A negative precision selects MLX's default. */
 int mlxrs_set_printoptions(int precision, bool capitalize_bool);
@@ -144,6 +143,97 @@ int mlxrs_finfo(
     double* eps,
     double* smallest_normal,
     mlx_dtype dtype);
+
+/* Fused scaled dot-product attention with a sliding window (MLX
+ * fast::scaled_dot_product_attention, the window_size parameter MLX v0.32.5
+ * added). Every other argument means what it means in MLX-C's
+ * mlx_fast_scaled_dot_product_attention. A query attends only to keys fewer
+ * than `window_size` positions away; MLX rejects 0 and values below -1, and
+ * -1 means no window. Retires when an MLX-C release forwards window_size;
+ * the forward edit at MLX-C's own call site fails the build loudly then,
+ * which is the signal to retire this entry too. */
+int mlxrs_fast_scaled_dot_product_attention_windowed(
+    mlx_array* res,
+    const mlx_array queries,
+    const mlx_array keys,
+    const mlx_array values,
+    float scale,
+    int window_size,
+    const char* mask_mode,
+    const mlx_array mask_arr /* may be null */,
+    const mlx_array sinks /* may be null */,
+    bool force_fused,
+    const mlx_stream s);
+
+/* The element type two types promote to (MLX core promote_types). */
+int mlxrs_promote_types(mlx_dtype* res, mlx_dtype first, mlx_dtype second);
+
+/* MLX's coarse classification of an element type (MLX core Dtype::Kind). */
+typedef enum mlxrs_dtype_kind_ {
+  MLXRS_DTYPE_KIND_BOOL,
+  MLXRS_DTYPE_KIND_UNSIGNED_INTEGER,
+  MLXRS_DTYPE_KIND_SIGNED_INTEGER,
+  MLXRS_DTYPE_KIND_FLOATING,
+  MLXRS_DTYPE_KIND_COMPLEX,
+  MLXRS_DTYPE_KIND_BRAIN_FLOATING,
+} mlxrs_dtype_kind;
+
+/* The element type's kind (MLX core kindof). */
+int mlxrs_kindof(mlxrs_dtype_kind* res, mlx_dtype dtype);
+
+/* MLX's element type hierarchy (MLX core Dtype::Category). */
+typedef enum mlxrs_dtype_category_ {
+  MLXRS_DTYPE_CATEGORY_COMPLEX_FLOATING,
+  MLXRS_DTYPE_CATEGORY_FLOATING,
+  MLXRS_DTYPE_CATEGORY_INEXACT,
+  MLXRS_DTYPE_CATEGORY_SIGNED_INTEGER,
+  MLXRS_DTYPE_CATEGORY_UNSIGNED_INTEGER,
+  MLXRS_DTYPE_CATEGORY_INTEGER,
+  MLXRS_DTYPE_CATEGORY_NUMBER,
+  MLXRS_DTYPE_CATEGORY_GENERIC,
+} mlxrs_dtype_category;
+
+/* Whether the element type falls under the category (MLX core issubdtype,
+ * the type-against-category overload). The other overloads are not carried:
+ * a type is under another type only when the two are equal, and the
+ * category hierarchy is fixed. */
+int mlxrs_issubdtype(bool* res, mlx_dtype dtype, mlxrs_dtype_category category);
+
+/* Whether MLX's Metal kernels can use the GPU neural accelerators (MLX
+ * metal::is_nax_available). MLX answers false when it was built without the
+ * Metal backend, so the query is safe on every host. */
+int mlxrs_is_nax_available(bool* res);
+
+/* Whether MLX's active memory is above its memory limit (MLX allocator
+ * over_memory_limit). */
+int mlxrs_over_memory_limit(bool* res);
+
+/* Sets a configuration value for the whole process (MLX config::update).
+ * The value outranks the environment variable of the same name. */
+int mlxrs_config_update(const char* name, int value);
+
+/* Reads a configuration value (MLX config::get): this thread's scoped
+ * values first, then process values, then the environment variable of the
+ * same name, then `default_value`. MLX records an environment or default
+ * answer as the process value on the first read of a name. */
+int mlxrs_config_get(int* res, const char* name, int default_value);
+
+/* A thread-scoped set of configuration values (MLX config::ScopedUpdate). */
+typedef struct mlxrs_config_scope_ {
+  void* ctx;
+} mlxrs_config_scope;
+
+/* Applies `values_num` name and value pairs on the calling thread until the
+ * scope is freed. MLX keeps scopes in a thread-local list, so the scope must
+ * be freed on the thread that created it. */
+int mlxrs_config_scope_new(
+    mlxrs_config_scope* res,
+    const char* const* names,
+    const int* values,
+    size_t values_num);
+
+/* Removes the scope's values from the calling thread. */
+int mlxrs_config_scope_free(mlxrs_config_scope scope);
 
 #ifdef __cplusplus
 }

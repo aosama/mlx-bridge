@@ -9,8 +9,8 @@ use bridge_fixtures::{array_at, gpu_context, vector_of};
 use mlx_bridge::{
     MlxArray, MlxBindingsContext, MlxCError, MlxClosure, MlxDtype, MlxMapStringToArray,
     active_memory_bytes, array_buffer_size_bytes, cache_memory_bytes, clear_allocator_cache,
-    memory_limit_bytes, peak_memory_bytes, reset_peak_memory, set_cache_limit, set_memory_limit,
-    synchronize,
+    is_over_memory_limit, memory_limit_bytes, peak_memory_bytes, reset_peak_memory,
+    set_cache_limit, set_memory_limit, synchronize,
 };
 
 /// 64 MiB of float32 elements.
@@ -217,4 +217,35 @@ fn should_report_no_buffer_bytes_for_an_empty_vector() {
     gpu_context();
 
     assert_eq!(array_buffer_size_bytes(&vector_of(&[])).unwrap(), 0);
+}
+
+#[test]
+fn should_report_memory_over_the_limit_only_when_active_bytes_exceed_it() {
+    // The limit moves around a fixed active total instead of allocating past
+    // it: from MLX v0.32.5 on, evaluating while over the limit waits for
+    // memory to drain, which this check must never depend on.
+    let context = gpu_context();
+    let held_values = context
+        .zeros(&[PROBE_ELEMENT_COUNT], MlxDtype::Float32)
+        .unwrap();
+    context.evaluate_arrays(&[&held_values]).unwrap();
+    let held_active_bytes = settle_active_memory(&context);
+    assert!(held_active_bytes >= PROBE_BYTE_COUNT);
+    let original_limit = set_memory_limit(held_active_bytes - 1).unwrap();
+
+    let over_one_byte_below = is_over_memory_limit().unwrap();
+    set_memory_limit(held_active_bytes).unwrap();
+    let over_at_exactly_active = is_over_memory_limit().unwrap();
+    set_memory_limit(original_limit).unwrap();
+    let over_at_original = is_over_memory_limit().unwrap();
+
+    assert!(
+        over_one_byte_below,
+        "active bytes above the limit must report over"
+    );
+    // Boundary: MLX compares strictly, so active bytes equal to the limit
+    // are within it.
+    assert!(!over_at_exactly_active);
+    assert!(!over_at_original);
+    drop(held_values);
 }

@@ -31,6 +31,34 @@ fn main() -> Result<(), MlxCError> {
 }
 ```
 
+### Sliding window attention
+
+The windowed entries limit each query to keys fewer than `window_size` positions away. Positions align at the end of the sequences, so with a key cache longer than the new queries, the last query sits at the last key. There are unmasked, causal, and array-mask forms, and a window of zero is rejected.
+
+```rust
+use mlx_bridge::{MlxArray, MlxBindingsContext, MlxCError, install_non_terminating_error_handler};
+
+fn main() -> Result<(), MlxCError> {
+    install_non_terminating_error_handler();
+    let context = MlxBindingsContext::new()?;
+    // Identical keys score equally, so attention averages the visible values.
+    let query = MlxArray::from_f32(&[1.0, 0.0], &[1, 1, 1, 2])?;
+    let keys = MlxArray::from_f32(&[1.0, 0.0, 1.0, 0.0, 1.0, 0.0], &[1, 1, 3, 2])?;
+    let values = MlxArray::from_f32(&[2.0, 2.0, 4.0, 6.0, 6.0, 10.0], &[1, 1, 3, 2])?;
+
+    // A window of two lets the query see the last two keys.
+    let windowed = context.windowed_scaled_dot_product_attention(&query, &keys, &values, 1.0, 2)?;
+    assert_eq!(windowed.to_vec_f32()?, vec![5.0, 8.0]);
+
+    // Causally, each query sees itself and the one key before it.
+    let causal = context.causal_windowed_scaled_dot_product_attention(&keys, &keys, &values, 1.0, 2)?;
+    assert_eq!(causal.to_vec_f32()?, vec![2.0, 2.0, 3.0, 4.0, 5.0, 8.0]);
+
+    assert!(context.windowed_scaled_dot_product_attention(&query, &keys, &values, 1.0, 0).is_err());
+    Ok(())
+}
+```
+
 ## Rotary position embeddings
 
 `rope` takes the input, rotated dimensions, base, and the token offset to start from. An offset lets you continue a sequence during incremental decoding. The other `rope_with_*` entry points take per-token positions or custom frequencies.

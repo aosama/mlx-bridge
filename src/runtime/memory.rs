@@ -2,7 +2,7 @@
 //!
 //! The embedding application decides when to call these; this module only
 //! makes the calls safe and typed. Every function here mirrors exactly one
-//! official MLX-C control.
+//! MLX control, through MLX-C or, where MLX-C has none yet, the gap shim.
 
 use crate::{MlxArrayVector, MlxCError, MlxStream, error::check_status, raw};
 
@@ -16,6 +16,21 @@ pub fn set_memory_limit(active_memory_limit_bytes: usize) -> Result<usize, MlxCE
         unsafe { raw::mlx_set_memory_limit(&mut previous_limit_bytes, active_memory_limit_bytes) };
     check_status(status, "set the MLX active memory limit")?;
     Ok(previous_limit_bytes)
+}
+
+/// Whether MLX's active memory is above the limit [`set_memory_limit`]
+/// applies. From MLX v0.32.5 on, MLX holds back new evaluation work while
+/// this is true and work is in flight, so a caller can check it before
+/// queueing a large graph.
+///
+/// # Errors
+/// Returns the captured MLX description when the query fails.
+pub fn is_over_memory_limit() -> Result<bool, MlxCError> {
+    let mut is_over_limit = false;
+    // SAFETY: The output pointer is valid writable storage.
+    let status = unsafe { raw::mlxrs_over_memory_limit(&mut is_over_limit) };
+    check_status(status, "query whether MLX is over its memory limit")?;
+    Ok(is_over_limit)
 }
 
 /// Applies the allocator-cache retention limit and returns the previous limit

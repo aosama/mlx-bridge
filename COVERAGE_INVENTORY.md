@@ -19,7 +19,7 @@ vendored MLX-C v0.8.0 surface.
 - Public upstream types: 85
 - Bridged functions: 675
 - Bridged types: 85
-- Gap shim functions: 14
+- Gap shim functions: 23
 - Exclusions: 1
 
 ## Functions
@@ -803,15 +803,24 @@ MLX-C equivalent has arrived.
 | shim symbol | wraps |
 |---|---|
 | `mlxrs_broadcast_shapes` | MLX core `broadcast_shapes` |
+| `mlxrs_config_get` | MLX `config::get` |
+| `mlxrs_config_scope_free` | MLX `config::ScopedUpdate`, its destructor |
+| `mlxrs_config_scope_new` | MLX `config::ScopedUpdate` |
+| `mlxrs_config_update` | MLX `config::update` |
 | `mlxrs_einsum_path` | MLX core `einsum_path` |
+| `mlxrs_fast_scaled_dot_product_attention_windowed` | MLX `fast::scaled_dot_product_attention`, its `window_size` parameter |
 | `mlxrs_finfo` | MLX core `finfo` |
 | `mlxrs_get_global_formatter` | MLX core `get_global_formatter` |
 | `mlxrs_is_nax_available` | MLX `metal::is_nax_available` |
+| `mlxrs_issubdtype` | MLX core `issubdtype`, the type-against-category overload |
 | `mlxrs_istft` | MLX `fft::istft` |
+| `mlxrs_kindof` | MLX core `kindof` |
 | `mlxrs_minmax_axes` | MLX core `minmax`, the axes overload |
 | `mlxrs_minmax_axis` | MLX core `minmax`, the axis overload |
 | `mlxrs_normalize_axis_index` | MLX core `normalize_axis_index` |
+| `mlxrs_over_memory_limit` | MLX `allocator::over_memory_limit` |
 | `mlxrs_peek_default_stream` | MLX core `peek_default_stream` |
+| `mlxrs_promote_types` | MLX core `promote_types` |
 | `mlxrs_result_type` | MLX core `result_type` |
 | `mlxrs_set_printoptions` | MLX core `set_printoptions` |
 | `mlxrs_stft` | MLX `fft::stft` |

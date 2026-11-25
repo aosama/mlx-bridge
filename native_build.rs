@@ -36,6 +36,9 @@ pub const PINNED_MLX_C_TARBALL_SHA256: &str =
 const PINNED_TARBALL_BASE_URL: &str = "https://github.com";
 
 /// Version of the build recipe itself, folded into the prefix identity.
+/// Recipe 12 widens the gap shim to the rest of what MLX v0.32.5 makes
+/// reachable: sliding window attention, the config module, the memory limit
+/// check, and the element type queries, split across two shim sources.
 /// Recipe 11 moves to MLX v0.32.5 ahead of any MLX-C release pairing with
 /// it. The forward edit set gains two edits MLX-C v0.8.0 needs to compile
 /// against it: the attention window_size argument MLX inserted
@@ -72,7 +75,7 @@ const PINNED_TARBALL_BASE_URL: &str = "https://github.com";
 /// the pair. Bump this when the recipe's build semantics change, so
 /// machines holding a prefix built the old way orphan it exactly like a
 /// pin bump would.
-const PINNED_PAIR_BUILD_RECIPE: &str = "recipe-11-mlx-0-32-5";
+const PINNED_PAIR_BUILD_RECIPE: &str = "recipe-12-mlx-0-32-5-shim";
 
 /// The forward edit set this engine applies to the extracted MLX-C tree
 /// between extraction and configure. It lives in its own self-contained,

@@ -1,166 +1,16 @@
-/* The mlx-bridge gap shim implementation. See gap_shim.h for the contract
- * and the retirement policy. The handle casts below inline what MLX-C's
- * private headers do: the public C struct carries the C++ object as a
- * void* ctx (that layout is the published C ABI), so casting ctx is both
- * self-contained — this file compiles against any installed MLX-C, no
- * private headers — and exactly what the vendored MLX-C itself does.
+/* The mlx-bridge gap shim's array-level entries: operations, transforms,
+ * FFT, element-type queries, and formatting. Process-level queries live in
+ * gap_shim_runtime.cpp. See gap_shim.h for the contract and the retirement
+ * policy.
  */
 
 #include "mlxrs/gap_shim.h"
 
-#include <functional>
-#include <optional>
-#include <stdexcept>
-#include <string>
-#include <utility>
-#include <vector>
-
+#include "gap_shim_handles.h"
 #include "mlx/c/error.h"
-#include "mlx/mlx.h"
 #include "mlx/ops.h"
 
-namespace {
-
-inline mlx::core::array& shim_array_get(const mlx_array handle) {
-  if (!handle.ctx) {
-    throw std::runtime_error("expected a non-empty mlx_array");
-  }
-  return *static_cast<mlx::core::array*>(handle.ctx);
-}
-
-inline void shim_array_set(mlx_array& destination, mlx::core::array&& value) {
-  if (destination.ctx) {
-    *static_cast<mlx::core::array*>(destination.ctx) = std::move(value);
-  } else {
-    destination.ctx = new mlx::core::array(std::move(value));
-  }
-}
-
-inline mlx::core::Stream& shim_stream_get(const mlx_stream handle) {
-  if (!handle.ctx) {
-    throw std::runtime_error("expected a non-empty mlx_stream");
-  }
-  return *static_cast<mlx::core::Stream*>(handle.ctx);
-}
-
-using ShimClosureFunction = std::function<std::vector<mlx::core::array>(
-    const std::vector<mlx::core::array>&)>;
-
-inline std::vector<mlx::core::array>& shim_vector_array_get(
-    const mlx_vector_array handle) {
-  if (!handle.ctx) {
-    throw std::runtime_error("expected a non-empty mlx_vector_array");
-  }
-  return *static_cast<std::vector<mlx::core::array>*>(handle.ctx);
-}
-
-inline std::optional<int> shim_optional_int(const mlx_optional_int value) {
-  return value.has_value ? std::make_optional(value.value) : std::nullopt;
-}
-
-inline std::optional<mlx::core::array> shim_optional_array(
-    const mlx_array handle) {
-  return handle.ctx ? std::make_optional(shim_array_get(handle)) : std::nullopt;
-}
-
-mlx::core::fft::FFTNorm shim_fft_norm(const mlx_fft_norm norm) {
-  switch (norm) {
-    case MLX_FFT_NORM_BACKWARD:
-      return mlx::core::fft::FFTNorm::Backward;
-    case MLX_FFT_NORM_ORTHO:
-      return mlx::core::fft::FFTNorm::Ortho;
-    case MLX_FFT_NORM_FORWARD:
-      return mlx::core::fft::FFTNorm::Forward;
-  }
-  throw std::invalid_argument("unknown FFT normalization");
-}
-
-mlx_dtype shim_dtype_to_c(const mlx::core::Dtype dtype) {
-  switch (dtype.val()) {
-    case mlx::core::Dtype::Val::bool_:
-      return MLX_BOOL;
-    case mlx::core::Dtype::Val::uint8:
-      return MLX_UINT8;
-    case mlx::core::Dtype::Val::uint16:
-      return MLX_UINT16;
-    case mlx::core::Dtype::Val::uint32:
-      return MLX_UINT32;
-    case mlx::core::Dtype::Val::uint64:
-      return MLX_UINT64;
-    case mlx::core::Dtype::Val::int8:
-      return MLX_INT8;
-    case mlx::core::Dtype::Val::int16:
-      return MLX_INT16;
-    case mlx::core::Dtype::Val::int32:
-      return MLX_INT32;
-    case mlx::core::Dtype::Val::int64:
-      return MLX_INT64;
-    case mlx::core::Dtype::Val::float16:
-      return MLX_FLOAT16;
-    case mlx::core::Dtype::Val::float32:
-      return MLX_FLOAT32;
-    case mlx::core::Dtype::Val::float64:
-      return MLX_FLOAT64;
-    case mlx::core::Dtype::Val::bfloat16:
-      return MLX_BFLOAT16;
-    case mlx::core::Dtype::Val::complex64:
-      return MLX_COMPLEX64;
-  }
-  throw std::invalid_argument("unknown element type");
-}
-
-mlx::core::Dtype shim_dtype_from_c(const mlx_dtype dtype) {
-  switch (dtype) {
-    case MLX_BOOL:
-      return mlx::core::bool_;
-    case MLX_UINT8:
-      return mlx::core::uint8;
-    case MLX_UINT16:
-      return mlx::core::uint16;
-    case MLX_UINT32:
-      return mlx::core::uint32;
-    case MLX_UINT64:
-      return mlx::core::uint64;
-    case MLX_INT8:
-      return mlx::core::int8;
-    case MLX_INT16:
-      return mlx::core::int16;
-    case MLX_INT32:
-      return mlx::core::int32;
-    case MLX_INT64:
-      return mlx::core::int64;
-    case MLX_FLOAT16:
-      return mlx::core::float16;
-    case MLX_FLOAT32:
-      return mlx::core::float32;
-    case MLX_FLOAT64:
-      return mlx::core::float64;
-    case MLX_BFLOAT16:
-      return mlx::core::bfloat16;
-    case MLX_COMPLEX64:
-      return mlx::core::complex64;
-  }
-  throw std::invalid_argument("unknown element type");
-}
-
-void shim_string_set(mlx_string* destination, const std::string& text) {
-  mlx_string source = mlx_string_new_data(text.c_str());
-  const int status = mlx_string_set(destination, source);
-  mlx_string_free(source);
-  if (status != 0) {
-    throw std::runtime_error("could not copy the string result");
-  }
-}
-
-void shim_vector_int_set(mlx_vector_int* destination, const std::vector<int>& values) {
-  // MLX-C declares this copying parameter non-const but only reads from it.
-  if (mlx_vector_int_set_data(
-          destination, const_cast<int*>(values.data()), values.size()) != 0) {
-    throw std::runtime_error("could not copy the integer vector result");
-  }
-}
-
-} // namespace
+using namespace mlxrs_shim;
 
 extern "C" int mlxrs_minmax_axes(
     mlx_array* res_0,
@@ -384,16 +234,6 @@ extern "C" int mlxrs_peek_default_stream(
   return 0;
 }
 
-extern "C" int mlxrs_is_nax_available(bool* res) {
-  try {
-    *res = mlx::core::metal::is_nax_available();
-  } catch (std::exception& error) {
-    mlx_error("%s", error.what());
-    return 1;
-  }
-  return 0;
-}
-
 extern "C" int mlxrs_set_printoptions(int precision, bool capitalize_bool) {
   try {
     mlx::core::set_printoptions(mlx::core::PrintOptions{precision});
@@ -431,6 +271,74 @@ extern "C" int mlxrs_finfo(
     *max = limits.max;
     *eps = limits.eps;
     *smallest_normal = limits.smallest_normal;
+  } catch (std::exception& error) {
+    mlx_error("%s", error.what());
+    return 1;
+  }
+  return 0;
+}
+
+extern "C" int mlxrs_fast_scaled_dot_product_attention_windowed(
+    mlx_array* res,
+    const mlx_array queries,
+    const mlx_array keys,
+    const mlx_array values,
+    float scale,
+    int window_size,
+    const char* mask_mode,
+    const mlx_array mask_arr,
+    const mlx_array sinks,
+    bool force_fused,
+    const mlx_stream s) {
+  try {
+    shim_array_set(
+        *res,
+        mlx::core::fast::scaled_dot_product_attention(
+            shim_array_get(queries),
+            shim_array_get(keys),
+            shim_array_get(values),
+            scale,
+            window_size,
+            std::string(mask_mode),
+            shim_optional_array(mask_arr),
+            shim_optional_array(sinks),
+            force_fused,
+            shim_stream_get(s)));
+  } catch (std::exception& error) {
+    mlx_error("%s", error.what());
+    return 1;
+  }
+  return 0;
+}
+
+extern "C" int mlxrs_promote_types(mlx_dtype* res, mlx_dtype first, mlx_dtype second) {
+  try {
+    *res = shim_dtype_to_c(mlx::core::promote_types(
+        shim_dtype_from_c(first), shim_dtype_from_c(second)));
+  } catch (std::exception& error) {
+    mlx_error("%s", error.what());
+    return 1;
+  }
+  return 0;
+}
+
+extern "C" int mlxrs_kindof(mlxrs_dtype_kind* res, mlx_dtype dtype) {
+  try {
+    *res = shim_dtype_kind_to_c(mlx::core::kindof(shim_dtype_from_c(dtype)));
+  } catch (std::exception& error) {
+    mlx_error("%s", error.what());
+    return 1;
+  }
+  return 0;
+}
+
+extern "C" int mlxrs_issubdtype(
+    bool* res,
+    mlx_dtype dtype,
+    mlxrs_dtype_category category) {
+  try {
+    *res = mlx::core::issubdtype(
+        shim_dtype_from_c(dtype), shim_dtype_category_from_c(category));
   } catch (std::exception& error) {
     mlx_error("%s", error.what());
     return 1;

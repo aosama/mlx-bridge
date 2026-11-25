@@ -1352,6 +1352,82 @@ pub struct MlxFloatInfo {
 
 A floating-point element type's limits, as MLX's `finfo` reports them.
 
+### `MlxDtypeKind`
+
+```rust
+pub enum MlxDtypeKind {
+    /// `Bool`.
+    Bool,
+    /// The `UInt*` types.
+    UnsignedInteger,
+    /// The `Int*` types.
+    SignedInteger,
+    /// `Float16`, `Float32`, and `Float64`.
+    Floating,
+    /// `Complex64`.
+    Complex,
+    /// `BFloat16`.
+    BrainFloating,
+}
+```
+
+MLX's coarse classification of an element type, as MLX's `kindof` reports it. `BFloat16` has a kind of its own because its bit layout is not an IEEE floating-point format.
+
+### `MlxDtypeCategory`
+
+```rust
+pub enum MlxDtypeCategory {
+    /// `Complex64`.
+    ComplexFloating,
+    /// The real floating-point types, `BFloat16` included.
+    Floating,
+    /// `Floating` and `ComplexFloating`.
+    Inexact,
+    /// The `Int*` types.
+    SignedInteger,
+    /// The `UInt*` types.
+    UnsignedInteger,
+    /// `SignedInteger` and `UnsignedInteger`.
+    Integer,
+    /// `Inexact` and `Integer`.
+    Number,
+    /// Every element type.
+    Generic,
+}
+```
+
+A node in MLX's element type hierarchy, for `MlxDtype::is_in_category`. `Generic` contains every type, `Number` every type but `Bool`, `Inexact` the floating and complex types, and `Integer` both integer families.
+
+### `MlxDtype::promote_with`
+
+```rust
+pub fn promote_with(self, other: Self) -> Result<Self, MlxCError>
+```
+
+The element type this type and `other` promote to together, the type MLX gives the result of a binary operation on the two.
+
+**Errors:** Returns the captured MLX description when the query fails.
+
+### `MlxDtype::kind`
+
+```rust
+pub fn kind(self) -> Result<MlxDtypeKind, MlxCError>
+```
+
+This element type's kind.
+
+**Errors:** Returns the captured MLX description when the query fails.
+
+### `MlxDtype::is_in_category`
+
+```rust
+pub fn is_in_category(self, category: MlxDtypeCategory) -> Result<bool, MlxCError>
+```
+
+Whether this element type falls under `category` in MLX's hierarchy.
+
+**Errors:** Returns the captured MLX description when the query fails.
+
 ### `MlxDtype::float_info`
 
 ```rust

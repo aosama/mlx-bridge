@@ -35,7 +35,7 @@ fn should_keep_pinned_pair_identity_stable() {
     // updating it must therefore always be a conscious act that rides a
     // deliberate pin or recipe bump, never an accident of refactoring or a
     // dependency upgrade changing how digests render. The current golden
-    // value is recipe-11-mlx-0-32-5: MLX v0.32.5 with MLX-C v0.8.0, the
-    // attention window_size forward edit, and the widened gap shim.
-    assert_eq!(pinned_pair_identity(), "ecce0feaa4cc38da");
+    // value is recipe-12-mlx-0-32-5-shim: MLX v0.32.5 with MLX-C v0.8.0,
+    // its forward edits, and the gap shim widened to what that MLX adds.
+    assert_eq!(pinned_pair_identity(), "2cbb4bf3beb7a3ba");
 }

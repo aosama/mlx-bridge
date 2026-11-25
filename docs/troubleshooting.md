@@ -31,7 +31,7 @@ Some failures only happen when the graph runs, such as Metal shader compilation.
 Names matter here:
 
 - `_mlx_*` such as `_mlx_matrix_transpose`, or `_mlx_distributed_group_get_rank`: an MLX-C older than 0.8 was found through `MLX_BRIDGE_MLX_C_PREFIX` or Homebrew. Update it, or remove it so the automatic build runs.
-- `_mlxrs_*`: you supplied your own libraries, and the gap shim isn't among them. Compile `native_gap_shim/src/gap_shim.cpp` into your build.
+- `_mlxrs_*`: you supplied your own libraries, and the gap shim isn't among them. Compile the sources in `native_gap_shim/src` into your build.
 - No MLX symbols resolve at all: no library was found. Look for a build-script warning, and check that `cmake` is on your `PATH`.
 
 ## The first build fails downloading or configuring

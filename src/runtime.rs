@@ -1,5 +1,7 @@
-//! Runtime domain controls: I/O, export, platform, stream defaults, and memory.
+//! Runtime domain controls: I/O, export, platform, stream defaults, memory,
+//! and configuration.
 
+pub(crate) mod config;
 pub(crate) mod distributed_all_gather;
 pub(crate) mod export;
 pub(crate) mod formatting;

@@ -45,6 +45,30 @@ fn main() -> Result<(), MlxCError> {
 }
 ```
 
+`is_over_memory_limit` reports whether active memory is above the limit. While it is and work is in flight, MLX holds back new evaluations until memory drains, so check it before queueing a large graph.
+
+## Configuration
+
+MLX reads integer tunables such as `MLX_MAX_OPS_PER_BUFFER` from the environment. `config_update` sets one for the whole process and `config_get` reads one back, falling back to the environment and then to the default you pass. `MlxConfigScope` applies values on the current thread until it drops, ahead of process values. A value takes effect where MLX reads the name after the change, and MLX reads some names only once, for example when it first creates a device or stream, so set those before the first computation. The first read of a name records its answer, so a later read with another default returns the first answer.
+
+```rust
+use mlx_bridge::{MlxCError, MlxConfigScope, config_get, config_update, install_non_terminating_error_handler};
+
+fn main() -> Result<(), MlxCError> {
+    install_non_terminating_error_handler();
+    config_update("MLX_MAX_OPS_PER_BUFFER", 40)?;
+    assert_eq!(config_get("MLX_MAX_OPS_PER_BUFFER", 10)?, 40);
+
+    let scope = MlxConfigScope::new(&[("MLX_MAX_OPS_PER_BUFFER", 20)])?;
+    assert_eq!(config_get("MLX_MAX_OPS_PER_BUFFER", 10)?, 20);
+    drop(scope);
+    assert_eq!(config_get("MLX_MAX_OPS_PER_BUFFER", 10)?, 40);
+    Ok(())
+}
+```
+
+A scope belongs to the thread that created it, so `MlxConfigScope` is neither `Send` nor `Sync`.
+
 ## Releasing memory
 
 Dropping every handle to an array releases it to the allocator's cache. `clear_allocator_cache` returns the cache to the system; call `synchronize` first so nothing in flight still uses it. In a long-running program, watch `active_memory_bytes` for leaks and `cache_memory_bytes` for growth.
@@ -72,10 +96,10 @@ fn main() -> Result<(), MlxCError> {
 
 ## Element type information
 
-`MlxDtype::float_info` reports a floating-point type's limits, and fails for non-floating types.
+`MlxDtype::float_info` reports a floating-point type's limits, and fails for non-floating types. `promote_with` gives the type MLX assigns the result of combining two types, `kind` gives MLX's coarse classification, and `is_in_category` tests a type against MLX's hierarchy of categories.
 
 ```rust
-use mlx_bridge::{MlxCError, MlxDtype, install_non_terminating_error_handler};
+use mlx_bridge::{MlxCError, MlxDtype, MlxDtypeCategory, MlxDtypeKind, install_non_terminating_error_handler};
 
 fn main() -> Result<(), MlxCError> {
     install_non_terminating_error_handler();
@@ -83,6 +107,11 @@ fn main() -> Result<(), MlxCError> {
     assert_eq!(limits.bits, 32);
     assert_eq!(limits.eps, f64::from(f32::EPSILON));
     assert!(MlxDtype::Int32.float_info().is_err());
+
+    assert_eq!(MlxDtype::Int8.promote_with(MlxDtype::UInt8)?, MlxDtype::Int16);
+    assert_eq!(MlxDtype::BFloat16.kind()?, MlxDtypeKind::BrainFloating);
+    assert!(MlxDtype::BFloat16.is_in_category(MlxDtypeCategory::Floating)?);
+    assert!(!MlxDtype::Bool.is_in_category(MlxDtypeCategory::Number)?);
     Ok(())
 }
 ```
