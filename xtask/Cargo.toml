@@ -1,6 +1,6 @@
 [package]
 name = "xtask"
-version = "0.32.4-alpha.6"
+version = "0.32.5-alpha.1"
 edition = "2024"
 rust-version = "1.101"
 description = "Typed repository tooling for mlx-bridge, invoked as cargo xtask <command>."

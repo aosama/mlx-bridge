@@ -4,7 +4,7 @@ name = "mlx-bridge"
 # stable release lands once early adopters have exercised it. Pre-releases
 # are never resolved by default dependency resolution, so nobody gets an
 # early build accidentally.
-version = "0.32.4-alpha.6"
+version = "0.32.5-alpha.1"
 edition = "2024"
 # The crate version names the MLX RELEASE THE CRATE IS VERIFIED AGAINST —
 # the number users search for and install (the scheme mlx-rs established for
@@ -17,10 +17,10 @@ edition = "2024"
 # difference. The bound pair is recorded here, in the README, and in
 # COVERAGE_INVENTORY.md. MLX occupies all three numeric slots, so our own
 # fixes and same-MLX MLX-C surface changes advance the pre-release counter
-# (0.32.4-alpha.N), surface changes with an inventory note; RELEASES.md
+# (0.32.5-alpha.N), surface changes with an inventory note; RELEASES.md
 # records what the first stable release must settle.
 rust-version = "1.101"
-description = "A complete, low-level, policy-free Rust bridge to the MLX-C API of Apple's MLX for Apple silicon (and Linux on MLX's CPU backend), tracking MLX releases. Version = the verified MLX release (0.32.4; binds MLX-C 0.8)."
+description = "A complete, low-level, policy-free Rust bridge to the MLX-C API of Apple's MLX for Apple silicon (and Linux on MLX's CPU backend), tracking MLX releases. Version = the verified MLX release (0.32.5; binds MLX-C 0.8)."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/aosama/mlx-bridge"
 documentation = "https://docs.rs/mlx-bridge"
