@@ -224,8 +224,10 @@ typedef struct mlxrs_config_scope_ {
 } mlxrs_config_scope;
 
 /* Applies `values_num` name and value pairs on the calling thread until the
- * scope is freed. MLX keeps scopes in a thread-local list, so the scope must
- * be freed on the thread that created it. */
+ * scope is freed. `names` and `values` each hold `values_num` entries and may
+ * be null only when `values_num` is zero; a null name fails the call. MLX
+ * keeps scopes in a thread-local list, so the scope must be freed on the
+ * thread that created it. */
 int mlxrs_config_scope_new(
     mlxrs_config_scope* res,
     const char* const* names,
