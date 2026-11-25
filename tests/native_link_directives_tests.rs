@@ -258,9 +258,11 @@ fn should_link_only_the_pair_and_the_runtime_for_a_bare_linux_prefix() {
 }
 
 #[test]
-fn should_keep_the_macos_static_link_line_unchanged() {
-    // The line this crate has always emitted for the engine's own prefix on
-    // macOS; the Linux support must not move a single entry of it.
+fn should_emit_the_complete_macos_static_link_line_in_order() {
+    // The whole line for the engine's own prefix on macOS, pinned entry by
+    // entry: archives before the archives they reference, then every
+    // framework the pinned MLX calls into, then the C++ runtime. IOKit is
+    // the newest entry, required from MLX v0.32.5 on.
     assert_eq!(
         macos_static_pair_link_directives(COMPLETE_PREFIX),
         vec![
@@ -273,6 +275,7 @@ fn should_keep_the_macos_static_link_line_unchanged() {
             "cargo:rustc-link-lib=framework=Foundation",
             "cargo:rustc-link-lib=framework=QuartzCore",
             "cargo:rustc-link-lib=framework=Accelerate",
+            "cargo:rustc-link-lib=framework=IOKit",
             "cargo:rustc-link-lib=dylib=c++",
         ]
     );
@@ -289,6 +292,33 @@ fn should_omit_the_optional_archives_a_macos_prefix_does_not_carry() {
                 || link_directive.contains("gguflib")),
         "absent archives must not be linked: {link_directives:?}"
     );
+}
+
+#[test]
+fn should_name_no_apple_framework_on_a_linux_static_link_line() {
+    // Negative: frameworks exist only on Apple platforms, and the Linux
+    // linker would stop on the first one it was handed.
+    let exported_link_libraries = exported_mlx_link_libraries(LINUX_EXPORTED_TARGETS)
+        .expect("the mlx target names its link libraries");
+
+    let link_directives =
+        linux_static_pair_link_directives(COMPLETE_PREFIX, &exported_link_libraries);
+
+    assert!(
+        !link_directives
+            .iter()
+            .any(|link_directive| link_directive.contains("framework=")),
+        "a Linux link line must carry no framework: {link_directives:?}"
+    );
+}
+
+#[test]
+fn should_keep_the_iokit_framework_on_a_macos_prefix_without_optional_archives() {
+    // Boundary: the framework is required by libmlx.a itself, so it stays
+    // even when the prefix carries neither optional archive.
+    let link_directives = macos_static_pair_link_directives(BARE_PREFIX);
+
+    position_of(&link_directives, "cargo:rustc-link-lib=framework=IOKit");
 }
 
 #[test]

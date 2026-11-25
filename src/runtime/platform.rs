@@ -35,6 +35,22 @@ pub fn metal_is_available() -> Result<bool, MlxCError> {
     Ok(available)
 }
 
+/// Whether MLX's Metal kernels can use the GPU neural accelerators on this
+/// machine. MLX selects different matmul, quantized, and attention kernels
+/// when they are available, so the answer explains which code path a
+/// benchmark measured. It is `false` wherever MLX has no Metal backend.
+///
+/// # Errors
+/// Returns the captured MLX description when the query fails.
+pub fn metal_is_nax_available() -> Result<bool, MlxCError> {
+    let operation: &'static str = "query MLX neural accelerator availability";
+    let mut available = false;
+    // SAFETY: The output pointer is valid writable storage.
+    let status = unsafe { raw::mlxrs_is_nax_available(&mut available) };
+    check_status(status, operation)?;
+    Ok(available)
+}
+
 /// Raises the wired-memory ceiling for MLX allocations.
 ///
 /// Returns the previously configured wired limit.

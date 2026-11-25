@@ -32,20 +32,38 @@ pub struct ForwardSourceEdit {
     pub drop_with: &'static str,
 }
 
-pub const MLX_C_FORWARD_SOURCE_EDITS: &[ForwardSourceEdit] = &[ForwardSourceEdit {
-    path: "CMakeLists.txt",
-    find: r#"if(MLX_C_USE_SYSTEM_MLX)
+pub const MLX_C_FORWARD_SOURCE_EDITS: &[ForwardSourceEdit] = &[
+    ForwardSourceEdit {
+        path: "CMakeLists.txt",
+        find: r#"if(MLX_C_USE_SYSTEM_MLX)
   find_package(MLX REQUIRED)"#,
-    replacement: r#"if(MLX_C_USE_SYSTEM_MLX)
+        replacement: r#"if(MLX_C_USE_SYSTEM_MLX)
   # The installed static MLX package's targets reference jaccl::jaccl in
   # their link interface without loading the jaccl package themselves, so
   # the consumer must resolve it first or find_package(MLX) dies at
   # set_target_properties on a missing target.
   find_package(jaccl REQUIRED)
   find_package(MLX REQUIRED)"#,
-    drop_with: "an MLX or MLX-C release whose system-MLX packaging \
+        drop_with: "an MLX or MLX-C release whose system-MLX packaging \
                     resolves jaccl's imported target itself",
-}];
+    },
+    // MLX v0.32.5 inserted `int window_size = -1` between `scale` and
+    // `mask_mode` for sliding window attention, so MLX-C v0.8.0's positional
+    // call hands a std::string to an int parameter and stops compiling.
+    // Passing MLX's own default keeps mlx_fast_scaled_dot_product_attention
+    // at its v0.8.0 signature and its unwindowed behavior; the window itself
+    // reaches Rust through the gap shim, never through this edit, because
+    // the forward edit set does not alter the bound C surface.
+    ForwardSourceEdit {
+        path: "mlx/c/fast.cpp",
+        find: "            scale,\n            std::string(mask_mode),",
+        replacement: "            scale,\n            \
+                      -1, // window_size: MLX's default, no sliding window\n            \
+                      std::string(mask_mode),",
+        drop_with: "an MLX-C release whose mlx_fast_scaled_dot_product_attention \
+                    forwards window_size itself",
+    },
+];
 
 /// Applies the forward edit set to the extracted MLX-C tree. Idempotent: a
 /// retry over sources edited by a previous attempt recognizes the

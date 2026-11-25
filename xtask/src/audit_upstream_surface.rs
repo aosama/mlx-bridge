@@ -44,11 +44,16 @@ use crate::surface_parsing::{
 /// MLX public functions that MLX-C verifiably does not wrap, kept reviewed
 /// so the audit fails only on NEW gaps. Every entry pairs the C++ function
 /// name with the reason the gap is accepted. Verified against the pinned
-/// pair MLX v0.32.4 + MLX-C v0.8.0 (the vendored header tree).
+/// pair MLX v0.32.5 + MLX-C v0.8.0 (the vendored header tree).
 const REVIEWED_UNWRAPPED_MLX_FUNCTIONS: &[(&str, &str)] = &[
     (
         "exporter",
         "served by the mlx_function_exporter_* family under the exporter-suffix naming",
+    ),
+    (
+        "get_arch_list",
+        "reports the CUDA architectures MLX was compiled for; this crate builds MLX \
+         without the CUDA backend on every host it supports",
     ),
     (
         "import_function",
@@ -56,7 +61,8 @@ const REVIEWED_UNWRAPPED_MLX_FUNCTIONS: &[(&str, &str)] = &[
     ),
     (
         "precompiled_cuda_kernel",
-        "CUDA runs only on CUDA hardware; this crate ships one target, Apple silicon",
+        "CUDA runs only on CUDA hardware; this crate builds MLX without the CUDA backend \
+         on every host it supports",
     ),
     (
         "to_stream",

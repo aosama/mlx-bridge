@@ -35,7 +35,7 @@ fn should_keep_pinned_pair_identity_stable() {
     // updating it must therefore always be a conscious act that rides a
     // deliberate pin or recipe bump, never an accident of refactoring or a
     // dependency upgrade changing how digests render. The current golden
-    // value is recipe-10-library-only: the recipe that stops compiling MLX's
-    // own tests and examples.
-    assert_eq!(pinned_pair_identity(), "dc7fcf8d1fd13ddf");
+    // value is recipe-11-mlx-0-32-5: MLX v0.32.5 with MLX-C v0.8.0, the
+    // attention window_size forward edit, and the widened gap shim.
+    assert_eq!(pinned_pair_identity(), "ecce0feaa4cc38da");
 }

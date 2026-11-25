@@ -179,7 +179,8 @@ pub use runtime::memory::{
 };
 pub use runtime::platform::{
     MlxDistributedGroup, clear_distributed_backends, cuda_is_available, distributed_is_available,
-    initialize_distributed, metal_is_available, metallib_path, set_wired_limit,
+    initialize_distributed, metal_is_available, metal_is_nax_available, metallib_path,
+    set_wired_limit,
 };
 pub use runtime::stream_defaults::{
     MlxStreamThreadLocal, clear_streams, set_default_stream, synchronize_all_defaults,

@@ -124,6 +124,11 @@ int mlxrs_peek_default_stream(
     bool* has_stream,
     const mlx_device device);
 
+/* Whether MLX's Metal kernels can use the GPU neural accelerators (MLX
+ * metal::is_nax_available). MLX answers false when it was built without the
+ * Metal backend, so the query is safe on every host. */
+int mlxrs_is_nax_available(bool* res);
+
 /* Sets how arrays print (MLX core set_printoptions, plus the formatter's
  * boolean capitalization). A negative precision selects MLX's default. */
 int mlxrs_set_printoptions(int precision, bool capitalize_bool);
