@@ -92,6 +92,125 @@ fn should_hide_later_keys_from_earlier_queries_through_the_causal_entry() {
     assert_floats_close(&floats_of(&attended)[..2], &[2.0, 2.0], FLOAT_TOLERANCE);
 }
 
+/// One query against three keys with identical scores, so attention is the
+/// plain mean of whichever values the window lets through: the value rows
+/// [2, 2], [4, 6], and [6, 10] give a distinct mean for every subset this
+/// family's contracts select.
+fn evenly_scored_single_query() -> (MlxArray, MlxArray, MlxArray) {
+    (
+        float_array(&[1.0, 0.0], &[1, 1, 1, 2]),
+        float_array(&[1.0, 0.0, 1.0, 0.0, 1.0, 0.0], &[1, 1, 3, 2]),
+        float_array(&[2.0, 2.0, 4.0, 6.0, 6.0, 10.0], &[1, 1, 3, 2]),
+    )
+}
+
+#[test]
+fn should_attend_only_to_keys_inside_the_window_aligned_at_the_last_key() {
+    let context = gpu_context();
+    let (query, keys, values) = evenly_scored_single_query();
+
+    let nearest_key_only = context
+        .windowed_scaled_dot_product_attention(&query, &keys, &values, 1.0, 1)
+        .unwrap();
+    let last_two_keys = context
+        .windowed_scaled_dot_product_attention(&query, &keys, &values, 1.0, 2)
+        .unwrap();
+
+    // The single query aligns with the last key, so a window of one sees
+    // only it, and a window of two adds the key before.
+    assert_floats_close(&floats_of(&nearest_key_only), &[6.0, 10.0], FLOAT_TOLERANCE);
+    assert_floats_close(&floats_of(&last_two_keys), &[5.0, 8.0], FLOAT_TOLERANCE);
+}
+
+#[test]
+fn should_match_unwindowed_attention_when_the_window_covers_every_key() {
+    // Boundary: a window as long as the sequence, and one far longer, hide
+    // nothing.
+    let context = gpu_context();
+    let (query, keys, values) = evenly_scored_single_query();
+    let unwindowed = context
+        .scaled_dot_product_attention(&query, &keys, &values, 1.0)
+        .unwrap();
+
+    for covering_window in [3, i32::MAX as u32] {
+        let windowed = context
+            .windowed_scaled_dot_product_attention(&query, &keys, &values, 1.0, covering_window)
+            .unwrap();
+
+        assert_floats_close(
+            &floats_of(&windowed),
+            &floats_of(&unwindowed),
+            FLOAT_TOLERANCE,
+        );
+    }
+    assert_floats_close(&floats_of(&unwindowed), &[4.0, 6.0], FLOAT_TOLERANCE);
+}
+
+#[test]
+fn should_reject_a_window_size_mlx_cannot_take() {
+    // Negative: zero is meaningless and MLX rejects it; values past i32::MAX
+    // cannot cross the C boundary.
+    let context = gpu_context();
+    let (query, keys, values) = evenly_scored_single_query();
+
+    for unusable_window in [0, i32::MAX as u32 + 1] {
+        let failure = context
+            .windowed_scaled_dot_product_attention(&query, &keys, &values, 1.0, unusable_window)
+            .unwrap_err();
+
+        assert!(
+            failure.description.contains("window size"),
+            "unexpected failure for window {unusable_window}: {failure:?}"
+        );
+    }
+}
+
+#[test]
+fn should_combine_the_window_with_causal_masking() {
+    let context = gpu_context();
+    let keys = float_array(&[1.0, 0.0, 1.0, 0.0, 1.0, 0.0], &[1, 1, 3, 2]);
+    let values = float_array(&[2.0, 2.0, 4.0, 6.0, 6.0, 10.0], &[1, 1, 3, 2]);
+
+    let attended = context
+        .causal_windowed_scaled_dot_product_attention(&keys, &keys, &values, 1.0, 2)
+        .unwrap();
+
+    // Each query sees itself and at most one earlier key; the last query
+    // would see all three under plain causal attention.
+    assert_floats_close(
+        &floats_of(&attended),
+        &[2.0, 2.0, 3.0, 4.0, 5.0, 8.0],
+        FLOAT_TOLERANCE,
+    );
+}
+
+#[test]
+fn should_keep_only_keys_inside_the_window_that_the_mask_also_keeps() {
+    let context = gpu_context();
+    let (query, keys, values) = evenly_scored_single_query();
+    let keep_first_two = context
+        .greater(
+            &float_array(&[1.0, 1.0, 0.0], &[1, 1, 1, 3]),
+            &MlxArray::from_scalar_f32(0.5),
+        )
+        .unwrap();
+
+    let attended = context
+        .masked_windowed_scaled_dot_product_attention(
+            &query,
+            &keys,
+            &values,
+            1.0,
+            2,
+            &keep_first_two,
+        )
+        .unwrap();
+
+    // The window keeps the last two keys and the mask the first two: only
+    // the middle key passes both.
+    assert_floats_close(&floats_of(&attended), &[4.0, 6.0], FLOAT_TOLERANCE);
+}
+
 #[test]
 fn should_slide_a_convolution_kernel_with_the_requested_stride() {
     let context = gpu_context();

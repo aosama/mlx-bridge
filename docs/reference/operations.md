@@ -530,6 +530,8 @@ Validated wrappers over MLX's fused scaled dot-product attention.
 
 C ABI: `mlx-c/mlx/c/fast.h::mlx_fast_scaled_dot_product_attention`. C++ bridge: `mlx-c/mlx/c/fast.cpp`, forwarding to `mlx::core::fast::scaled_dot_product_attention`. MLX computes attention as `softmax(scale * Q @ K^T + mask) @ V` and performs softmax in Float32 even for BF16 inputs. Model code should shape/pad/segment tensors, not reproduce this math. Callers can select unmasked, causal, or explicit array-mask execution.
 
+The windowed entries reach MLX's sliding window through the gap shim (`mlxrs_fast_scaled_dot_product_attention_windowed`), because MLX-C v0.8.0 predates the `window_size` parameter MLX v0.32.5 added.
+
 ### `MlxBindingsContext::scaled_dot_product_attention`
 
 ```rust
@@ -555,6 +557,38 @@ pub fn masked_scaled_dot_product_attention(&self, queries: &MlxArray, keys: &Mlx
 ```
 
 Applies fused attention with a broadcast-compatible boolean or additive mask.
+
+### `MlxBindingsContext::windowed_scaled_dot_product_attention`
+
+```rust
+pub fn windowed_scaled_dot_product_attention(&self, queries: &MlxArray, keys: &MlxArray, values: &MlxArray, scale: f32, window_size: u32) -> Result<MlxArray, MlxCError>
+```
+
+Applies attention in which each query sees only the keys fewer than `window_size` positions away, in either direction.
+
+Positions align at the end of the sequences: the last query sits at the last key, which is how incremental decoding lays out a key cache that is longer than the new queries.
+
+**Errors:** Fails when `window_size` is zero or larger than `i32::MAX`, and for the argument errors `Self::scaled_dot_product_attention` reports.
+
+### `MlxBindingsContext::causal_windowed_scaled_dot_product_attention`
+
+```rust
+pub fn causal_windowed_scaled_dot_product_attention(&self, queries: &MlxArray, keys: &MlxArray, values: &MlxArray, scale: f32, window_size: u32) -> Result<MlxArray, MlxCError>
+```
+
+Applies causal attention restricted to a sliding window: each query sees itself and the `window_size - 1` keys before it.
+
+**Errors:** Fails when `window_size` is zero or larger than `i32::MAX`, and for the argument errors `Self::scaled_dot_product_attention` reports.
+
+### `MlxBindingsContext::masked_windowed_scaled_dot_product_attention`
+
+```rust
+pub fn masked_windowed_scaled_dot_product_attention(&self, queries: &MlxArray, keys: &MlxArray, values: &MlxArray, scale: f32, window_size: u32, mask: &MlxArray) -> Result<MlxArray, MlxCError>
+```
+
+Applies windowed attention that also honors a broadcast-compatible boolean or additive mask: a key must be inside the window and kept by the mask.
+
+**Errors:** Fails when `window_size` is zero or larger than `i32::MAX`, and for the argument errors `Self::masked_scaled_dot_product_attention` reports.
 
 ## `src/operations/convolution.rs`
 

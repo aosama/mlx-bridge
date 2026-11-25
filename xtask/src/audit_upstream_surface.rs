@@ -5,10 +5,11 @@
 //! The audit has two legs:
 //!
 //! 1. The upstream leg (needs `--mlx-source <checkout>`): parse the public
-//!    C++ free functions out of the pinned MLX checkout's umbrella header
-//!    (`mlx/mlx.h` — the reviewed definition of MLX's public surface), map
-//!    each C++ name onto the C naming convention MLX-C follows, and report
-//!    every MLX function with no C wrapper. Those functions are the only
+//!    C++ free functions out of every MLX header the pinned checkout's
+//!    umbrella `mlx/mlx.h` reaches, directly or through other MLX headers
+//!    (what a consumer of the umbrella can call), map each C++ name onto the
+//!    C naming convention MLX-C follows, and report every MLX function with
+//!    neither a C wrapper nor a gap shim entry. Those functions are the only
 //!    place coverage can be lost upstream of this repository: the build
 //!    script's bindgen translation is mechanical and full-tree, so
 //!    anything MLX-C declares is necessarily bridged here.
@@ -26,6 +27,8 @@
 //! (`mlx::core::linalg::norm` → `mlx_linalg_norm`), then the bare prefix
 //! (`fft::fftn` also tries `mlx_fftn`), then a suffix match for names the
 //! C side composes differently (`cuda_kernel` family under `mlx_fast_`).
+//! A gap shim entry counts when it carries the same family-prefixed name with
+//! `mlxrs_` in place of `mlx_` (`config::get` → `mlxrs_config_get`).
 //! Everything still unmatched lands in the report against the reviewed
 //! allowlist below, which records why each surviving gap is accepted.
 
@@ -47,6 +50,17 @@ use crate::surface_parsing::{
 /// pair MLX v0.32.5 + MLX-C v0.8.0 (the vendored header tree).
 const REVIEWED_UNWRAPPED_MLX_FUNCTIONS: &[(&str, &str)] = &[
     (
+        "allocator",
+        "returns MLX's C++ allocator object, which C cannot hold; the memory \
+         controls it carries reach Rust through MLX-C's memory family",
+    ),
+    (
+        "can_reuse_alien_buffer",
+        "on Metal it reads the storage mode of an MTL::Buffer object, which this \
+         crate never holds: MlxArray::from_managed_buffer adopts host memory, and \
+         a host pointer passed here would be read as a Metal object",
+    ),
+    (
         "exporter",
         "served by the mlx_function_exporter_* family under the exporter-suffix naming",
     ),
@@ -63,6 +77,12 @@ const REVIEWED_UNWRAPPED_MLX_FUNCTIONS: &[(&str, &str)] = &[
         "precompiled_cuda_kernel",
         "CUDA runs only on CUDA hardware; this crate builds MLX without the CUDA backend \
          on every host it supports",
+    ),
+    (
+        "register_config_handler",
+        "installs one C function that answers every configuration lookup in the \
+         process, MLX's own included, from MLX's worker threads; config_update, \
+         config_get, and MlxConfigScope cover setting and reading values",
     ),
     (
         "to_stream",
@@ -92,6 +112,11 @@ fn candidate_prefixes_for_header(header_relative_path: &str) -> &'static [&'stat
         // prefix; the fast fallback exists because MLX-C's fast.h also
         // exposes cuda-kernel entry points as mlx_fast_cuda_kernel_*.
         "metal" => &["mlx_metal_", "mlx_"],
+        // No bare fallback: the config functions are generic words (get,
+        // update), and a future top-level MLX-C mlx_get or mlx_update would
+        // otherwise mark them wrapped without having anything to do with
+        // configuration.
+        "config" => &["mlx_config_"],
         "cuda" => &["mlx_cuda_", "mlx_fast_", "mlx_"],
         "distributed" | "ops" if header_relative_path.starts_with("distributed/") => {
             &["mlx_distributed_", "mlx_"]
@@ -249,28 +274,50 @@ fn visit_vendored_header(
     }
 }
 
-/// Parse the MLX checkout's public C++ free functions, starting from the
-/// umbrella header `mlx/mlx.h` (the reviewed definition of the public
-/// surface — the one header MLX keeps as the complete public include set).
+/// Parse the MLX checkout's public C++ free functions from every header the
+/// umbrella `mlx/mlx.h` reaches (see `public_mlx_headers`).
 fn extract_mlx_public_functions(mlx_checkout_root: &Path) -> BTreeSet<MlxPublicFunction> {
-    let umbrella_path = mlx_checkout_root.join("mlx/mlx.h");
-    let Some(umbrella_source) = std::fs::read_to_string(&umbrella_path).ok() else {
-        return BTreeSet::new();
-    };
     let mut public_functions = BTreeSet::new();
-    for included_relative_path in quoted_includes(&umbrella_source) {
-        let header_path = mlx_checkout_root.join(&included_relative_path);
+    for header_relative_path in public_mlx_headers(mlx_checkout_root) {
+        let header_path = mlx_checkout_root.join(&header_relative_path);
         let Some(header_source) = std::fs::read_to_string(&header_path).ok() else {
             continue;
         };
         for function_name in cpp_public_free_function_names(&header_source) {
             public_functions.insert(MlxPublicFunction {
-                header_relative_path: included_relative_path.clone(),
+                header_relative_path: header_relative_path.clone(),
                 function_name,
             });
         }
     }
     public_functions
+}
+
+/// Every MLX header the umbrella `mlx/mlx.h` reaches, directly or through
+/// other MLX headers. MLX's public surface is what a consumer of the
+/// umbrella can call, and MLX also declares public functions in headers the
+/// umbrella includes only indirectly: MLX v0.32.5's `config` module arrives
+/// through `mlx/utils.h`, and `allocator.h` and `dtype.h` arrive the same
+/// way. Walking only the umbrella's own includes missed all three. Only
+/// quoted `mlx/` includes that exist in the checkout are followed, so system
+/// and third-party headers never enter the audit.
+fn public_mlx_headers(mlx_checkout_root: &Path) -> BTreeSet<String> {
+    let mut reached_headers = BTreeSet::new();
+    let mut headers_to_visit = vec!["mlx/mlx.h".to_owned()];
+    while let Some(header_relative_path) = headers_to_visit.pop() {
+        let header_path = mlx_checkout_root.join(&header_relative_path);
+        let Some(header_source) = std::fs::read_to_string(&header_path).ok() else {
+            continue;
+        };
+        for included_relative_path in quoted_includes(&header_source) {
+            let is_mlx_header = included_relative_path.starts_with("mlx/");
+            if is_mlx_header && !reached_headers.contains(&included_relative_path) {
+                reached_headers.insert(included_relative_path.clone());
+                headers_to_visit.push(included_relative_path);
+            }
+        }
+    }
+    reached_headers
 }
 
 /// The composition layer: MLX-C sometimes re-composes a C++ name's words
@@ -311,20 +358,28 @@ fn extract_gap_shim_functions(repository_root: &Path) -> BTreeSet<String> {
 /// separate public function `einsum_path`, not an overload of `einsum`.
 const GAP_SHIM_OVERLOAD_SUFFIXES: &[&str] = &["axes", "axis"];
 
-/// The shim entry serving one MLX function, if any: an exact `mlxrs_<name>`
-/// match, or one of its overload entry points.
+/// The shim entry serving one MLX function, if any. Shim symbols follow
+/// MLX-C's naming with `mlxrs_` in place of `mlx_`, so each family prefix
+/// for the declaring header is tried (`config::get` → `mlxrs_config_get`),
+/// as an exact name or one of its overload entry points. A name that only
+/// extends the function's (`mlxrs_fast_scaled_dot_product_attention_windowed`)
+/// is a separate entry, not this function's wrapper.
 fn gap_shim_entry_for(
     function_name: &str,
+    header_relative_path: &str,
     gap_shim_functions: &BTreeSet<String>,
 ) -> Option<String> {
-    let exact_shim_symbol = format!("mlxrs_{function_name}");
-    if gap_shim_functions.contains(&exact_shim_symbol) {
-        return Some(exact_shim_symbol);
-    }
-    for overload_suffix in GAP_SHIM_OVERLOAD_SUFFIXES {
-        let overload_symbol = format!("mlxrs_{function_name}_{overload_suffix}");
-        if gap_shim_functions.contains(&overload_symbol) {
-            return Some(overload_symbol);
+    for c_prefix in candidate_prefixes_for_header(header_relative_path) {
+        let shim_prefix = c_prefix.replacen("mlx_", "mlxrs_", 1);
+        let exact_shim_symbol = format!("{shim_prefix}{function_name}");
+        if gap_shim_functions.contains(&exact_shim_symbol) {
+            return Some(exact_shim_symbol);
+        }
+        for overload_suffix in GAP_SHIM_OVERLOAD_SUFFIXES {
+            let overload_symbol = format!("{exact_shim_symbol}_{overload_suffix}");
+            if gap_shim_functions.contains(&overload_symbol) {
+                return Some(overload_symbol);
+            }
         }
     }
     None
@@ -362,7 +417,11 @@ fn audit_upstream_surface(
             .find(|candidate| vendored_c_functions.contains(candidate.as_str()));
         let wrapped_by_mlxc_composition =
             is_wrapped_by_composition(&public_function.function_name, vendored_c_functions);
-        let shim_entry = gap_shim_entry_for(&public_function.function_name, gap_shim_functions);
+        let shim_entry = gap_shim_entry_for(
+            &public_function.function_name,
+            &public_function.header_relative_path,
+            gap_shim_functions,
+        );
         if exact_candidate.is_some() || wrapped_by_mlxc_composition {
             if exact_candidate.is_some() {
                 exact_match_count += 1;
@@ -476,71 +535,5 @@ fn audit_upstream_surface(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn should_match_shim_entries_exactly_and_by_extension() {
-        let shim_surface: BTreeSet<String> = [
-            "mlxrs_matrix_transpose".to_owned(),
-            "mlxrs_unique".to_owned(),
-            "mlxrs_minmax_axes".to_owned(),
-            "mlxrs_minmax_axis".to_owned(),
-        ]
-        .into_iter()
-        .collect();
-        // Exact shim names match their C++ function...
-        assert_eq!(
-            gap_shim_entry_for("matrix_transpose", &shim_surface),
-            Some("mlxrs_matrix_transpose".to_owned())
-        );
-        // ...and a C++ overload whose C entry points extend the name (the
-        // minmax axes/axis variants) matches through the extension rule.
-        assert!(
-            gap_shim_entry_for("minmax", &shim_surface)
-                .is_some_and(|shim_symbol| shim_symbol.starts_with("mlxrs_minmax_"))
-        );
-        assert_eq!(gap_shim_entry_for("vmap", &shim_surface), None);
-    }
-
-    #[test]
-    fn should_not_treat_a_separate_public_function_as_an_overload() {
-        let shim_surface: BTreeSet<String> = ["mlxrs_einsum_path".to_owned()].into_iter().collect();
-
-        assert_eq!(gap_shim_entry_for("einsum", &shim_surface), None);
-        assert_eq!(
-            gap_shim_entry_for("einsum_path", &shim_surface),
-            Some("mlxrs_einsum_path".to_owned())
-        );
-    }
-
-    #[test]
-    fn should_apply_family_prefixes_and_composition_fallback() {
-        let vendored_surface: BTreeSet<String> = [
-            "mlx_linalg_norm",
-            "mlx_fft_fftn",
-            "mlx_abs",
-            "mlx_stream_new",
-            "mlx_device_info_new",
-            "mlx_fast_metal_kernel_new",
-            "mlx_async_eval",
-        ]
-        .into_iter()
-        .map(String::from)
-        .collect();
-        assert_eq!(
-            candidate_prefixes_for_header("mlx/linalg.h"),
-            &["mlx_linalg_", "mlx_"] as &[&str]
-        );
-        // Exact family names win first.
-        assert!(vendored_surface.contains("mlx_linalg_norm"));
-        // Composition matches reordered multi-word names...
-        assert!(is_wrapped_by_composition("new_stream", &vendored_surface));
-        assert!(is_wrapped_by_composition("device_info", &vendored_surface));
-        assert!(is_wrapped_by_composition("metal_kernel", &vendored_surface));
-        // ...but a single-word name must never fuzzy-match: eval would
-        // otherwise silently hide behind mlx_async_eval.
-        assert!(!is_wrapped_by_composition("eval", &vendored_surface));
-        assert!(!is_wrapped_by_composition("unique", &vendored_surface));
-    }
-}
+#[path = "audit_upstream_surface_tests.rs"]
+mod tests;

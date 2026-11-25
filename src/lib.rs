@@ -161,6 +161,7 @@ pub use metal::metallib::set_metallib_path;
 pub use operations::upstream_gap::{
     MlxEinsumPath, broadcast_shapes, einsum_path, normalize_axis_index,
 };
+pub use runtime::config::{MlxConfigScope, config_get, config_update};
 pub use runtime::distributed_all_gather::initialize_distributed_with_all_gather;
 pub use runtime::export::{
     GraphOutputFile, MlxFunctionExporter, MlxImportedFunction, MlxNodeNamer, export_function,
@@ -174,8 +175,8 @@ pub use runtime::io::{
 };
 pub use runtime::memory::{
     active_memory_bytes, array_buffer_size_bytes, cache_memory_bytes, clear_allocator_cache,
-    memory_limit_bytes, peak_memory_bytes, reset_peak_memory, set_cache_limit, set_memory_limit,
-    synchronize,
+    is_over_memory_limit, memory_limit_bytes, peak_memory_bytes, reset_peak_memory,
+    set_cache_limit, set_memory_limit, synchronize,
 };
 pub use runtime::platform::{
     MlxDistributedGroup, clear_distributed_backends, cuda_is_available, distributed_is_available,
@@ -190,7 +191,7 @@ pub use types::array_vector::MlxArrayVector;
 pub use types::closure_custom::{MlxClosureCustom, MlxClosureCustomJvp, MlxClosureCustomVmap};
 pub use types::closures::{MlxClosure, MlxClosureKwargs, MlxClosureValueAndGrad};
 pub use types::device::{MlxDeviceHandle, MlxDeviceInfo};
-pub use types::dtype_info::{MlxFloatInfo, result_type};
+pub use types::dtype_info::{MlxDtypeCategory, MlxDtypeKind, MlxFloatInfo, result_type};
 pub use types::maps::{
     MlxMapStringToArray, MlxMapStringToArrayIterator, MlxMapStringToString,
     MlxMapStringToStringIterator,

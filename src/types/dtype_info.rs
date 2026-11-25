@@ -19,7 +19,131 @@ pub struct MlxFloatInfo {
     pub smallest_normal: f64,
 }
 
+/// MLX's coarse classification of an element type, as MLX's `kindof`
+/// reports it. `BFloat16` has a kind of its own because its bit layout is not
+/// an IEEE floating-point format.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum MlxDtypeKind {
+    /// `Bool`.
+    Bool,
+    /// The `UInt*` types.
+    UnsignedInteger,
+    /// The `Int*` types.
+    SignedInteger,
+    /// `Float16`, `Float32`, and `Float64`.
+    Floating,
+    /// `Complex64`.
+    Complex,
+    /// `BFloat16`.
+    BrainFloating,
+}
+
+impl MlxDtypeKind {
+    fn from_raw(raw_kind: raw::mlxrs_dtype_kind) -> Result<Self, MlxCError> {
+        Ok(match raw_kind {
+            raw::mlxrs_dtype_kind__MLXRS_DTYPE_KIND_BOOL => Self::Bool,
+            raw::mlxrs_dtype_kind__MLXRS_DTYPE_KIND_UNSIGNED_INTEGER => Self::UnsignedInteger,
+            raw::mlxrs_dtype_kind__MLXRS_DTYPE_KIND_SIGNED_INTEGER => Self::SignedInteger,
+            raw::mlxrs_dtype_kind__MLXRS_DTYPE_KIND_FLOATING => Self::Floating,
+            raw::mlxrs_dtype_kind__MLXRS_DTYPE_KIND_COMPLEX => Self::Complex,
+            raw::mlxrs_dtype_kind__MLXRS_DTYPE_KIND_BRAIN_FLOATING => Self::BrainFloating,
+            unknown_kind => {
+                return Err(MlxCError {
+                    operation: "read an MLX element type kind",
+                    description: format!(
+                        "MLX returned an unknown element type kind {unknown_kind}"
+                    ),
+                });
+            }
+        })
+    }
+}
+
+/// A node in MLX's element type hierarchy, for [`MlxDtype::is_in_category`].
+/// `Generic` contains every type, `Number` every type but `Bool`, `Inexact`
+/// the floating and complex types, and `Integer` both integer families.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum MlxDtypeCategory {
+    /// `Complex64`.
+    ComplexFloating,
+    /// The real floating-point types, `BFloat16` included.
+    Floating,
+    /// `Floating` and `ComplexFloating`.
+    Inexact,
+    /// The `Int*` types.
+    SignedInteger,
+    /// The `UInt*` types.
+    UnsignedInteger,
+    /// `SignedInteger` and `UnsignedInteger`.
+    Integer,
+    /// `Inexact` and `Integer`.
+    Number,
+    /// Every element type.
+    Generic,
+}
+
+impl MlxDtypeCategory {
+    const fn to_raw(self) -> raw::mlxrs_dtype_category {
+        match self {
+            Self::ComplexFloating => {
+                raw::mlxrs_dtype_category__MLXRS_DTYPE_CATEGORY_COMPLEX_FLOATING
+            }
+            Self::Floating => raw::mlxrs_dtype_category__MLXRS_DTYPE_CATEGORY_FLOATING,
+            Self::Inexact => raw::mlxrs_dtype_category__MLXRS_DTYPE_CATEGORY_INEXACT,
+            Self::SignedInteger => raw::mlxrs_dtype_category__MLXRS_DTYPE_CATEGORY_SIGNED_INTEGER,
+            Self::UnsignedInteger => {
+                raw::mlxrs_dtype_category__MLXRS_DTYPE_CATEGORY_UNSIGNED_INTEGER
+            }
+            Self::Integer => raw::mlxrs_dtype_category__MLXRS_DTYPE_CATEGORY_INTEGER,
+            Self::Number => raw::mlxrs_dtype_category__MLXRS_DTYPE_CATEGORY_NUMBER,
+            Self::Generic => raw::mlxrs_dtype_category__MLXRS_DTYPE_CATEGORY_GENERIC,
+        }
+    }
+}
+
 impl MlxDtype {
+    /// The element type this type and `other` promote to together, the
+    /// type MLX gives the result of a binary operation on the two.
+    ///
+    /// # Errors
+    /// Returns the captured MLX description when the query fails.
+    pub fn promote_with(self, other: Self) -> Result<Self, MlxCError> {
+        let mut promoted_dtype = raw::mlx_dtype__MLX_BOOL;
+        // SAFETY: The output pointer is valid writable storage and both
+        // element types are plain values.
+        let status =
+            unsafe { raw::mlxrs_promote_types(&mut promoted_dtype, self.to_raw(), other.to_raw()) };
+        check_status(status, "promote two MLX element types")?;
+        Ok(Self::from_raw(promoted_dtype))
+    }
+
+    /// This element type's kind.
+    ///
+    /// # Errors
+    /// Returns the captured MLX description when the query fails.
+    pub fn kind(self) -> Result<MlxDtypeKind, MlxCError> {
+        let mut raw_kind = raw::mlxrs_dtype_kind__MLXRS_DTYPE_KIND_BOOL;
+        // SAFETY: The output pointer is valid writable storage and the
+        // element type is a plain value.
+        let status = unsafe { raw::mlxrs_kindof(&mut raw_kind, self.to_raw()) };
+        check_status(status, "read an MLX element type kind")?;
+        MlxDtypeKind::from_raw(raw_kind)
+    }
+
+    /// Whether this element type falls under `category` in MLX's hierarchy.
+    ///
+    /// # Errors
+    /// Returns the captured MLX description when the query fails.
+    pub fn is_in_category(self, category: MlxDtypeCategory) -> Result<bool, MlxCError> {
+        let mut is_in_category = false;
+        // SAFETY: The output pointer is valid writable storage and both
+        // arguments are plain values.
+        let status =
+            unsafe { raw::mlxrs_issubdtype(&mut is_in_category, self.to_raw(), category.to_raw()) };
+        check_status(status, "test an MLX element type's category")?;
+        Ok(is_in_category)
+    }
+
     /// This floating-point type's limits.
     ///
     /// # Errors

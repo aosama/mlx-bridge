@@ -25,7 +25,7 @@ find_library(
   HINTS "${CMAKE_PREFIX_PATH}/lib"
   REQUIRED)
 
-add_library(mlxrs_gap_shim STATIC src/gap_shim.cpp)
+add_library(mlxrs_gap_shim STATIC src/gap_shim.cpp src/gap_shim_runtime.cpp)
 
 target_include_directories(
   mlxrs_gap_shim

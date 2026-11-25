@@ -25,7 +25,7 @@ The first match wins:
 
 Only `pkg-config` checks the version. If an older MLX-C sits in the first two places, linking fails with undefined symbols; see [Troubleshooting](troubleshooting.md#undefined-symbols-when-linking).
 
-A prefix you supply may hold dynamic libraries. Their install names use `@rpath`, and a library crate cannot add an rpath to your binary, so your own build must add one, for example through a `build.rs` printing `cargo:rustc-link-arg=-Wl,-rpath,<prefix>/lib`. Otherwise the binary builds and then fails to start with "Library not loaded". Static libraries, as the automatic build produces, avoid this. The gap shim only comes with the automatic build. With your own libraries, compile `native_gap_shim/src/gap_shim.cpp` yourself to use the shim's functions, such as `stft` and `vmapped`.
+A prefix you supply may hold dynamic libraries. Their install names use `@rpath`, and a library crate cannot add an rpath to your binary, so your own build must add one, for example through a `build.rs` printing `cargo:rustc-link-arg=-Wl,-rpath,<prefix>/lib`. Otherwise the binary builds and then fails to start with "Library not loaded". Static libraries, as the automatic build produces, avoid this. The gap shim only comes with the automatic build. With your own libraries, compile the sources in `native_gap_shim/src` yourself to use the shim's functions, such as `stft` and `vmapped`.
 
 ## Linux
 
