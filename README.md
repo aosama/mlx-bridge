@@ -5,13 +5,13 @@
 
 A complete, low-level, policy-free Rust bridge to the public [MLX-C](https://github.com/ml-explore/mlx-c) C API of Apple's [MLX](https://github.com/ml-explore/mlx) array framework for Apple silicon, which also links and runs on Linux through MLX's CPU backend.
 
-**Current release: [`0.32.4-alpha.6`](https://crates.io/crates/mlx-bridge/0.32.4-alpha.6) — verified against MLX `v0.32.4`, binding the complete MLX-C `v0.8.0` surface, the MLX-C release pairing with that MLX, plus this repository's gap shim for the MLX functions that release leaves unwrapped.** Releases up to `0.32.4-alpha.4` were published under the crate's former name, [`mlx-c-rust`](https://crates.io/crates/mlx-c-rust). The crate version always names the MLX release it is verified against — the number you search for and install — while the bound MLX-C release and the forward adaptations are recorded here and in `COVERAGE_INVENTORY.md`. Published on [crates.io](https://crates.io/crates/mlx-bridge); documentation builds on [docs.rs](https://docs.rs/mlx-bridge).
+**Current release: [`0.32.5-alpha.1`](https://crates.io/crates/mlx-bridge/0.32.5-alpha.1) — verified against MLX `v0.32.5`, binding the complete MLX-C `v0.8.0` surface, carried forward to that MLX by reviewed source edits until an MLX-C release pairs with it, plus this repository's gap shim for the MLX functions MLX-C leaves unwrapped.** Releases up to `0.32.4-alpha.4` were published under the crate's former name, [`mlx-c-rust`](https://crates.io/crates/mlx-c-rust). The crate version always names the MLX release it is verified against — the number you search for and install — while the bound MLX-C release and the forward adaptations are recorded here and in `COVERAGE_INVENTORY.md`. Published on [crates.io](https://crates.io/crates/mlx-bridge); documentation builds on [docs.rs](https://docs.rs/mlx-bridge).
 
 ## Documentation
 
 - [Guides and API reference](docs/README.md): task guides whose examples all run in continuous integration, and a reference covering every public item.
 - [Getting started](docs/getting-started.md): from an empty project to your first computation.
-- [Migrating to 0.32.4-alpha.6](docs/migration.md): every breaking change with its replacement.
+- [Migrating to 0.32.5-alpha.1](docs/migration.md): every breaking change with its replacement.
 - [API documentation on docs.rs](https://docs.rs/mlx-bridge).
 
 ## The goal
@@ -30,7 +30,7 @@ What this crate is *not*: a high-level framework. For neural-network layers, opt
 
 ## Status
 
-Early public release, versioned to name the verified MLX release (crate `0.32.4` is verified against MLX `v0.32.4`, binding MLX-C `v0.8.0`). The completeness guarantee covers symbol *presence*; per-wrapper behavioral test coverage is growing and tracked in `COVERAGE_INVENTORY.md`.
+Early public release, versioned to name the verified MLX release (crate `0.32.5` is verified against MLX `v0.32.5`, binding MLX-C `v0.8.0`). The completeness guarantee covers symbol *presence*; per-wrapper behavioral test coverage is growing and tracked in `COVERAGE_INVENTORY.md`.
 
 ## Building
 
@@ -48,7 +48,7 @@ To link against an MLX-C you provide yourself instead, in first-match order (eac
 
 ## Versioning
 
-The crate version names the **MLX release it is verified against** (the scheme mlx-rs established for user-facing crates): crate `0.32.4-alpha.N` is verified against MLX `v0.32.4`. The bound MLX-C release rides in the README headline and `COVERAGE_INVENTORY.md`. MLX-C is the carrier for the C bridge, not the pace-setter: when no MLX-C release pairs with the newest MLX, the native build engine applies this repository's reviewed forward adaptations to the pinned MLX-C sources, and drops them when an MLX-C release catches up — so the crate tracks MLX releases even ahead of MLX-C. Both upstreams are pre-1.0, so minor releases may carry breaking changes when upstream does; our own fixes and same-MLX MLX-C surface changes advance the pre-release counter (`0.32.4-alpha.N`).
+The crate version names the **MLX release it is verified against** (the scheme mlx-rs established for user-facing crates): crate `0.32.5-alpha.N` is verified against MLX `v0.32.5`. The bound MLX-C release rides in the README headline and `COVERAGE_INVENTORY.md`. MLX-C is the carrier for the C bridge, not the pace-setter: when no MLX-C release pairs with the newest MLX, the native build engine applies this repository's reviewed forward adaptations to the pinned MLX-C sources, and drops them when an MLX-C release catches up — so the crate tracks MLX releases even ahead of MLX-C. Both upstreams are pre-1.0, so minor releases may carry breaking changes when upstream does; our own fixes and same-MLX MLX-C surface changes advance the pre-release counter (`0.32.5-alpha.N`).
 
 **The gap shim** — a pinned MLX-C release can lag the pinned MLX, and where it does this repository carries its own C ABI instead of waiting: the gap shim (`native_gap_shim/`, compiled by the native build engine as the third prefix component) wraps the missing MLX functions behind `mlxrs_*` entry points with MLX-C's exact conventions, and the bridge exposes them through the same owned-handle, captured-error wrappers as every MLX-C family. When an MLX-C release wraps a function, the shim entry retires — `cargo xtask audit-upstream-surface` (upstream leg with `--mlx-source <mlx checkout>`, record legs always, also run by `cargo xtask verify`) flags both missing wrappers and entries whose MLX-C equivalent has arrived.
 

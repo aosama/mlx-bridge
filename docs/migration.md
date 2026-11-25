@@ -1,6 +1,31 @@
-# Migrating to 0.32.4-alpha.6
+# Migrating to 0.32.5-alpha.1
 
-This release changes no Rust API, so moving from `alpha.5` only needs the new version number. It adds Linux: the crate now links and runs there on MLX's CPU backend; see [Native build](native-build.md#linux). The automatic native pair keeps its identity, so a Mac that built it for `alpha.5` reuses it without compiling again.
+This release moves to MLX `v0.32.5` and changes no existing Rust API. Cargo does not move a `0.32.4-alpha.N` requirement to a pre-release of another version on its own, so change the requirement in `Cargo.toml` to `0.32.5-alpha.1`. Coming from `alpha.5` or earlier, the sections below this one apply as well.
+
+## Moving to 0.32.5-alpha.1
+
+**The native pair compiles once more.** The pinned MLX changed, so the automatic build has a new identity and compiles once on each machine, which takes a few minutes. The previous pair stays in `~/.cache/mlx-bridge/native/` until you remove it.
+
+**Static MLX on macOS needs IOKit.** MLX `v0.32.5` reads the GPU core count through the IOKit framework. The default `link` feature adds it for the automatic build and for a static prefix you supply. In bindings-only mode, add `cargo:rustc-link-lib=framework=IOKit` to your own build script; see [Troubleshooting](troubleshooting.md).
+
+**The gap shim now has two source files.** If you compile it yourself, compile every `.cpp` file in `native_gap_shim/src`, not `gap_shim.cpp` alone.
+
+**MLX itself changed some behaviors.** These come from MLX `v0.32.5`, not from this crate:
+- Saving writes a temporary file beside the target and renames it, so a failed save leaves an existing file intact.
+- Each thread starts with its own default random key.
+- `import_function` checks that trace input ids match the trace inputs.
+- From MLX's own release notes: `full` honors the requested dtype for array values, `take` handles negative indices, and `gated_delta_update` keeps `g` and `beta` in float32.
+
+**New capabilities worth adopting:**
+- Sliding window attention: `windowed_scaled_dot_product_attention` and its causal and masked forms.
+- `config_update`, `config_get`, and `MlxConfigScope` set MLX's tunables in code instead of through environment variables.
+- `is_over_memory_limit` reports when MLX will hold back new evaluations.
+- `metal_is_nax_available` reports whether MLX's kernels can use the GPU neural accelerators.
+- `MlxDtype::promote_with`, `kind`, and `is_in_category` answer element-type questions without creating arrays.
+
+## Moving to 0.32.4-alpha.6
+
+This release changed no Rust API. It added Linux: the crate links and runs there on MLX's CPU backend; see [Native build](native-build.md#linux).
 
 Coming from `alpha.4` or earlier, the `alpha.5` rename below applies, and from `alpha.3` or earlier, the `alpha.4` changes further down apply as well.
 
