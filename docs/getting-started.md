@@ -6,6 +6,8 @@ This guide takes you from an empty project to a working MLX computation in Rust.
 
 You need an Apple silicon Mac, or a Linux machine for MLX's CPU backend (see [Native build](native-build.md#linux)), a Rust toolchain that supports edition 2024 and `rust-version` 1.101, Clang for `bindgen` (libclang 16 or newer), and `curl`, `tar`, and `cmake` on your `PATH`. `brew install cmake` on macOS, or your distribution's package manager on Linux, covers the one that is usually missing.
 
+If Cargo stops with "requires rustc 1.101", your toolchain is older than the crate needs. The crate uses no unstable features, so any toolchain at 1.101 or newer works; until 1.101 is a stable release, that means beta or nightly: run `rustup toolchain install beta`, then `rustup override set beta` inside your project.
+
 ## Add the crate
 
 Pre-releases are never selected automatically, so name the version:

@@ -27,8 +27,8 @@ next MLX-release bump and ride its alpha window; once the crate declares
 stability, breaking changes only ever ride an MLX release bump.
 
 **Stable fix slot (open — settle before the first stable release):** a
-stable `0.32.4` leaves no number for a crate-only fix. `0.32.5` would
-claim verification against an MLX `0.32.5` that may not exist, and a
+stable `0.32.5` leaves no number for a crate-only fix. `0.32.6` would
+claim verification against an MLX `0.32.6` that may not exist, and a
 pre-release suffix sorts below the release it would be fixing. The
 pre-release counter carries every fix until this is decided.
 
