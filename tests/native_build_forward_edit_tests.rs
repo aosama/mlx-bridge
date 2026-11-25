@@ -67,6 +67,25 @@ fn attention_window_edit() -> &'static ForwardSourceEdit {
         .expect("the set carries the attention window_size edit")
 }
 
+/// The edit that adds the `<format>` include to MLX-C's private I/O header.
+fn io_header_format_edit() -> &'static ForwardSourceEdit {
+    MLX_C_FORWARD_SOURCE_EDITS
+        .iter()
+        .find(|forward_edit| forward_edit.path == "mlx/c/private/io.h")
+        .expect("the set carries the io.h format include edit")
+}
+
+/// The opening of MLX-C v0.8.0's `mlx/c/private/io.h`, copied from the
+/// release: the include block the edit anchors on and the line after it.
+const MLX_C_IO_HEADER_OPENING: &str = "#ifndef MLX_IO_PRIVATE_H
+#define MLX_IO_PRIVATE_H
+
+#include <iostream>
+#include <streambuf>
+
+#include \"mlx/mlx.h\"
+";
+
 /// MLX-C v0.8.0's attention call site, the lines around the edit's anchor
 /// copied from `mlx/c/fast.cpp`: enough of the real argument list to prove
 /// the default lands in the fifth position and nowhere else.
@@ -304,6 +323,75 @@ fn should_fail_loudly_when_mlx_c_forwards_the_window_size_itself() {
     assert!(
         apply_outcome.is_none(),
         "a call site that already forwards window_size must fail the build"
+    );
+    let _ = fs::remove_dir_all(&mlx_c_directory);
+}
+
+#[test]
+fn should_include_format_in_the_mlx_c_io_header() {
+    let mlx_c_directory =
+        extracted_tree_with_edit_body(io_header_format_edit(), MLX_C_IO_HEADER_OPENING);
+
+    let apply_outcome = apply_forward_source_edits(&mlx_c_directory);
+
+    assert!(
+        apply_outcome.is_some(),
+        "the v0.8.0 header must edit cleanly"
+    );
+    let edited_header = fs::read_to_string(mlx_c_directory.join(io_header_format_edit().path))
+        .expect("the edited header should still read");
+    assert_eq!(
+        edited_header,
+        MLX_C_IO_HEADER_OPENING.replace(
+            "#include <iostream>",
+            "#include <format>\n#include <iostream>"
+        ),
+        "the edit must add exactly the one include and touch nothing else"
+    );
+    let _ = fs::remove_dir_all(&mlx_c_directory);
+}
+
+#[test]
+fn should_leave_an_io_header_that_already_includes_format_unchanged() {
+    // Boundary: this entry's replacement contains its find text, so an
+    // already-edited header still matches the find text once, nested inside
+    // the replacement. A retry must recognize that as applied.
+    let already_edited_header = MLX_C_IO_HEADER_OPENING.replace(
+        "#include <iostream>",
+        "#include <format>\n#include <iostream>",
+    );
+    let mlx_c_directory =
+        extracted_tree_with_edit_body(io_header_format_edit(), &already_edited_header);
+
+    let apply_outcome = apply_forward_source_edits(&mlx_c_directory);
+
+    assert!(apply_outcome.is_some(), "a retry must succeed");
+    assert_eq!(
+        fs::read_to_string(mlx_c_directory.join(io_header_format_edit().path))
+            .expect("the file should still read"),
+        already_edited_header,
+        "a retry must not add the include a second time"
+    );
+    let _ = fs::remove_dir_all(&mlx_c_directory);
+}
+
+#[test]
+fn should_fail_loudly_when_mlx_c_includes_format_in_its_own_place() {
+    // Negative: an MLX-C release that fixes this itself may put the include
+    // anywhere. Once the anchored block no longer matches, the build stops
+    // and names the entry to drop instead of adding a second include.
+    let upstream_fixed_header = MLX_C_IO_HEADER_OPENING.replace(
+        "#include <streambuf>",
+        "#include <format>\n#include <streambuf>",
+    );
+    let mlx_c_directory =
+        extracted_tree_with_edit_body(io_header_format_edit(), &upstream_fixed_header);
+
+    let apply_outcome = apply_forward_source_edits(&mlx_c_directory);
+
+    assert!(
+        apply_outcome.is_none(),
+        "a header that changed its include block must fail the build"
     );
     let _ = fs::remove_dir_all(&mlx_c_directory);
 }

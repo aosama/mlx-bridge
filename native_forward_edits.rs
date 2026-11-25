@@ -63,6 +63,20 @@ pub const MLX_C_FORWARD_SOURCE_EDITS: &[ForwardSourceEdit] = &[
         drop_with: "an MLX-C release whose mlx_fast_scaled_dot_product_attention \
                     forwards window_size itself",
     },
+    // MLX-C's private I/O header calls std::format without including
+    // <format>. It compiled because MLX's public headers reached <format>
+    // transitively: MLX v0.32.4's random.h included <chrono>, which
+    // libstdc++ (GCC 13 and newer) builds on <format>. MLX v0.32.5 dropped
+    // that include, so the Linux build stops with "'format' is not a member
+    // of 'std'"; libc++ on macOS still reaches <format> another way, which
+    // is why only Linux noticed. Including the header the code uses is the
+    // whole fix and changes no declaration.
+    ForwardSourceEdit {
+        path: "mlx/c/private/io.h",
+        find: "#include <iostream>\n#include <streambuf>\n",
+        replacement: "#include <format>\n#include <iostream>\n#include <streambuf>\n",
+        drop_with: "an MLX-C release whose mlx/c/private/io.h includes <format> itself",
+    },
 ];
 
 /// Applies the forward edit set to the extracted MLX-C tree. Idempotent: a

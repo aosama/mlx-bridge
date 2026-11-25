@@ -37,10 +37,11 @@ const PINNED_TARBALL_BASE_URL: &str = "https://github.com";
 
 /// Version of the build recipe itself, folded into the prefix identity.
 /// Recipe 11 moves to MLX v0.32.5 ahead of any MLX-C release pairing with
-/// it: the forward edit set gains the attention window_size edit, because
-/// MLX inserted that parameter mid-signature and MLX-C v0.8.0 no longer
-/// compiles against it unedited, and the gap shim gains the neural
-/// accelerator availability query that MLX release introduces.
+/// it. The forward edit set gains two edits MLX-C v0.8.0 needs to compile
+/// against it: the attention window_size argument MLX inserted
+/// mid-signature, and the <format> include MLX-C's private I/O header relied
+/// on MLX to provide. The gap shim gains the neural accelerator availability
+/// query that MLX release introduces.
 /// Recipe 10 stops compiling MLX's own tests and examples.
 /// Recipe 9 widens the gap shim to the MLX functions MLX-C leaves unwrapped.
 /// Recipe 8 moves to MLX-C v0.8.0, the release pairing with MLX v0.32.4:

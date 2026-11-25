@@ -6,12 +6,14 @@ deliberate surface or pin change.
 
 Pairing note: the native pair this crate verifies against is MLX v0.32.5 +
 MLX-C v0.8.0. MLX-C v0.8.0 pairs with MLX v0.32.4 and no MLX-C release
-pairs with v0.32.5 yet, so two reviewed forward edits
+pairs with v0.32.5 yet, so three reviewed forward edits
 (`MLX_C_FORWARD_SOURCE_EDITS` in `native_forward_edits.rs`) carry the
-difference. One concerns CMake packaging. The other passes MLX's default
+difference. One concerns CMake packaging. One passes MLX's default
 `window_size` inside the body of `mlx_fast_scaled_dot_product_attention`,
-where MLX v0.32.5 inserted that parameter. Neither changes a declaration, so
-the C surface recorded below is exactly the vendored MLX-C v0.8.0 surface.
+where MLX v0.32.5 inserted that parameter. One adds the `<format>` include
+MLX-C's private I/O header used to receive through MLX's own headers. None
+changes a declaration, so the C surface recorded below is exactly the
+vendored MLX-C v0.8.0 surface.
 
 - Public upstream functions: 674
 - Public upstream types: 85
