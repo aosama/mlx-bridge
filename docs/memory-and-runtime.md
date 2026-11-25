@@ -89,4 +89,4 @@ fn main() -> Result<(), MlxCError> {
 
 ## Platform queries
 
-`metal_is_available`, `cuda_is_available`, and `distributed_is_available` report what this process can use, and `MlxBindingsContext::version` reports the linked MLX.
+`metal_is_available`, `cuda_is_available`, and `distributed_is_available` report what this process can use, `metal_is_nax_available` reports whether MLX's Metal kernels can use the GPU neural accelerators on this machine, and `MlxBindingsContext::version` reports the linked MLX.

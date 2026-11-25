@@ -4,17 +4,22 @@ Recorded for the vendored MLX-C v0.8.0 headers. The build script emits the
 bridged-symbol inventory on every compile; refresh this record after a
 deliberate surface or pin change.
 
-Pairing note: the native pair this crate verifies against is MLX v0.32.4 +
-MLX-C v0.8.0, the MLX-C release pairing with that MLX. The one remaining
-reviewed forward edit (`MLX_C_FORWARD_SOURCE_EDITS` in
-`native_forward_edits.rs`) concerns CMake packaging only, so the C surface
-recorded below is exactly the vendored MLX-C v0.8.0 surface.
+Pairing note: the native pair this crate verifies against is MLX v0.32.5 +
+MLX-C v0.8.0. MLX-C v0.8.0 pairs with MLX v0.32.4 and no MLX-C release
+pairs with v0.32.5 yet, so three reviewed forward edits
+(`MLX_C_FORWARD_SOURCE_EDITS` in `native_forward_edits.rs`) carry the
+difference. One concerns CMake packaging. One passes MLX's default
+`window_size` inside the body of `mlx_fast_scaled_dot_product_attention`,
+where MLX v0.32.5 inserted that parameter. One adds the `<format>` include
+MLX-C's private I/O header used to receive through MLX's own headers. None
+changes a declaration, so the C surface recorded below is exactly the
+vendored MLX-C v0.8.0 surface.
 
 - Public upstream functions: 674
 - Public upstream types: 85
 - Bridged functions: 675
 - Bridged types: 85
-- Gap shim functions: 13
+- Gap shim functions: 14
 - Exclusions: 1
 
 ## Functions
@@ -801,6 +806,7 @@ MLX-C equivalent has arrived.
 | `mlxrs_einsum_path` | MLX core `einsum_path` |
 | `mlxrs_finfo` | MLX core `finfo` |
 | `mlxrs_get_global_formatter` | MLX core `get_global_formatter` |
+| `mlxrs_is_nax_available` | MLX `metal::is_nax_available` |
 | `mlxrs_istft` | MLX `fft::istft` |
 | `mlxrs_minmax_axes` | MLX core `minmax`, the axes overload |
 | `mlxrs_minmax_axis` | MLX core `minmax`, the axis overload |

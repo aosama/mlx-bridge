@@ -54,14 +54,16 @@ mlx-bridge = { version = "0.32.4-alpha.6", default-features = false }
 
 Declarations, wrappers, and error handling are identical.
 
+On macOS a static MLX needs these frameworks on your link line: `Metal`, `Foundation`, `QuartzCore`, `Accelerate`, and, from MLX `v0.32.5` on, `IOKit`. The default `link` feature names them for you, for the automatic build and for a static prefix you supply.
+
 ## What is pinned
 
 | Component | Version |
 |---|---|
-| MLX | `v0.32.4` |
+| MLX | `v0.32.5` |
 | MLX-C | `v0.8.0` |
 
-The crate version names the verified MLX release. MLX's tests and examples are not compiled, because consumers only link the library.
+The crate version names the verified MLX release. MLX-C `v0.8.0` was released against MLX `v0.32.4`; until an MLX-C release pairs with `v0.32.5`, the build applies small reviewed edits to the MLX-C sources so they compile against the newer MLX, without changing any C declaration. MLX's tests and examples are not compiled, because consumers only link the library.
 
 ## Environment variables
 

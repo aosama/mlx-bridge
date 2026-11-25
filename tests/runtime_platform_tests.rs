@@ -11,7 +11,7 @@ use bridge_fixtures::{
 };
 use mlx_bridge::{
     clear_distributed_backends, cuda_is_available, distributed_is_available,
-    initialize_distributed, metal_is_available, set_wired_limit,
+    initialize_distributed, metal_is_available, metal_is_nax_available, set_wired_limit,
 };
 
 #[test]
@@ -39,6 +39,49 @@ fn should_agree_on_metal_availability_with_an_actual_gpu_computation() {
 
     assert!(metal_is_available().unwrap());
     assert_eq!(floats_of(&doubled), vec![2.0, 4.0]);
+}
+
+#[test]
+fn should_report_no_neural_accelerators_on_a_build_without_a_gpu_backend() {
+    // Negative: MLX's no-Metal build answers false, and the wrapper must
+    // carry that answer instead of an error or a stale output value.
+    if linked_mlx_has_a_gpu_backend() {
+        return;
+    }
+    gpu_context();
+
+    assert!(!metal_is_nax_available().unwrap());
+}
+
+#[test]
+fn should_answer_the_neural_accelerator_query_the_same_way_every_time() {
+    // The answer depends on the machine's GPU generation and operating
+    // system, so no value can be asserted here. What the wrapper owes is a
+    // successful status and the value MLX wrote, which MLX computes once per
+    // process.
+    if skip_without_gpu_backend(
+        "should_answer_the_neural_accelerator_query_the_same_way_every_time",
+    ) {
+        return;
+    }
+    gpu_context();
+
+    let first_answer = metal_is_nax_available().unwrap();
+    let second_answer = metal_is_nax_available().unwrap();
+
+    assert_eq!(first_answer, second_answer);
+}
+
+#[test]
+fn should_never_report_neural_accelerators_without_metal() {
+    // Boundary between the two queries: accelerated kernels are Metal
+    // kernels, so the accelerator answer can never exceed Metal's.
+    gpu_context();
+
+    let metal_available = metal_is_available().unwrap();
+    let neural_accelerators_available = metal_is_nax_available().unwrap();
+
+    assert!(metal_available || !neural_accelerators_available);
 }
 
 #[test]

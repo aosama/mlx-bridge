@@ -54,6 +54,10 @@ The `clang` executable is missing. bindgen asks it where clang's own headers liv
 
 Your GCC is older than version 13, whose standard library first provides `std::format`, which MLX-C uses. Install GCC 13 or newer. See [Linux](native-build.md#linux).
 
+## Undefined `_IOServiceMatching` or other `_IO…` symbols when linking on macOS
+
+MLX `v0.32.5` reads the GPU core count through the IOKit framework, and a static `libmlx.a` does not carry that dependency. With the default `link` feature the crate links IOKit for you from `0.32.5` on, so upgrade the crate. In [bindings-only mode](native-build.md#bindings-only-mode) add `cargo:rustc-link-lib=framework=IOKit` to your own `build.rs`. The error appears only in binaries that reach the kernels using the query, such as quantized matmul, so a small program can link while a larger one fails.
+
 ## The binary fails to start with "Library not loaded"
 
 You linked MLX-C dylibs from your own prefix, and their `@rpath` install names can't be resolved. A library crate cannot add an rpath to your binary, so add one in your own build, as [Native build](native-build.md#the-link-ladder) shows, or use the automatic static build.

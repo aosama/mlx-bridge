@@ -27,15 +27,21 @@ use sha2::{Digest, Sha256};
 /// carrier for the C bridge, not the pace-setter: when no MLX-C release
 /// pairs with the pinned MLX yet, the forward edit set below adapts the
 /// pinned MLX-C sources to it until upstream catches up.
-pub const PINNED_MLX_TAG: &str = "v0.32.4";
+pub const PINNED_MLX_TAG: &str = "v0.32.5";
 pub const PINNED_MLX_C_TAG: &str = "v0.8.0";
 pub const PINNED_MLX_TARBALL_SHA256: &str =
-    "0276db8d7bf1af8db6d4ae25c7c550abea4d5b3b6a16207610a5d4a0c19fe1a0";
+    "b318f8763a31c9eb66b38e378ae2655e6c9874a51d1ef03aa7c4de4ab977c5af";
 pub const PINNED_MLX_C_TARBALL_SHA256: &str =
     "ea6251d37968ec3a7975982d2eb38b008ee2a6bfa75bee1132cae178a39765e2";
 const PINNED_TARBALL_BASE_URL: &str = "https://github.com";
 
 /// Version of the build recipe itself, folded into the prefix identity.
+/// Recipe 11 moves to MLX v0.32.5 ahead of any MLX-C release pairing with
+/// it. The forward edit set gains two edits MLX-C v0.8.0 needs to compile
+/// against it: the attention window_size argument MLX inserted
+/// mid-signature, and the <format> include MLX-C's private I/O header relied
+/// on MLX to provide. The gap shim gains the neural accelerator availability
+/// query that MLX release introduces.
 /// Recipe 10 stops compiling MLX's own tests and examples.
 /// Recipe 9 widens the gap shim to the MLX functions MLX-C leaves unwrapped.
 /// Recipe 8 moves to MLX-C v0.8.0, the release pairing with MLX v0.32.4:
@@ -66,7 +72,7 @@ const PINNED_TARBALL_BASE_URL: &str = "https://github.com";
 /// the pair. Bump this when the recipe's build semantics change, so
 /// machines holding a prefix built the old way orphan it exactly like a
 /// pin bump would.
-const PINNED_PAIR_BUILD_RECIPE: &str = "recipe-10-library-only";
+const PINNED_PAIR_BUILD_RECIPE: &str = "recipe-11-mlx-0-32-5";
 
 /// The forward edit set this engine applies to the extracted MLX-C tree
 /// between extraction and configure. It lives in its own self-contained,

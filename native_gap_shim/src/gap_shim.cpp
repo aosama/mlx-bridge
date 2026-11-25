@@ -384,6 +384,16 @@ extern "C" int mlxrs_peek_default_stream(
   return 0;
 }
 
+extern "C" int mlxrs_is_nax_available(bool* res) {
+  try {
+    *res = mlx::core::metal::is_nax_available();
+  } catch (std::exception& error) {
+    mlx_error("%s", error.what());
+    return 1;
+  }
+  return 0;
+}
+
 extern "C" int mlxrs_set_printoptions(int precision, bool capitalize_bool) {
   try {
     mlx::core::set_printoptions(mlx::core::PrintOptions{precision});

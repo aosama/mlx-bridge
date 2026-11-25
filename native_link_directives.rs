@@ -72,7 +72,13 @@ pub fn macos_static_pair_link_directives(prefix_archives: StaticPrefixArchives) 
     let mut link_directives = static_pair_archive_directives(prefix_archives);
     // Follows mlx, which references it.
     link_directives.push("cargo:rustc-link-lib=static=jaccl".to_owned());
-    for framework_name in ["Metal", "Foundation", "QuartzCore", "Accelerate"] {
+    // A static archive records no framework dependencies, so every framework
+    // MLX's sources call into is named here. IOKit joined with MLX v0.32.5,
+    // whose Metal device code reads the GPU core count from the I/O registry;
+    // MLX links it privately, which reaches a shared libmlx but not a consumer
+    // of libmlx.a. Without it, any binary whose live code reaches that query
+    // fails to link on undefined IOKit symbols.
+    for framework_name in ["Metal", "Foundation", "QuartzCore", "Accelerate", "IOKit"] {
         link_directives.push(format!("cargo:rustc-link-lib=framework={framework_name}"));
     }
     link_directives.push("cargo:rustc-link-lib=dylib=c++".to_owned());

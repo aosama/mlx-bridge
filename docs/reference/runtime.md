@@ -627,6 +627,16 @@ Whether the MLX-Metal backend is available in this process.
 
 **Errors:** Returns the captured MLX-C description when the query fails.
 
+### `metal_is_nax_available`
+
+```rust
+pub fn metal_is_nax_available() -> Result<bool, MlxCError>
+```
+
+Whether MLX's Metal kernels can use the GPU neural accelerators on this machine. MLX selects different matmul, quantized, and attention kernels when they are available, so the answer explains which code path a benchmark measured. It is `false` wherever MLX has no Metal backend.
+
+**Errors:** Returns the captured MLX description when the query fails.
+
 ### `set_wired_limit`
 
 ```rust
